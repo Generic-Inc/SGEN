@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS Profiles (
     modified DATETIME DEFAULT DATETIME('now', 'localtime')
 );
 
-CREATE TRIGGER UpdateProfilesModified
+CREATE TRIGGER IF NOT EXISTS UpdateProfilesModified
 AFTER UPDATE ON Profiles
 FOR EACH ROW
 BEGIN

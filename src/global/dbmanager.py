@@ -2,7 +2,7 @@ from typing import Optional
 from pathlib import Path
 import aiosqlite
 
-SCHEMA_PATH = "../database/schema.sql"
+SCHEMA_PATH = Path(__file__).parent.parent / "database" / "schema.sql"
 
 class DBManager:
     def __init__(self, path: str | Path=SCHEMA_PATH) -> None:

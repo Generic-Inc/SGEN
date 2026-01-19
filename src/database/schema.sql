@@ -27,4 +27,17 @@ CREATE TABLE IF NOT EXISTS Communities (
 
     created DATETIME DEFAULT DATETIME('now', 'localtime'),
     modified DATETIME DEFAULT DATETIME('now', 'localtime')
+);
+
+CREATE TABLE IF NOT EXISTS ChatMessage(
+    message_id INT PRIMARY KEY AUTOINCREMENT,
+    community_id INT NOT NULL,
+    author_id INT NOT NULL,
+    content VARCHAR(2048) NOT NULL,
+
+    FOREIGN KEY (community_id) REFERENCES Communities(community_id),
+    FOREIGN KEY (author_id) REFERENCES Profiles(user_id),
+
+    created DATETIME DEFAULT DATETIME('now', 'localtime'),
+    modified DATETIME DEFAULT DATETIME('now', 'localtime')
 )

@@ -8,8 +8,8 @@ CREATE TABLE IF NOT EXISTS Profiles (
     bio VARCHAR(1024) NOT NULL,
     language VARCHAR(32) NOT NULL,
 
-    created DATETIME DEFAULT CURRENT_TIMESTAMP,
-    modified DATETIME DEFAULT CURRENT_TIMESTAMP
+    created DATETIME DEFAULT DATETIME('now', 'localtime'),
+    modified DATETIME DEFAULT DATETIME('now', 'localtime')
 );
 
 CREATE TABLE IF NOT EXISTS Communities (
@@ -25,6 +25,6 @@ CREATE TABLE IF NOT EXISTS Communities (
 
     FOREIGN KEY (owner_id) REFERENCES Profiles(user_id),
 
-    created DATETIME DEFAULT CURRENT_TIMESTAMP,
-    modified DATETIME DEFAULT CURRENT_TIMESTAMP
+    created DATETIME DEFAULT DATETIME('now', 'localtime'),
+    modified DATETIME DEFAULT DATETIME('now', 'localtime')
 )

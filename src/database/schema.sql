@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS Communities (
     modified DATETIME DEFAULT DATETIME('now', 'localtime')
 );
 
-CREATE TRIGGER UpdateCommunitiesModified
+CREATE TRIGGER IF NOT EXISTS UpdateCommunitiesModified
 AFTER UPDATE ON Communities
 FOR EACH ROW
 BEGIN
@@ -54,10 +54,10 @@ CREATE TABLE IF NOT EXISTS ChatMessage(
 
     created DATETIME DEFAULT DATETIME('now', 'localtime'),
     modified DATETIME DEFAULT DATETIME('now', 'localtime')
-)
+);
 
 
-CREATE TRIGGER UpdateChatMessageModified
+CREATE TRIGGER IF NOT EXISTS UpdateChatMessageModified
 AFTER UPDATE ON ChatMessage
 FOR EACH ROW
 BEGIN

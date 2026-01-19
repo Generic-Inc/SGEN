@@ -4,7 +4,7 @@ import aiosqlite
 
 SCHEMA_PATH = Path(__file__).parent.parent / "database" / "schema.sql"
 
-class DBManager:
+class Database:
     def __init__(self, path: str | Path=SCHEMA_PATH) -> None:
         self.path = path
         self.con: Optional[aiosqlite.Connection] = None
@@ -97,3 +97,4 @@ class DBManager:
         await self._get_con()
         await self._create_tables(self.path)
 
+DATABASE = Database()

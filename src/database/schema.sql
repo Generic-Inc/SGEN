@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS Profiles (
     user_id INT PRIMARY KEY,
     username VARCHAR(32) NOT NULL,
     display_name VARCHAR(64) NOT NULL,
-    email VARCHAR(254) NOT NULL,
+    _email VARCHAR(254) NOT NULL,
     language VARCHAR(32) DEFAULT "en",
     profile_picture_url VARCHAR(2048),
     bio VARCHAR(1024),

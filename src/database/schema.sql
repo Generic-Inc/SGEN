@@ -2,11 +2,10 @@ CREATE TABLE IF NOT EXISTS Profiles (
     user_id INT PRIMARY KEY,
     username VARCHAR(32) NOT NULL,
     display_name VARCHAR(64) NOT NULL,
-    profile_picture_url VARCHAR(2048),
     email VARCHAR(254) NOT NULL,
-    phone_number VARCHAR(15),
-    bio VARCHAR(1024) NOT NULL,
-    language VARCHAR(32) NOT NULL,
+    language VARCHAR(32) DEFAULT "en",
+    profile_picture_url VARCHAR(2048),
+    bio VARCHAR(1024),
 
     created DATETIME DEFAULT DATETIME('now', 'localtime'),
     modified DATETIME DEFAULT DATETIME('now', 'localtime')

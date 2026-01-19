@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS Profiles (
     modified DATETIME DEFAULT DATETIME('now', 'localtime')
 );
 
-CREATE TRIGGER UpdateProfilesModified
+CREATE TRIGGER IF NOT EXISTS UpdateProfilesModified
 AFTER UPDATE ON Profiles
 FOR EACH ROW
 BEGIN
@@ -34,9 +34,9 @@ CREATE TABLE IF NOT EXISTS Communities (
 
     created DATETIME DEFAULT DATETIME('now', 'localtime'),
     modified DATETIME DEFAULT DATETIME('now', 'localtime')
-)
+);
 
-CREATE TRIGGER UpdateCommunitiesModified
+CREATE TRIGGER IF NOT EXISTS UpdateCommunitiesModified
 AFTER UPDATE ON Communities
 FOR EACH ROW
 BEGIN

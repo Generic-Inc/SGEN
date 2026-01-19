@@ -36,6 +36,13 @@ CREATE TABLE IF NOT EXISTS Communities (
     modified DATETIME DEFAULT DATETIME('now', 'localtime')
 );
 
+CREATE TRIGGER UpdateCommunitiesModified
+AFTER UPDATE ON Communities
+FOR EACH ROW
+BEGIN
+    UPDATE Communities SET modified = DATETIME('now', 'localtime') WHERE community_id = OLD.community_id;
+END;
+
 CREATE TABLE IF NOT EXISTS ChatMessage(
     message_id INT PRIMARY KEY AUTOINCREMENT,
     community_id INT NOT NULL,
@@ -48,9 +55,11 @@ CREATE TABLE IF NOT EXISTS ChatMessage(
     created DATETIME DEFAULT DATETIME('now', 'localtime'),
     modified DATETIME DEFAULT DATETIME('now', 'localtime')
 )
-CREATE TRIGGER UpdateCommunitiesModified
-AFTER UPDATE ON Communities
+
+
+CREATE TRIGGER UpdateChatMessageModified
+AFTER UPDATE ON ChatMessage
 FOR EACH ROW
 BEGIN
-    UPDATE Communities SET modified = DATETIME('now', 'localtime') WHERE community_id = OLD.community_id;
+    UPDATE ChatMessage SET modified = DATETIME('now', 'localtime') WHERE message_id = OLD.message_id;
 END;

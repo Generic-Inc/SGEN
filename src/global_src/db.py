@@ -2,11 +2,13 @@ from typing import Optional
 from pathlib import Path
 import aiosqlite
 
-SCHEMA_PATH = Path(__file__).parent.parent / "database" / "schema.sql"
+from global_src.constants import SCHEMA_PATH, DATABASE_PATH
 
-class DBManager:
-    def __init__(self, path: str | Path=SCHEMA_PATH) -> None:
+
+class Database:
+    def __init__(self, path: str | Path=DATABASE_PATH, schema_path: str | Path=SCHEMA_PATH) -> None:
         self.path = path
+        self.schema_path = schema_path
         self.con: Optional[aiosqlite.Connection] = None
 
     async def _create_tables(self, schema_path: str | Path=SCHEMA_PATH) -> None:
@@ -52,10 +54,10 @@ class DBManager:
         con = await self._get_con()
         if values:
             async with con.execute(query, values) as cur:
-                data = await cur.fetchone()
+                data = await cur.fetchall()
         else:
             async with con.execute(query) as cur:
-                data = await cur.fetchone()
+                data = await cur.fetchall()
         return data
 
     async def execute(self, query: str, values: tuple = None, commit=True) -> None:
@@ -95,5 +97,6 @@ class DBManager:
         :return: None
         """
         await self._get_con()
-        await self._create_tables(self.path)
+        await self._create_tables(self.schema_path)
 
+DATABASE = Database()

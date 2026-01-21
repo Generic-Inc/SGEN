@@ -18,7 +18,8 @@ class ConfigRoot:
         config_url = local_config["configUrl"]
         async with aiohttp.ClientSession() as session:
             async with session.get(config_url) as response:
-                self.config = await response.json()
+                response.raise_for_status()
+                self.config = await response.json(content_type=None)
         return self.config
 
     async def auto_reload(self) -> None:

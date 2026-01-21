@@ -54,10 +54,10 @@ class Database:
         con = await self._get_con()
         if values:
             async with con.execute(query, values) as cur:
-                data = await cur.fetchone()
+                data = await cur.fetchall()
         else:
             async with con.execute(query) as cur:
-                data = await cur.fetchone()
+                data = await cur.fetchall()
         return data
 
     async def execute(self, query: str, values: tuple = None, commit=True) -> None:

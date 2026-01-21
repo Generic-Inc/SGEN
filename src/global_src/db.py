@@ -2,11 +2,13 @@ from typing import Optional
 from pathlib import Path
 import aiosqlite
 
-from global_src.constants import SCHEMA_PATH
+from global_src.constants import SCHEMA_PATH, DATABASE_PATH
+
 
 class Database:
-    def __init__(self, path: str | Path=SCHEMA_PATH) -> None:
+    def __init__(self, path: str | Path=DATABASE_PATH, schema_path: str | Path=SCHEMA_PATH) -> None:
         self.path = path
+        self.schema_path = schema_path
         self.con: Optional[aiosqlite.Connection] = None
 
     async def _create_tables(self, schema_path: str | Path=SCHEMA_PATH) -> None:
@@ -95,6 +97,6 @@ class Database:
         :return: None
         """
         await self._get_con()
-        await self._create_tables(self.path)
+        await self._create_tables(self.schema_path)
 
 DATABASE = Database()

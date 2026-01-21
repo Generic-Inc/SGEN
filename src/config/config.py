@@ -5,7 +5,7 @@ from typing import Optional
 
 import aiohttp
 
-CONFIG_PATH: dict = Path(__file__).parent / "config.json"
+from global_src.constants import CONFIG_PATH
 
 class ConfigRoot:
     def __init__(self):

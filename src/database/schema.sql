@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS Profiles (
     display_name VARCHAR(64) NOT NULL,
     _email VARCHAR(254) NOT NULL,
     language VARCHAR(32) DEFAULT "en",
-    profile_picture_url VARCHAR(2048),
+    avatar_url VARCHAR(2048),
     bio VARCHAR(1024),
 
     created DATETIME DEFAULT DATETIME('now', 'localtime'),

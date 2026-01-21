@@ -19,13 +19,13 @@ class User(BaseClass):
                  display_name: str,
                  email: str,
                  language: str,
-                 profile_picture_url: str=None,
+                 avatar_url: str=None,
                  bio: str=None
                  ):
         self.user_id = user_id
         self.username = username
         self.display_name = display_name
-        self.profile_picture_url = profile_picture_url
+        self.avatar_url = avatar_url
         self.bio = bio
         self.language = language
         self._email = email
@@ -39,20 +39,20 @@ SELECT
       display_name, 
       _email, 
       language, 
-      profile_picture_url, 
+      avatar_url, 
       bio
 FROM Profiles
     WHERE user_id=?
 """, (user_id,))
         if not profile: return None
-        username, display_name, email, language, profile_picture_url, bio = profile
+        username, display_name, email, language, avatar_url, bio = profile
         return cls(
             user_id=user_id,
             username=username,
             display_name=display_name,
             email=email,
             language=language,
-            profile_picture_url=profile_picture_url,
+            avatar_url=avatar_url,
             bio=bio
         )
 
@@ -65,8 +65,8 @@ FROM Profiles
             "displayName": self.display_name,
             "language": self.language
         }
-        if self.profile_picture_url:
-            base_json["profilePictureUrl"] = self.profile_picture_url
+        if self.avatar_url:
+            base_json["profilePictureUrl"] = self.avatar_url
         if self.bio:
             base_json["bio"] = self.bio
         return base_json

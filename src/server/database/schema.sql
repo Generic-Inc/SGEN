@@ -68,3 +68,54 @@ ON CONFLICT(username) DO NOTHING;
 INSERT INTO Communities (community_name, display_name, owner_id, description)
 VALUES("sgen", "SGEN Community", 1, "The official community for SGEN users.")
 ON CONFLICT(community_name) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS Posts (
+    post_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    content TEXT NOT NULL,
+    image_url VARCHAR(2048),
+
+    community_id VARCHAR(128) NOT NULL,
+    author_id INT NOT NULL,
+
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    modified DATETIME DEFAULT (DATETIME('now', 'localtime')),
+
+    FOREIGN KEY (community_id) REFERENCES Communities(community_id),
+    FOREIGN KEY (author_id) REFERENCES Profiles(user_id)
+);
+
+CREATE TRIGGER IF NOT EXISTS UpdatePostsModified
+AFTER UPDATE ON Posts FOR EACH ROW
+BEGIN
+    UPDATE Posts SET modified = (DATETIME('now', 'localtime')) WHERE post_id = OLD.post_id;
+END;
+
+CREATE TABLE IF NOT EXISTS Comments (
+    comment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    content TEXT NOT NULL,
+
+    post_id INTEGER NOT NULL,
+    author_id INT NOT NULL,
+
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    modified DATETIME DEFAULT (DATETIME('now', 'localtime')),
+
+    FOREIGN KEY (post_id) REFERENCES Posts(post_id),
+    FOREIGN KEY (author_id) REFERENCES Profiles(user_id)
+);
+
+CREATE TRIGGER IF NOT EXISTS UpdateCommentsModified
+AFTER UPDATE ON Comments FOR EACH ROW
+BEGIN
+    UPDATE Comments SET modified = (DATETIME('now', 'localtime')) WHERE comment_id = OLD.comment_id;
+END;
+
+CREATE TABLE IF NOT EXISTS PostLikes (
+    like_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    post_id INTEGER NOT NULL,
+    user_id INT NOT NULL,
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    FOREIGN KEY (post_id) REFERENCES Posts(post_id),
+    FOREIGN KEY (user_id) REFERENCES Profiles(user_id),
+    UNIQUE(post_id, user_id)
+);

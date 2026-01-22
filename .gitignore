@@ -1,6 +1,7 @@
 .idea
 .vsc
 *.db
+ignore/
 
 
 # Byte-compiled / optimized / DLL files

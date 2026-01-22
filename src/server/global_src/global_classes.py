@@ -84,6 +84,18 @@ FROM Profiles
         communities = [Community.get_community(i) for i in community_ids]
         return await asyncio.gather(*communities)
 
+    async def get_member(self, community_id: int):
+        role_fetch = await DATABASE.fetch_one("""
+        SELECT 
+            role
+        FROM Memberships
+            WHERE member_id=? AND community_id=?
+        """, (self.user_id, community_id))
+        if not role_fetch:
+            return None
+        role, = role_fetch
+        return role
+
 class Community(BaseClass):
     """A class representing a community"""
     def __init__(self,
@@ -91,6 +103,7 @@ class Community(BaseClass):
                  community_name: str,
                  display_name: str,
                  owner: Optional[User],
+                 member_count: int=0,
                  description: str=None,
                  icon_url: str=None,
                  post_guidelines: str=None,
@@ -102,6 +115,7 @@ class Community(BaseClass):
         self.community_name = community_name
         self.display_name = display_name
         self.owner = owner
+        self.member_count = member_count
         self.description = description
         self.icon_url = icon_url
         self.post_guidelines = post_guidelines
@@ -129,11 +143,14 @@ FROM Communities
         if not community_fetch: return None
         community_name, display_name, owner_id, description, icon_url, post_guidelines, messages_guidelines, offline_text, online_text = community_fetch
         owner = await User.get_user(owner_id)
+        member_count = await DATABASE.fetch_all("SELECT * FROM Memberships WHERE community_id=? AND active=1", (community_id,))
+        member_count = 0 if not member_count else len(member_count)
         return cls(
             community_id=community_id,
             community_name=community_name,
             display_name=display_name,
             owner=owner,
+            member_count=member_count,
             description=description,
             icon_url=icon_url,
             post_guidelines=post_guidelines,
@@ -150,6 +167,7 @@ FROM Communities
             "communityName": self.community_name,
             "displayName": self.display_name,
             "owner": self.owner.public_json,
+            "memberCount": self.member_count,
             "description": self.description,
             "iconUrl": self.icon_url,
             "postGuidelines": self.post_guidelines,
@@ -158,6 +176,52 @@ FROM Communities
             "onlineText": self.online_text
         }
         return base_json
+
+    async def get_members(self):
+        member_fetch = await DATABASE.fetch_all("""
+        SELECT 
+            member_id,
+            role
+        FROM Memberships
+            WHERE community_id=?
+        """, (self.community_id,))
+        if not member_fetch:
+            return []
+        member_ids = [row[0] for row in member_fetch]
+        members = [CommunityMember.get_member(i, self.community_id) for i in member_ids]
+        return await asyncio.gather(*members)
+
+class CommunityMember(BaseClass):
+    def __init__(self, community_id: int, user: User, role: str):
+        self.community_id = community_id
+        self.user = user
+        self.role = role
+
+    @classmethod
+    async def get_member(cls, user_id: int, community_id: int):
+        role_fetch = DATABASE.fetch_one("""
+        SELECT 
+            role
+        FROM Memberships
+            WHERE member_id=? AND community_id=?
+        """, (user_id, community_id))
+        user_fetch = User.get_user(user_id)
+        role_fetch, user_fetch = await asyncio.gather(role_fetch, user_fetch)
+        if not role_fetch or not user_fetch:
+            return None
+        role, = role_fetch
+        return cls(
+            community_id=community_id,
+            user=user_fetch,
+            role=role
+        )
+
+    @property
+    def public_json(self) -> dict[str, Any]:
+        return {
+            "user": self.user.public_json,
+            "role": self.role
+        }
 
 
 

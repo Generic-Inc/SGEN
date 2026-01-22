@@ -103,6 +103,7 @@ class Community(BaseClass):
                  community_name: str,
                  display_name: str,
                  owner: Optional[User],
+                 member_count: int=0,
                  description: str=None,
                  icon_url: str=None,
                  post_guidelines: str=None,
@@ -114,6 +115,7 @@ class Community(BaseClass):
         self.community_name = community_name
         self.display_name = display_name
         self.owner = owner
+        self.member_count = member_count
         self.description = description
         self.icon_url = icon_url
         self.post_guidelines = post_guidelines
@@ -141,11 +143,14 @@ FROM Communities
         if not community_fetch: return None
         community_name, display_name, owner_id, description, icon_url, post_guidelines, messages_guidelines, offline_text, online_text = community_fetch
         owner = await User.get_user(owner_id)
+        member_count = await DATABASE.fetch_all("SELECT * FROM Memberships WHERE community_id=? AND active=1", (community_id,))
+        member_count = 0 if not member_count else len(member_count)
         return cls(
             community_id=community_id,
             community_name=community_name,
             display_name=display_name,
             owner=owner,
+            member_count=member_count,
             description=description,
             icon_url=icon_url,
             post_guidelines=post_guidelines,
@@ -162,6 +167,7 @@ FROM Communities
             "communityName": self.community_name,
             "displayName": self.display_name,
             "owner": self.owner.public_json,
+            "memberCount": self.member_count,
             "description": self.description,
             "iconUrl": self.icon_url,
             "postGuidelines": self.post_guidelines,

@@ -22,8 +22,8 @@ async def get_user(user_id: int):
         return {"error": "User not found"}, 404
     return user_get.public_json
 
-@community.route("/<community_id>")
-async def get_community(community_id: str):
+@community.route("/<int:community_id>")
+async def get_community(community_id: int):
     """Get a community's public information by their community ID"""
     community_get = await Community.get_community(community_id)
     if not community_get:

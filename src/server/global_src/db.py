@@ -2,11 +2,13 @@ from typing import Optional
 from pathlib import Path
 import aiosqlite
 
-SCHEMA_PATH = "../database/schema.sql"
+from global_src.constants import SCHEMA_PATH, DATABASE_PATH
 
-class DBManager:
-    def __init__(self, path: str | Path=SCHEMA_PATH) -> None:
+
+class Database:
+    def __init__(self, path: str | Path=DATABASE_PATH, schema_path: str | Path=SCHEMA_PATH) -> None:
         self.path = path
+        self.schema_path = schema_path
         self.con: Optional[aiosqlite.Connection] = None
 
     async def _create_tables(self, schema_path: str | Path=SCHEMA_PATH) -> None:
@@ -21,6 +23,11 @@ class DBManager:
         await con.executescript(schema)
         await con.commit()
 
+    async def _get_con(self):
+        if not self.con:
+            self.con = await aiosqlite.connect(self.path)
+        return self.con
+
     async def fetch_one(self, query: str, values: tuple=None) -> tuple:
         """
         Fetches one row of the database based on the query and the values
@@ -28,7 +35,7 @@ class DBManager:
         :param values: values from query
         :return: tuple
         """
-        con = self.con
+        con = await self._get_con()
         if values:
             async with con.execute(query, values) as cur:
                 data = await cur.fetchone()
@@ -44,13 +51,13 @@ class DBManager:
         :param values: values from query
         :return: list[tuple]
         """
-        con = self.con
+        con = await self._get_con()
         if values:
             async with con.execute(query, values) as cur:
-                data = await cur.fetchone()
+                data = await cur.fetchall()
         else:
             async with con.execute(query) as cur:
-                data = await cur.fetchone()
+                data = await cur.fetchall()
         return data
 
     async def execute(self, query: str, values: tuple = None, commit=True) -> None:
@@ -61,7 +68,7 @@ class DBManager:
         :param commit: whether to commit the query
         :return: None
         """
-        con = self.con
+        con = await self._get_con()
         await con.execute(query, values)
         if commit:
             await con.commit()
@@ -72,7 +79,7 @@ class DBManager:
         :param query: query to execute
         :return: None
         """
-        con = self.con
+        con = await self._get_con()
         await con.executescript(query)
         await con.commit()
 
@@ -81,7 +88,7 @@ class DBManager:
         commit to the database
         :return: None
         """
-        con = self.con
+        con = await self._get_con()
         await con.commit()
 
     async def initialize(self) -> None:
@@ -89,6 +96,7 @@ class DBManager:
         initialize the database
         :return: None
         """
-        self.con = await aiosqlite.connect(self.path)
-        await self._create_tables(self.path)
+        await self._get_con()
+        await self._create_tables(self.schema_path)
 
+DATABASE = Database()

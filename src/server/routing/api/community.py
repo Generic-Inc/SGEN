@@ -11,9 +11,12 @@ async def get_community(community_id: int):
     return community_get.public_json
 
 
-@community.route("/<int:community_id>/members")
+@community.route("/<int:community_id>/members", methods=["GET", "POST"])
 async def get_community_members(community_id: int):
-    """Get a list of members in a community by the community ID"""
+    """
+    GET: Get a list of members in a community by the community ID
+    POST: join a community by the community ID (not implemented yet)
+    """
     community_get = await Community.get_community(community_id)
     if not community_get:
         return {"error": "Community not found"}, 404

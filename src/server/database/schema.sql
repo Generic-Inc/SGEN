@@ -8,7 +8,9 @@ CREATE TABLE IF NOT EXISTS Profiles (
     bio VARCHAR(1024),
 
     created DATETIME DEFAULT (DATETIME('now', 'localtime')),
-    modified DATETIME DEFAULT (DATETIME('now', 'localtime'))
+    modified DATETIME DEFAULT (DATETIME('now', 'localtime')),
+
+    active TINYINT DEFAULT 1 CHECK(active IN (0, 1))
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_username ON Profiles(username);
@@ -36,6 +38,8 @@ CREATE TABLE IF NOT EXISTS Communities (
     created DATETIME DEFAULT (DATETIME('now', 'localtime')),
     modified DATETIME DEFAULT (DATETIME('now', 'localtime')),
 
+    active TINYINT DEFAULT 1 CHECK(active IN (0, 1)),
+
     FOREIGN KEY (owner_id) REFERENCES Profiles(user_id)
 );
 
@@ -48,14 +52,14 @@ BEGIN
     UPDATE Communities SET modified = (DATETIME('now', 'localtime')) WHERE community_id = OLD.community_id;
 END;
 
-CREATE TRIGGER InsertCommunityNameLower
+CREATE TRIGGER IF NOT EXISTS InsertCommunityNameLower
 BEFORE INSERT ON Communities
 FOR EACH ROW
 BEGIN
     UPDATE Communities SET community_name = lower(NEW.community_name) WHERE community_id = NEW.community_id;
 END;
 
-CREATE TRIGGER UpdateCommunityNameLower
+CREATE TRIGGER IF NOT EXISTS UpdateCommunityNameLower
 BEFORE INSERT ON Communities
 FOR EACH ROW
 BEGIN
@@ -68,3 +72,25 @@ ON CONFLICT(username) DO NOTHING;
 INSERT INTO Communities (community_name, display_name, owner_id, description)
 VALUES("sgen", "SGEN Community", 1, "The official community for SGEN users.")
 ON CONFLICT(community_name) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS Memberships (
+    member_id INT NOT NULL,
+    community_id INT NOT NULL,
+    role VARCHAR(32) DEFAULT 'member',
+
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    modified DATETIME DEFAULT (DATETIME('now', 'localtime')),
+
+    active TINYINT DEFAULT 1 CHECK(active IN (0, 1)),
+
+    PRIMARY KEY (member_id, community_id),
+    FOREIGN KEY (member_id) REFERENCES Profiles(user_id),
+    FOREIGN KEY (community_id) REFERENCES Communities(community_id)
+);
+
+CREATE TRIGGER IF NOT EXISTS UpdateMembershipsModified
+AFTER UPDATE ON Memberships
+FOR EACH ROW
+BEGIN
+    UPDATE Memberships SET modified = (DATETIME('now', 'localtime')) WHERE member_id = OLD.member_id AND community_id = OLD.community_id;
+END;

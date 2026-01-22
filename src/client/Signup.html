@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sign Up</title>
+    <style>
+        /* global styles */
+        :root{
+            --primary:#5b4bff;
+            --facebook:#3b5998;
+            --border:#e6e6e6
+        }
+        body{
+            font-family:sans-serif;
+            background:#f3f4f6;
+            margin:0;
+            padding: 150px
+        }
+
+        /* signup styles */
+        .container{
+            max-width:980px;
+            margin:0 auto;
+            background:transparent;
+            display:grid;
+            grid-template-columns:1fr 420px;gap:20px;
+            align-items:stretch
+        }
+        .hero{
+            background:#ddd;
+            border-radius:8px;
+            padding:36px;display:flex;
+            flex-direction:column;
+            justify-content:center;
+            align-items:flex-start;
+            color:#333
+        }
+        
+
+        .banner{
+            background:#cfcfcf;
+            height:180px;
+            width:100%;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            border-radius:6px;
+            margin-bottom:18px;
+            color:#666
+        }
+
+        .card{
+            background:#fff;
+            border-radius:8px;
+            padding:20px;
+            border:1px solid var(--border);
+            box-shadow:0 6px 18px rgba(16,24,40,0.06)
+        }
+        .tabs{
+            display:flex;
+            gap:18px;
+            border-bottom:1px solid var(--border);
+            padding-bottom:10px;
+            margin-bottom:14px
+        }
+        .tabs a{
+            color:#444;
+            text-decoration:none;
+        }
+        .tabs a.active{
+            border-bottom:3px solid var(--primary);
+            color:var(--primary)
+        }
+
+        form{
+            display:flex;
+            flex-direction:column;
+            gap:12px
+        }
+
+        input[type=email],
+        input[type=password]{
+            width:93%;padding:12px;
+            border:1px solid var(--border);
+            border-radius:6px;
+            font-size:14px
+        }
+
+        .primary{
+            background:var(--primary);
+            color:#fff;
+            border:none;
+            padding:12px;
+            border-radius:8px;
+            font-weight:700;
+            cursor:pointer;
+            margin-top:6px
+        }
+
+        /* social media style */
+        .social{
+            display:flex;
+            flex-direction:column;
+            gap:8px;
+            margin-top:6px
+        }
+        .btn-facebook{
+            background:var(--facebook);
+            color:#fff;
+            padding:10px;
+            border-radius:8px;
+            border:none;
+            cursor:pointer
+        }
+        .btn-google{
+            display:flex;
+            align-items:center;
+            gap:10px;
+            justify-content:center;
+            padding:10px;
+            border-radius:8px;
+            border:1px solid var(--border);
+            background:#fff;
+            cursor:pointer
+        }
+        .small{
+            font-size:13px;
+            color:#666;
+            text-align:center;
+            margin-top:10px
+        }
+
+        /* mobile responsive */
+        @media(max-width:880px){
+            .container{
+                grid-template-columns:1fr;
+                max-width:520px;
+                padding:0 12px
+            }.hero{order:2}}
+    </style>
+</head>
+<body>
+
+
+
+<div class="container">
+    <div class="hero">
+        <div class="banner"><img src="" alt=""></div>
+        <h2>SGEN</h2>
+        <p>For All Generations in Singapore</p>
+    </div>
+
+    <form class="card" id="signupForm" method="post" action="/register" novalidate>
+        <!--Tab between signup/login-->
+        <div class="tabs">
+            <a href="login.html">Log In</a>
+            <a class="active" href="#">Sign Up</a>
+        </div>
+
+        <!--form field-->
+        <label for="email"></label><input type="email" id="email" name="email" placeholder="Email" required>
+
+        <label for="password"></label><input type="password" id="password" name="password" placeholder="Password" required>
+        <label for="confirm_password"></label><input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm Password" required>
+
+            <button class="primary" type="submit">Create a new account</button>
+
+            <div class="social">
+                <button type="button" class="btn-facebook">Continue with Facebook</button>
+                <button type="button" class="btn-google">
+                    Continue with Google
+                </button>
+            </div>
+
+            <div class="small">Already have an account? <a class="footer-link" href="login.html">Log in now</a></div>
+        </form>
+</div>
+
+<script>
+document.getElementById('signupForm').addEventListener('submit', function(e){
+    const p = document.getElementById('password').value;
+    const c = document.getElementById('confirm_password').value;
+    if(p !== c){ e.preventDefault(); alert('Passwords do not match.'); return false; }
+    if(p.length < 8){ e.preventDefault(); alert('Password must be at least 8 characters.'); return false; }
+});
+</script>
+
+</body>
+</html>

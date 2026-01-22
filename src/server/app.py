@@ -1,6 +1,6 @@
 from flask import Flask
 
-from routing.api import api
+from routing.api.main import api
 
 app = Flask(__name__)
 app.json.sort_keys = False

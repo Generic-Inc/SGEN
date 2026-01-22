@@ -84,6 +84,18 @@ FROM Profiles
         communities = [Community.get_community(i) for i in community_ids]
         return await asyncio.gather(*communities)
 
+    async def get_member(self, community_id: int):
+        role_fetch = await DATABASE.fetch_one("""
+        SELECT 
+            role
+        FROM Memberships
+            WHERE member_id=? AND community_id=?
+        """, (self.user_id, community_id))
+        if not role_fetch:
+            return None
+        role, = role_fetch
+        return role
+
 class Community(BaseClass):
     """A class representing a community"""
     def __init__(self,
@@ -158,6 +170,52 @@ FROM Communities
             "onlineText": self.online_text
         }
         return base_json
+
+    async def get_members(self):
+        member_fetch = await DATABASE.fetch_all("""
+        SELECT 
+            member_id,
+            role
+        FROM Memberships
+            WHERE community_id=?
+        """, (self.community_id,))
+        if not member_fetch:
+            return []
+        member_ids = [row[0] for row in member_fetch]
+        members = [CommunityMember.get_member(i, self.community_id) for i in member_ids]
+        return await asyncio.gather(*members)
+
+class CommunityMember(BaseClass):
+    def __init__(self, community_id: int, user: User, role: str):
+        self.community_id = community_id
+        self.user = user
+        self.role = role
+
+    @classmethod
+    async def get_member(cls, user_id: int, community_id: int):
+        role_fetch = DATABASE.fetch_one("""
+        SELECT 
+            role
+        FROM Memberships
+            WHERE member_id=? AND community_id=?
+        """, (user_id, community_id))
+        user_fetch = User.get_user(user_id)
+        role_fetch, user_fetch = await asyncio.gather(role_fetch, user_fetch)
+        if not role_fetch or not user_fetch:
+            return None
+        role, = role_fetch
+        return cls(
+            community_id=community_id,
+            user=user_fetch,
+            role=role
+        )
+
+    @property
+    def public_json(self) -> dict[str, Any]:
+        return {
+            "user": self.user.public_json,
+            "role": self.role
+        }
 
 
 

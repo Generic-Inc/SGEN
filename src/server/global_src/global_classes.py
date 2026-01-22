@@ -63,21 +63,20 @@ FROM Profiles
             "userId": self.user_id,
             "username": self.username,
             "displayName": self.display_name,
-            "language": self.language
+            "language": self.language,
+            "avatarUrl": self.avatar_url,
+            "bio": self.bio
         }
-        if self.avatar_url:
-            base_json["profilePictureUrl"] = self.avatar_url
-        if self.bio:
-            base_json["bio"] = self.bio
         return base_json
 
 class Community(BaseClass):
     """A class representing a community"""
     def __init__(self,
-                 community_id: str,
+                 community_id: int,
+                 community_name: str,
                  display_name: str,
                  owner: Optional[User],
-                 description: str,
+                 description: str=None,
                  icon_url: str=None,
                  post_guidelines: str=None,
                  messages_guidelines: str=None,
@@ -85,6 +84,7 @@ class Community(BaseClass):
                  online_text: str=None
                  ):
         self.community_id = community_id
+        self.community_name = community_name
         self.display_name = display_name
         self.owner = owner
         self.description = description
@@ -99,22 +99,24 @@ class Community(BaseClass):
         """Form a community obj after fetching a community from the community id"""
         community_fetch = await DATABASE.fetch_one("""
 SELECT 
+    community_name,
     display_name,
     owner_id,
     description,
     icon_url,
-    post_guidelines,
+    posts_guidelines,
     messages_guidelines,
-    offine_text,
+    offline_text,
     online_text
 FROM Communities
     WHERE community_id=?
         """, (community_id,))
         if not community_fetch: return None
-        display_name, owner_id, description, icon_url, post_guidelines, messages_guidelines, offline_text, online_text = community_fetch
+        community_name, display_name, owner_id, description, icon_url, post_guidelines, messages_guidelines, offline_text, online_text = community_fetch
         owner = await User.get_user(owner_id)
         return cls(
             community_id=community_id,
+            community_name=community_name,
             display_name=display_name,
             owner=owner,
             description=description,
@@ -130,20 +132,16 @@ FROM Communities
         """Get a dict of information about the community that is allowed to be public"""
         base_json = {
             "communityId": self.community_id,
+            "communityName": self.community_name,
             "displayName": self.display_name,
             "owner": self.owner.public_json,
             "description": self.description,
+            "iconUrl": self.icon_url,
+            "postGuidelines": self.post_guidelines,
+            "messagesGuidelines": self.messages_guidelines,
+            "offlineText": self.offline_text,
+            "onlineText": self.online_text
         }
-        if self.icon_url:
-            base_json["iconUrl"] = self.icon_url
-        if self.post_guidelines:
-            base_json["postGuidelines"] = self.post_guidelines
-        if self.messages_guidelines:
-            base_json["messagesGuidelines"] = self.messages_guidelines
-        if self.offline_text:
-            base_json["offlineText"] = self.offline_text
-        if self.online_text:
-            base_json["onlineText"] = self.online_text
         return base_json
 
 

@@ -119,3 +119,14 @@ CREATE TABLE IF NOT EXISTS PostLikes (
     FOREIGN KEY (user_id) REFERENCES Profiles(user_id),
     UNIQUE(post_id, user_id)
 );
+
+CREATE TABLE IF NOT EXISTS CommentLikes (
+    like_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    comment_id INTEGER NOT NULL,
+    user_id INT NOT NULL,
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+
+    FOREIGN KEY (comment_id) REFERENCES Comments(comment_id),
+    FOREIGN KEY (user_id) REFERENCES Profiles(user_id),
+    UNIQUE(comment_id, user_id)
+);

@@ -111,7 +111,7 @@ class Community(BaseClass):
                  offline_text: str=None,
                  online_text: str=None
                  ):
-        self.community_id = community_id
+        self.community_id = int(community_id)
         self.community_name = community_name
         self.display_name = display_name
         self.owner = owner

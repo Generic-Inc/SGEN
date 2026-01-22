@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS Profiles (
-    user_id INT PRIMARY KEY,
+    user_id INT PRIMARY KEY AUTOINCREMENT,
     username VARCHAR(32) NOT NULL,
     display_name VARCHAR(64) NOT NULL,
     _email VARCHAR(254) NOT NULL,
@@ -10,6 +10,9 @@ CREATE TABLE IF NOT EXISTS Profiles (
     created DATETIME DEFAULT (DATETIME('now', 'localtime')),
     modified DATETIME DEFAULT (DATETIME('now', 'localtime'))
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_username ON Profiles(username);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_email ON Profiles(_email);
 
 CREATE TRIGGER IF NOT EXISTS UpdateProfilesModified
 AFTER UPDATE ON Profiles

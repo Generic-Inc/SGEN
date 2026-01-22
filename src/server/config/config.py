@@ -1,10 +1,10 @@
-<<<<<<< HEAD
+
 import json
 
 class ConfigRoot:
     def __init__(self):
         pass
-=======
+
 import asyncio
 import json
 from typing import Optional
@@ -33,7 +33,5 @@ class ConfigRoot:
         while True:
             await self.load_config()
             await asyncio.sleep(300)
-
->>>>>>> 76a548c894c1434a56fdf2c0a67f1e96ff053c15
 
 CONFIG = ConfigRoot()

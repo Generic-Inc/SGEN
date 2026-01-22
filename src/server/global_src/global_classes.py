@@ -1,3 +1,4 @@
+import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
@@ -68,6 +69,20 @@ FROM Profiles
             "bio": self.bio
         }
         return base_json
+
+    async def get_communities(self, limit=25) -> list["Community"]:
+        community_fetch = await DATABASE.fetch_all("""
+        SELECT 
+            community_id
+        FROM Memberships
+            WHERE member_id=?
+        LIMIT ?
+        """, (self.user_id, limit))
+        if not community_fetch:
+            return []
+        community_ids = [row[0] for row in community_fetch]
+        communities = [Community.get_community(i) for i in community_ids]
+        return await asyncio.gather(*communities)
 
 class Community(BaseClass):
     """A class representing a community"""

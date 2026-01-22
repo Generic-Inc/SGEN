@@ -4,20 +4,26 @@ from global_src.global_classes import User
 from global_src.global_classes import Community
 api = Blueprint('api', __name__, url_prefix='/api')
 
+user = Blueprint('user', __name__, url_prefix='/user')
+community = Blueprint('community', __name__, url_prefix='/community')
+api.register_blueprint(user)
+api.register_blueprint(community)
+
+
 @api.route('/ping')
 def ping():
     return {"message": "pong!"}
 
-@api.route("/user/<int:user_id>")
+@user.route("/<int:user_id>")
 async def get_user(user_id: int):
-    user = await User.get_user(user_id)
-    if not user:
+    user_get = await User.get_user(user_id)
+    if not user_get:
         return {"error": "User not found"}, 404
-    return user.public_json
+    return user_get.public_json
 
-@api.route("/community/<community_id>")
+@community.route("/<community_id>")
 async def get_community(community_id: str):
-    community = await Community.get_community(community_id)
-    if not community:
+    community_get = await Community.get_community(community_id)
+    if not community_get:
         return {"error": "Community not found"}, 404
-    return community.public_json
+    return community_get.public_json

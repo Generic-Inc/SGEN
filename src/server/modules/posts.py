@@ -243,7 +243,6 @@ class Comment(BaseClass):
         )
         self.content = new_content
 
-
 class Like:
     @staticmethod
     async def toggle_post_like(post_id: int, user_id: int) -> bool:

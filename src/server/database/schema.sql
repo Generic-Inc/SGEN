@@ -170,3 +170,11 @@ ON CONFLICT(username) DO NOTHING;
 INSERT INTO Communities (community_name, display_name, owner_id, description)
 VALUES("sgen", "SGEN Community", 1, "The official community for SGEN users.")
 ON CONFLICT(community_name) DO NOTHING;
+
+INSERT INTO Posts (content, community_id, author_id, image_url)
+VALUES (
+    "Welcome to SGEN! This is the first post in the database.",
+    1,
+    1,
+    "https://placehold.co/600x400"
+);

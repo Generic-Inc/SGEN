@@ -321,3 +321,34 @@ class Post(BaseClass):
         author_obj = await User.get_user(author_id)
 
         return cls(row[0], row[1], row[3], author_obj, row[4], row[5], row[6], row[2])
+
+    @classmethod
+    async def get_by_id(cls, post_id: int) -> Optional['Post']:
+        query = """
+                SELECT p.post_id, \
+                       p.content, \
+                       p.image_url, \
+                       p.community_id, \
+                       p.created, \
+                       p.modified, \
+                       p.active, \
+                       u.user_id, \
+                       u.username, \
+                       u.display_name, \
+                       u._email, \
+                       u.language, \
+                       u.avatar_url, \
+                       u.bio
+                FROM Posts p
+                         JOIN Profiles u ON p.author_id = u.user_id
+                WHERE p.post_id = ? \
+                """
+        row = await DATABASE.fetch_one(query, (post_id,))
+        if not row: return None
+
+        (p_id, p_content, p_img, p_comm_id, p_created, p_mod, p_active,
+         u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio) = row
+
+        author_obj = User(u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio)
+
+        return cls(p_id, p_content, p_comm_id, author_obj, p_created, p_mod, p_active, p_img)

@@ -10,3 +10,4 @@ api.register_blueprint(community_blueprint)
 from . import community
 from . import user
 from . import main
+from . import posts

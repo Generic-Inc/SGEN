@@ -215,6 +215,52 @@ FROM Communities
             return True
         return False
 
+    async def update_community(self,
+                               display_name: str=None,
+                               owner: User=None,
+                               description: str=None,
+                               icon_url: str=None,
+                               posts_guidelines: str=None,
+                               messages_guidelines: str=None,
+                               offline_text: str=None,
+                               online_text: str=None
+                               ):
+        fields = []
+        values = []
+        if display_name:
+            fields.append("display_name=?")
+            values.append(display_name)
+        if owner:
+            fields.append("owner_id=?")
+            values.append(owner.user_id)
+        if description:
+            fields.append("description=?")
+            values.append(description)
+        if icon_url:
+            fields.append("icon_url=?")
+            values.append(icon_url)
+        if posts_guidelines:
+            fields.append("posts_guidelines=?")
+            values.append(posts_guidelines)
+        if messages_guidelines:
+            fields.append("messages_guidelines=?")
+            values.append(messages_guidelines)
+        if offline_text:
+            fields.append("offline_text=?")
+            values.append(offline_text)
+        if online_text:
+            fields.append("online_text=?")
+            values.append(online_text)
+        fields = ",".join(fields)
+        await DATABASE.execute(f"""
+        UPDATE Communities SET {fields} WHERE community_id=?
+        """, tuple(values + [self.community_id]))
+        return await Community.get_community(self.community_id)
+
+
+
+
+
     async def get_members(self):
         member_fetch = await DATABASE.fetch_all("""
         SELECT 

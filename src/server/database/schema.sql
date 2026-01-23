@@ -181,5 +181,5 @@ VALUES (
 
 INSERT INTO Comments (content, post_id, author_id)
 VALUES ("First comment! Testing the API.", 1, 1);
-
+INSERT INTO PostLikes (post_id, user_id) VALUES (1, 1);
 INSERT INTO CommentLikes (comment_id, user_id) VALUES (1, 1);

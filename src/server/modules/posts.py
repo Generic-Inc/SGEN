@@ -11,7 +11,8 @@ class Post(BaseClass):
                  created: str,
                  modified: str,
                  active: int,
-                 image_url: Optional[str] = None):
+                 image_url: Optional[str] = None,
+                 like_count: int = 0):
         self.post_id = post_id
         self.content = content
         self.image_url = image_url
@@ -20,6 +21,7 @@ class Post(BaseClass):
         self.created = created
         self.modified = modified
         self.active = active
+        self.like_count = like_count
 
     @property
     def public_json(self) -> dict[str, Any]:
@@ -30,7 +32,8 @@ class Post(BaseClass):
             "communityId": self.community_id,
             "author": self.author.public_json,
             "created": self.created,
-            "modified": self.modified
+            "modified": self.modified,
+            "likeCount": self.like_count
         }
 
     @classmethod
@@ -49,7 +52,8 @@ class Post(BaseClass):
                        u._email, \
                        u.language, \
                        u.avatar_url, \
-                       u.bio
+                       u.bio, \
+                       (SELECT COUNT(*) FROM PostLikes pl WHERE pl.post_id = p.post_id) as like_count
                 FROM Posts p
                          JOIN Profiles u ON p.author_id = u.user_id
                 WHERE p.community_id = ? \
@@ -61,11 +65,11 @@ class Post(BaseClass):
         posts = []
         for row in rows:
             (p_id, p_content, p_img, p_comm_id, p_created, p_mod, p_active,
-             u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio) = row
+             u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio, like_cnt) = row
 
             author_obj = User(u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio)
 
-            posts.append(cls(p_id, p_content, p_comm_id, author_obj, p_created, p_mod, p_active, p_img))
+            posts.append(cls(p_id, p_content, p_comm_id, author_obj, p_created, p_mod, p_active, p_img, like_cnt))
 
         return posts
 
@@ -80,7 +84,7 @@ class Post(BaseClass):
         if not row: return None
         author_obj = await User.get_user(author_id)
 
-        return cls(row[0], row[1], row[3], author_obj, row[4], row[5], row[6], row[2])
+        return cls(row[0], row[1], row[3], author_obj, row[4], row[5], row[6], row[2], 0)
 
     @classmethod
     async def get_by_id(cls, post_id: int) -> Optional['Post']:
@@ -98,7 +102,8 @@ class Post(BaseClass):
                        u._email, \
                        u.language, \
                        u.avatar_url, \
-                       u.bio
+                       u.bio, \
+                       (SELECT COUNT(*) FROM PostLikes pl WHERE pl.post_id = p.post_id) as like_count
                 FROM Posts p
                          JOIN Profiles u ON p.author_id = u.user_id
                 WHERE p.post_id = ? \
@@ -107,11 +112,11 @@ class Post(BaseClass):
         if not row: return None
 
         (p_id, p_content, p_img, p_comm_id, p_created, p_mod, p_active,
-         u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio) = row
+         u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio, like_cnt) = row
 
         author_obj = User(u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio)
 
-        return cls(p_id, p_content, p_comm_id, author_obj, p_created, p_mod, p_active, p_img)
+        return cls(p_id, p_content, p_comm_id, author_obj, p_created, p_mod, p_active, p_img, like_cnt)
 
     async def update(self, new_content: str):
         """Update the content of this post"""
@@ -121,7 +126,6 @@ class Post(BaseClass):
         )
         self.content = new_content
 
-
 class Comment(BaseClass):
     def __init__(self,
                  comment_id: int,
@@ -130,7 +134,8 @@ class Comment(BaseClass):
                  author: User,
                  created: str,
                  modified: str,
-                 active: int):
+                 active: int,
+                 like_count: int = 0):
         self.comment_id = comment_id
         self.content = content
         self.post_id = post_id
@@ -138,6 +143,7 @@ class Comment(BaseClass):
         self.created = created
         self.modified = modified
         self.active = active
+        self.like_count = like_count
 
     @property
     def public_json(self) -> dict[str, Any]:
@@ -147,7 +153,8 @@ class Comment(BaseClass):
             "postId": self.post_id,
             "author": self.author.public_json,
             "created": self.created,
-            "modified": self.modified
+            "modified": self.modified,
+            "likeCount": self.like_count
         }
 
     @classmethod
@@ -165,7 +172,8 @@ class Comment(BaseClass):
                        u._email, \
                        u.language, \
                        u.avatar_url, \
-                       u.bio
+                       u.bio, \
+                       (SELECT COUNT(*) FROM CommentLikes cl WHERE cl.comment_id = c.comment_id) as like_count
                 FROM Comments c
                          JOIN Profiles u ON c.author_id = u.user_id
                 WHERE c.post_id = ? \
@@ -177,10 +185,10 @@ class Comment(BaseClass):
         comments = []
         for row in rows:
             (c_id, c_content, c_post_id, c_created, c_mod, c_active,
-             u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio) = row
+             u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio, like_cnt) = row
 
             author = User(u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio)
-            comments.append(cls(c_id, c_content, c_post_id, author, c_created, c_mod, c_active))
+            comments.append(cls(c_id, c_content, c_post_id, author, c_created, c_mod, c_active, like_cnt))
 
         return comments
 
@@ -195,7 +203,7 @@ class Comment(BaseClass):
 
         author = await User.get_user(author_id)
 
-        return cls(row[0], row[1], row[2], author, row[4], row[5], row[6])
+        return cls(row[0], row[1], row[2], author, row[4], row[5], row[6], 0)
 
     @classmethod
     async def get_by_id(cls, comment_id: int) -> Optional['Comment']:
@@ -212,7 +220,8 @@ class Comment(BaseClass):
                        u._email, \
                        u.language, \
                        u.avatar_url, \
-                       u.bio
+                       u.bio, \
+                       (SELECT COUNT(*) FROM CommentLikes cl WHERE cl.comment_id = c.comment_id) as like_count
                 FROM Comments c
                          JOIN Profiles u ON c.author_id = u.user_id
                 WHERE c.comment_id = ?
@@ -221,10 +230,10 @@ class Comment(BaseClass):
         if not row: return None
 
         (c_id, c_content, c_post_id, c_created, c_mod, c_active,
-         u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio) = row
+         u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio, like_cnt) = row
 
         author = User(u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio)
-        return cls(c_id, c_content, c_post_id, author, c_created, c_mod, c_active)
+        return cls(c_id, c_content, c_post_id, author, c_created, c_mod, c_active, like_cnt)
 
     async def update(self, new_content: str):
         """Update the content of this comment"""

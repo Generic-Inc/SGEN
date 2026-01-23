@@ -46,14 +46,34 @@ async def create_community():
         else:
             return community_post.public_json
 
-@community_blueprint.route("/<int:community_id>", methods=["GET","DELETE"])
+@community_blueprint.route("/<int:community_id>", methods=["GET", "PATCH", "DELETE"])
 async def get_community(community_id: int):
     """Get a community's public information by their community ID"""
     community_get = await Community.get_community(community_id)
+    if not community_get:
+        return {"error": "Community not found"}, 404
     if request.method == "GET":
-        if not community_get:
-            return {"error": "Community not found"}, 404
         return community_get.public_json
+    elif request.method == "PATCH":
+        data = request.get_json()
+        kwargs = {}
+        if "displayName" in data:
+            kwargs["display_name"] = data["displayName"]
+        if "description" in data:
+            kwargs["description"] = data["description"]
+        if "iconUrl" in data:
+            kwargs["icon_url"] = data["iconUrl"]
+        if "postsGuidelines" in data:
+            kwargs["posts_guidelines"] = data["postsGuidelines"]
+        if "messagesGuidelines" in data:
+            kwargs["messages_guidelines"] = data["messagesGuidelines"]
+        if "offlineText" in data:
+            kwargs["offline_text"] = data["offlineText"]
+        if "onlineText" in data:
+            kwargs["online_text"] = data["onlineText"]
+
+        community_update = await community_get.update_community(community_id, **kwargs)
+        return community_update.public_json
     elif request.method == "DELETE":
         check = await community_get.delete_community()
         if not check: return {"error": "Community never existed"}

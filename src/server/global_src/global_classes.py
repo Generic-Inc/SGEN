@@ -278,24 +278,3 @@ class CommunityMember(BaseClass):
             "user": self.user.public_json,
             "role": self.role
         }
-
-class Events(BaseClass):
-    def __init__(self,
-                 event_id: int,
-                 community_id: int,
-                 creator: User,
-                 event_name: str,
-                 description: str,
-                 date: str,
-                 location: str,
-                 attendance: bool=False,
-                 ):
-        self.event_id = event_id
-        self.community_id = community_id
-        self.creator = creator
-        self.event_name = event_name
-        self.description = description
-        self.date = date
-        self.location = location
-        self.attendance = attendance
-        

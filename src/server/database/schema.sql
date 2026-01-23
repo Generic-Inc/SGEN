@@ -95,7 +95,6 @@ BEGIN
     UPDATE Memberships SET modified = (DATETIME('now', 'localtime')) WHERE member_id = OLD.member_id AND community_id = OLD.community_id;
 END;
 
--- EVENTS TABLE
 CREATE TABLE IF NOT EXISTS Events (
     event_id INTEGER PRIMARY KEY AUTOINCREMENT,
     event_name VARCHAR(255) NOT NULL,
@@ -118,7 +117,6 @@ BEGIN
     UPDATE Events SET modified = (DATETIME('now', 'localtime')) WHERE event_id = OLD.event_id;
 END;
 
--- EVENT ATTENDANCE TABLE
 CREATE TABLE IF NOT EXISTS EventAttendance (
     attendance_id INTEGER PRIMARY KEY AUTOINCREMENT,
     event_id INTEGER NOT NULL,
@@ -130,7 +128,7 @@ CREATE TABLE IF NOT EXISTS EventAttendance (
     UNIQUE(event_id, user_id)
 );
 
--- SEED DATA
+
 INSERT INTO Events (event_name, event_description, scheduled_date, event_location, community_id, creator_id, image_url)
 VALUES (
     "SGEN Meetup 2025",

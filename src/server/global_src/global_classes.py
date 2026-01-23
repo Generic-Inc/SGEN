@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Union
 
@@ -17,6 +18,7 @@ class BaseClass(ABC):
 class User(BaseClass):
     """A class representing a user"""
     def __init__(self,
+                 created: datetime,
                  user_id: int,
                  username: str,
                  display_name: str,
@@ -25,6 +27,8 @@ class User(BaseClass):
                  avatar_url: str=None,
                  bio: str=None
                  ):
+        self.created = created
+
         self.user_id = user_id
         self.username = username
         self.display_name = display_name
@@ -42,7 +46,8 @@ class User(BaseClass):
             "displayName": self.display_name,
             "language": self.language,
             "avatarUrl": self.avatar_url,
-            "bio": self.bio
+            "bio": self.bio,
+            "created": self.created,
         }
         return base_json
 
@@ -56,12 +61,13 @@ SELECT
       _email, 
       language, 
       avatar_url, 
-      bio
+      bio, 
+    created
 FROM Profiles
     WHERE user_id=?
 """, (user_id,))
         if not profile: return None
-        username, display_name, email, language, avatar_url, bio = profile
+        username, display_name, email, language, avatar_url, bio, created = profile
         return cls(
             user_id=user_id,
             username=username,
@@ -69,7 +75,8 @@ FROM Profiles
             email=email,
             language=language,
             avatar_url=avatar_url,
-            bio=bio
+            bio=bio,
+            created=created
         )
 
     async def get_communities(self, limit=25) -> list["Community"]:
@@ -101,6 +108,7 @@ FROM Profiles
 class Community(BaseClass):
     """A class representing a community"""
     def __init__(self,
+                 created: datetime,
                  community_id: int,
                  community_name: str,
                  display_name: str,
@@ -113,6 +121,8 @@ class Community(BaseClass):
                  offline_text: str=None,
                  online_text: str=None
                  ):
+        self.created = created
+
         self.community_id = int(community_id)
         self.community_name = community_name
         self.display_name = display_name
@@ -139,7 +149,8 @@ class Community(BaseClass):
             "postGuidelines": self.post_guidelines,
             "messagesGuidelines": self.messages_guidelines,
             "offlineText": self.offline_text,
-            "onlineText": self.online_text
+            "onlineText": self.online_text,
+            "created": self.created
         }
         return base_json
 
@@ -156,13 +167,15 @@ SELECT
     posts_guidelines,
     messages_guidelines,
     offline_text,
-    online_text
+    online_text,
+    created,
+    modified
 FROM Communities
     WHERE community_id=?
     AND active=1
         """, (community_id,))
         if not community_fetch: return None
-        community_name, display_name, owner_id, description, icon_url, post_guidelines, messages_guidelines, offline_text, online_text = community_fetch
+        community_name, display_name, owner_id, description, icon_url, post_guidelines, messages_guidelines, offline_text, online_text, created, modified = community_fetch
         owner = await User.get_user(owner_id)
         member_count = await DATABASE.fetch_all("SELECT * FROM Memberships WHERE community_id=? AND active=1", (community_id,))
         member_count = 0 if not member_count else len(member_count)
@@ -177,7 +190,8 @@ FROM Communities
             post_guidelines=post_guidelines,
             messages_guidelines=messages_guidelines,
             offline_text=offline_text,
-            online_text=online_text
+            online_text=online_text,
+            created=created
         )
 
     @classmethod
@@ -195,7 +209,8 @@ FROM Communities
         check = await DATABASE.fetch_one("""SELECT * FROM Communities WHERE community_name=?""", (community_name,))
         if check:
             return False
-        cur = await DATABASE.execute("""
+
+        await DATABASE.execute("""
         INSERT INTO Communities (community_name, display_name, owner_id, description, icon_url, posts_guidelines, messages_guidelines, offline_text, online_text)
             VALUES (?,?,?,?,?,?,?,?,?)
             ON CONFLICT DO NOTHING
@@ -204,7 +219,9 @@ FROM Communities
         community_id = await DATABASE.fetch_one("""SELECT community_id FROM Communities WHERE community_name=?""", (community_name,))
         if not community_id:
             return False
-        return await cls.get_community(community_id[0])
+        community = await cls.get_community(community_id[0])
+        await community.add_member(owner.user_id)
+        return community
 
     async def delete_community(self):
         await DATABASE.execute("""
@@ -258,9 +275,6 @@ FROM Communities
         return await Community.get_community(self.community_id)
 
 
-
-
-
     async def get_members(self):
         member_fetch = await DATABASE.fetch_all("""
         SELECT 
@@ -294,7 +308,8 @@ FROM Communities
         return await CommunityMember.get_member(user_id=user_id, community_id=self.community_id)
 
 class CommunityMember(BaseClass):
-    def __init__(self, community_id: int, user: User, role: str):
+    def __init__(self, created: datetime, community_id: int, user: User, role: str):
+        self.created = created
         self.community_id = community_id
         self.user = user
         self.role = role
@@ -303,7 +318,8 @@ class CommunityMember(BaseClass):
     async def get_member(cls, user_id: int, community_id: int):
         role_fetch = DATABASE.fetch_one("""
         SELECT 
-            role
+            role,
+            created
         FROM Memberships
             WHERE member_id=? AND community_id=?
         """, (user_id, community_id))
@@ -311,18 +327,20 @@ class CommunityMember(BaseClass):
         role_fetch, user_fetch = await asyncio.gather(role_fetch, user_fetch)
         if not role_fetch or not user_fetch:
             return None
-        role, = role_fetch
+        role, created = role_fetch
         return cls(
             community_id=community_id,
             user=user_fetch,
-            role=role
+            role=role,
+            created=created,
         )
 
     @property
     def public_json(self) -> dict[str, Any]:
         return {
             "user": self.user.public_json,
-            "role": self.role
+            "role": self.role,
+            "joined": self.created
         }
 
 

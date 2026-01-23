@@ -191,6 +191,15 @@ FROM Communities
         members = [CommunityMember.get_member(i, self.community_id) for i in member_ids]
         return await asyncio.gather(*members)
 
+    async def add_member(self, user_id: int):
+        await DATABASE.execute("""
+        INSERT INTO Memberships (community_id, member_id)
+            VALUES (?, ?)
+        ON CONFLICT 
+        DO UPDATE SET active=1
+        """, (self.community_id, user_id))
+        return await CommunityMember.get_member(user_id=user_id, community_id=self.community_id)
+
 class CommunityMember(BaseClass):
     def __init__(self, community_id: int, user: User, role: str):
         self.community_id = community_id

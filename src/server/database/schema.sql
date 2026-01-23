@@ -173,8 +173,13 @@ ON CONFLICT(community_name) DO NOTHING;
 
 INSERT INTO Posts (content, community_id, author_id, image_url)
 VALUES (
-    "Welcome to SGEN! This is the first post in the database.",
+    "Welcome to SGEN! This is the first post.",
     1,
     1,
     "https://placehold.co/600x400"
 );
+
+INSERT INTO Comments (content, post_id, author_id)
+VALUES ("First comment! Testing the API.", 1, 1);
+
+INSERT INTO CommentLikes (comment_id, user_id) VALUES (1, 1);

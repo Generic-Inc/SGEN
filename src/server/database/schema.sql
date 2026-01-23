@@ -94,3 +94,53 @@ FOR EACH ROW
 BEGIN
     UPDATE Memberships SET modified = (DATETIME('now', 'localtime')) WHERE member_id = OLD.member_id AND community_id = OLD.community_id;
 END;
+
+-- EVENTS TABLE
+CREATE TABLE IF NOT EXISTS Events (
+    event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_name VARCHAR(255) NOT NULL,
+    event_description TEXT,
+    scheduled_date DATETIME NOT NULL,
+    event_location VARCHAR(255) NOT NULL,
+    image_url VARCHAR(2048),
+    community_id INTEGER NOT NULL,
+    creator_id INTEGER NOT NULL,
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    modified DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    active TINYINT DEFAULT 1 CHECK(active IN (0, 1)),
+    FOREIGN KEY (community_id) REFERENCES Communities(community_id),
+    FOREIGN KEY (creator_id) REFERENCES Profiles(user_id)
+);
+
+CREATE TRIGGER IF NOT EXISTS UpdateEventsModified
+AFTER UPDATE ON Events FOR EACH ROW
+BEGIN
+    UPDATE Events SET modified = (DATETIME('now', 'localtime')) WHERE event_id = OLD.event_id;
+END;
+
+-- EVENT ATTENDANCE TABLE
+CREATE TABLE IF NOT EXISTS EventAttendance (
+    attendance_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    status VARCHAR(20) DEFAULT 'going' CHECK(status IN ('going', 'interested', 'not_going')),
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    FOREIGN KEY (event_id) REFERENCES Events(event_id),
+    FOREIGN KEY (user_id) REFERENCES Profiles(user_id),
+    UNIQUE(event_id, user_id)
+);
+
+-- SEED DATA
+INSERT INTO Events (event_name, event_description, scheduled_date, event_location, community_id, creator_id, image_url)
+VALUES (
+    "SGEN Meetup 2025",
+    "Join us for our first community meetup!",
+    DATETIME('2025-02-15 18:00:00'),
+    "Marina Bay Sands Convention Center",
+    1,
+    1,
+    "https://placehold.co/800x400"
+) ON CONFLICT DO NOTHING;
+
+INSERT INTO EventAttendance (event_id, user_id, status)
+VALUES (1, 1, 'going');

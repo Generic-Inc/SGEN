@@ -1,6 +1,8 @@
 import asyncio
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any, Optional, Union
+
+from slugify import slugify
 
 from .db import DATABASE
 
@@ -31,6 +33,19 @@ class User(BaseClass):
         self.language = language
         self._email = email
 
+    @property
+    def public_json(self) -> dict[str, Any]:
+        """Get a dict of information about the user that is allowed to be public"""
+        base_json = {
+            "userId": self.user_id,
+            "username": self.username,
+            "displayName": self.display_name,
+            "language": self.language,
+            "avatarUrl": self.avatar_url,
+            "bio": self.bio
+        }
+        return base_json
+
     @classmethod
     async def get_user(cls, user_id: int) -> "User":
         """Form a user obj after fetching a user from the user id"""
@@ -56,19 +71,6 @@ FROM Profiles
             avatar_url=avatar_url,
             bio=bio
         )
-
-    @property
-    def public_json(self) -> dict[str, Any]:
-        """Get a dict of information about the user that is allowed to be public"""
-        base_json = {
-            "userId": self.user_id,
-            "username": self.username,
-            "displayName": self.display_name,
-            "language": self.language,
-            "avatarUrl": self.avatar_url,
-            "bio": self.bio
-        }
-        return base_json
 
     async def get_communities(self, limit=25) -> list["Community"]:
         community_fetch = await DATABASE.fetch_all("""
@@ -123,6 +125,24 @@ class Community(BaseClass):
         self.offline_text = offline_text
         self.online_text = online_text
 
+    @property
+    def public_json(self) -> dict[str, Any]:
+        """Get a dict of information about the community that is allowed to be public"""
+        base_json = {
+            "communityId": self.community_id,
+            "communityName": self.community_name,
+            "displayName": self.display_name,
+            "owner": self.owner.public_json,
+            "memberCount": self.member_count,
+            "description": self.description,
+            "iconUrl": self.icon_url,
+            "postGuidelines": self.post_guidelines,
+            "messagesGuidelines": self.messages_guidelines,
+            "offlineText": self.offline_text,
+            "onlineText": self.online_text
+        }
+        return base_json
+
     @classmethod
     async def get_community(cls, community_id: int) -> "Community":
         """Form a community obj after fetching a community from the community id"""
@@ -139,6 +159,7 @@ SELECT
     online_text
 FROM Communities
     WHERE community_id=?
+    AND active=1
         """, (community_id,))
         if not community_fetch: return None
         community_name, display_name, owner_id, description, icon_url, post_guidelines, messages_guidelines, offline_text, online_text = community_fetch
@@ -159,23 +180,40 @@ FROM Communities
             online_text=online_text
         )
 
-    @property
-    def public_json(self) -> dict[str, Any]:
-        """Get a dict of information about the community that is allowed to be public"""
-        base_json = {
-            "communityId": self.community_id,
-            "communityName": self.community_name,
-            "displayName": self.display_name,
-            "owner": self.owner.public_json,
-            "memberCount": self.member_count,
-            "description": self.description,
-            "iconUrl": self.icon_url,
-            "postGuidelines": self.post_guidelines,
-            "messagesGuidelines": self.messages_guidelines,
-            "offlineText": self.offline_text,
-            "onlineText": self.online_text
-        }
-        return base_json
+    @classmethod
+    async def create_community(cls,
+                               community_name: str,
+                               display_name: str,
+                               owner: User,
+                               description: str=None,
+                               icon_url: str=None,
+                               post_guidelines: str=None,
+                               messages_guidelines: str=None,
+                               offline_text: str=None,
+                               online_text: str=None) -> Union["Community", bool]:
+        community_name = slugify(community_name)
+        check = await DATABASE.fetch_one("""SELECT * FROM Communities WHERE community_name=?""", (community_name,))
+        if check:
+            return False
+        cur = await DATABASE.execute("""
+        INSERT INTO Communities (community_name, display_name, owner_id, description, icon_url, posts_guidelines, messages_guidelines, offline_text, online_text)
+            VALUES (?,?,?,?,?,?,?,?,?)
+            ON CONFLICT DO NOTHING
+
+        """, (community_name, display_name, owner.user_id, description, icon_url, post_guidelines, messages_guidelines, offline_text, online_text), commit=True)
+        community_id = await DATABASE.fetch_one("""SELECT community_id FROM Communities WHERE community_name=?""", (community_name,))
+        if not community_id:
+            return False
+        return await cls.get_community(community_id[0])
+
+    async def delete_community(self):
+        await DATABASE.execute("""
+        UPDATE Communities SET active=0 WHERE community_id=?
+        """, (self.community_id,))
+        check = await DATABASE.fetch_one("SELECT active FROM Communities WHERE community_id=?", (self.community_id,))
+        if check[0] == 0:
+            return True
+        return False
 
     async def get_members(self):
         member_fetch = await DATABASE.fetch_all("""
@@ -184,12 +222,30 @@ FROM Communities
             role
         FROM Memberships
             WHERE community_id=?
+            AND active=1
         """, (self.community_id,))
         if not member_fetch:
             return []
         member_ids = [row[0] for row in member_fetch]
         members = [CommunityMember.get_member(i, self.community_id) for i in member_ids]
         return await asyncio.gather(*members)
+
+    async def add_member(self, user_id: int):
+        await DATABASE.execute("""
+        INSERT INTO Memberships (community_id, member_id)
+            VALUES (?, ?)
+        ON CONFLICT 
+        DO UPDATE SET active=1
+        """, (self.community_id, user_id))
+        return await CommunityMember.get_member(user_id=user_id, community_id=self.community_id)
+
+    async def delete_member(self, user_id: int):
+        await DATABASE.execute("""
+                               UPDATE Memberships 
+                               SET active=0 
+                               WHERE community_id=? AND member_id=?
+                               """, (self.community_id, user_id))
+        return await CommunityMember.get_member(user_id=user_id, community_id=self.community_id)
 
 class CommunityMember(BaseClass):
     def __init__(self, community_id: int, user: User, role: str):
@@ -222,7 +278,3 @@ class CommunityMember(BaseClass):
             "user": self.user.public_json,
             "role": self.role
         }
-
-
-
-

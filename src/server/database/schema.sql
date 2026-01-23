@@ -1,5 +1,3 @@
--- 1. PROFILES & COMMUNITIES (The Core)
-
 CREATE TABLE IF NOT EXISTS Profiles (
     user_id INTEGER PRIMARY KEY AUTOINCREMENT,
     username VARCHAR(32) NOT NULL,
@@ -90,8 +88,6 @@ BEGIN
     UPDATE Memberships SET modified = (DATETIME('now', 'localtime')) WHERE member_id = OLD.member_id AND community_id = OLD.community_id;
 END;
 
--- 2. CONTENT (Posts & Comments)
-
 CREATE TABLE IF NOT EXISTS Posts (
     post_id INTEGER PRIMARY KEY AUTOINCREMENT,
     content TEXT NOT NULL,
@@ -137,8 +133,6 @@ BEGIN
     UPDATE Comments SET modified = (DATETIME('now', 'localtime')) WHERE comment_id = OLD.comment_id;
 END;
 
--- 3. INTERACTION (Likes & Membership)
-
 CREATE TABLE IF NOT EXISTS PostLikes (
     like_id INTEGER PRIMARY KEY AUTOINCREMENT,
     post_id INTEGER NOT NULL,
@@ -160,8 +154,6 @@ CREATE TABLE IF NOT EXISTS CommentLikes (
     FOREIGN KEY (user_id) REFERENCES Profiles(user_id),
     UNIQUE(comment_id, user_id)
 );
-
--- 4. SEED DATA (Defaults)
 
 INSERT INTO Profiles (username, display_name, _email, bio)
 VALUES("admin", "Admin", "ryankgithub@gmail.com", "Hi im Ryan")

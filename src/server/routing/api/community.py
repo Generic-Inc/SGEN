@@ -13,7 +13,7 @@ async def get_community(community_id: int):
     return community_get.public_json
 
 
-@community_blueprint.route("/<int:community_id>/members", methods=["GET", "POST"])
+@community_blueprint.route("/<int:community_id>/members", methods=["GET", "POST", "DELETE"])
 async def get_community_members(community_id: int):
     """
     GET: Get a list of members in a community by the community ID
@@ -36,7 +36,15 @@ async def get_community_members(community_id: int):
             members = await community_get.get_members()
             return {"members": [i.public_json for i in members]}
         except Exception as e:
-            return {"success": False}, 500
+            return {"error": e}, 500
+    elif request.method == "DELETE":
+        try:
+            data = request.get_json()
+            user_id = data.get("userId")
+            members = await community_get.delete_member(user_id)
+            return {"members": [i.public_json for i in members]}
+        except Exception as e:
+            return {"error": e}, 500
 
             
 

@@ -139,6 +139,7 @@ SELECT
     online_text
 FROM Communities
     WHERE community_id=?
+    AND active=1
         """, (community_id,))
         if not community_fetch: return None
         community_name, display_name, owner_id, description, icon_url, post_guidelines, messages_guidelines, offline_text, online_text = community_fetch
@@ -184,6 +185,7 @@ FROM Communities
             role
         FROM Memberships
             WHERE community_id=?
+            AND active=1
         """, (self.community_id,))
         if not member_fetch:
             return []
@@ -198,6 +200,14 @@ FROM Communities
         ON CONFLICT 
         DO UPDATE SET active=1
         """, (self.community_id, user_id))
+        return await CommunityMember.get_member(user_id=user_id, community_id=self.community_id)
+
+    async def delete_member(self, user_id: int):
+        await DATABASE.execute("""
+                               UPDATE Memberships 
+                               SET active=0 
+                               WHERE community_id=? AND member_id=?
+                               """, (self.community_id, user_id))
         return await CommunityMember.get_member(user_id=user_id, community_id=self.community_id)
 
 class CommunityMember(BaseClass):

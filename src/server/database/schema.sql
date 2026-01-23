@@ -1,6 +1,4 @@
--- ==========================================
 -- 1. PROFILES & COMMUNITIES (The Core)
--- ==========================================
 
 CREATE TABLE IF NOT EXISTS Profiles (
     user_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,9 +68,29 @@ BEGIN
     UPDATE Communities SET community_name = lower(NEW.community_name) WHERE community_id = NEW.community_id;
 END;
 
--- ==========================================
+CREATE TABLE IF NOT EXISTS Memberships (
+    member_id INT NOT NULL,
+    community_id INT NOT NULL,
+    role VARCHAR(32) DEFAULT 'member',
+
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    modified DATETIME DEFAULT (DATETIME('now', 'localtime')),
+
+    active TINYINT DEFAULT 1 CHECK(active IN (0, 1)),
+
+    PRIMARY KEY (member_id, community_id),
+    FOREIGN KEY (member_id) REFERENCES Profiles(user_id),
+    FOREIGN KEY (community_id) REFERENCES Communities(community_id)
+);
+
+CREATE TRIGGER IF NOT EXISTS UpdateMembershipsModified
+AFTER UPDATE ON Memberships
+FOR EACH ROW
+BEGIN
+    UPDATE Memberships SET modified = (DATETIME('now', 'localtime')) WHERE member_id = OLD.member_id AND community_id = OLD.community_id;
+END;
+
 -- 2. CONTENT (Posts & Comments)
--- ==========================================
 
 CREATE TABLE IF NOT EXISTS Posts (
     post_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -119,9 +137,7 @@ BEGIN
     UPDATE Comments SET modified = (DATETIME('now', 'localtime')) WHERE comment_id = OLD.comment_id;
 END;
 
--- ==========================================
 -- 3. INTERACTION (Likes & Membership)
--- ==========================================
 
 CREATE TABLE IF NOT EXISTS PostLikes (
     like_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -145,31 +161,7 @@ CREATE TABLE IF NOT EXISTS CommentLikes (
     UNIQUE(comment_id, user_id)
 );
 
-CREATE TABLE IF NOT EXISTS Memberships (
-    member_id INT NOT NULL,
-    community_id INT NOT NULL,
-    role VARCHAR(32) DEFAULT 'member',
-
-    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
-    modified DATETIME DEFAULT (DATETIME('now', 'localtime')),
-
-    active TINYINT DEFAULT 1 CHECK(active IN (0, 1)),
-
-    PRIMARY KEY (member_id, community_id),
-    FOREIGN KEY (member_id) REFERENCES Profiles(user_id),
-    FOREIGN KEY (community_id) REFERENCES Communities(community_id)
-);
-
-CREATE TRIGGER IF NOT EXISTS UpdateMembershipsModified
-AFTER UPDATE ON Memberships
-FOR EACH ROW
-BEGIN
-    UPDATE Memberships SET modified = (DATETIME('now', 'localtime')) WHERE member_id = OLD.member_id AND community_id = OLD.community_id;
-END;
-
--- ==========================================
 -- 4. SEED DATA (Defaults)
--- ==========================================
 
 INSERT INTO Profiles (username, display_name, _email, bio)
 VALUES("admin", "Admin", "ryankgithub@gmail.com", "Hi im Ryan")

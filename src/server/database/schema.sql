@@ -104,4 +104,19 @@ CREATE TABLE IF NOT EXISTS UserAuthentication (
     modified DATETIME DEFAULT (DATETIME('now', 'localtime')),
 
     FOREIGN KEY (user_id) REFERENCES Profiles(user_id)
-)
+);
+
+CREATE TRIGGER IF NOT EXISTS UpdateUserAuthenticationModified
+AFTER UPDATE ON UserAuthentication
+FOR EACH ROW
+BEGIN
+    UPDATE UserAuthentication SET modified = (DATETIME('now', 'localtime')) WHERE user_id = OLD.user_id;
+END;
+
+CREATE TABLE IF NOT EXISTS AuthTokens (
+    token_hash VARCHAR(256) PRIMARY KEY,
+    user_id INT NOT NULL,
+
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    FOREIGN KEY (user_id) REFERENCES Profiles(user_id)
+);

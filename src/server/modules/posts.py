@@ -244,14 +244,20 @@ class Comment(BaseClass):
 class Like:
     @staticmethod
     async def toggle_post_like(post_id: int, user_id: int) -> bool:
-        check_query = "SELECT like_id FROM PostLikes WHERE post_id = ? AND user_id = ?"
+        check_query = "SELECT 1 FROM PostLikes WHERE post_id = ? AND user_id = ?"
         existing = await DATABASE.fetch_one(check_query, (post_id, user_id))
 
         if existing:
-            await DATABASE.execute("DELETE FROM PostLikes WHERE like_id = ?", (existing[0],))
+            await DATABASE.execute(
+                "DELETE FROM PostLikes WHERE post_id = ? AND user_id = ?",
+                (post_id, user_id)
+            )
             return False
         else:
-            await DATABASE.execute("INSERT INTO PostLikes (post_id, user_id) VALUES (?, ?)", (post_id, user_id))
+            await DATABASE.execute(
+                "INSERT INTO PostLikes (post_id, user_id) VALUES (?, ?)",
+                (post_id, user_id)
+            )
             return True
 
     @staticmethod
@@ -262,15 +268,22 @@ class Like:
 
     @staticmethod
     async def toggle_comment_like(comment_id: int, user_id: int) -> bool:
-        check_query = "SELECT like_id FROM CommentLikes WHERE comment_id = ? AND user_id = ?"
+        check_query = "SELECT 1 FROM CommentLikes WHERE comment_id = ? AND user_id = ?"
         existing = await DATABASE.fetch_one(check_query, (comment_id, user_id))
 
         if existing:
-            await DATABASE.execute("DELETE FROM CommentLikes WHERE like_id = ?", (existing[0],))
+            # UNLIKE
+            await DATABASE.execute(
+                "DELETE FROM CommentLikes WHERE comment_id = ? AND user_id = ?",
+                (comment_id, user_id)
+            )
             return False
         else:
-            await DATABASE.execute("INSERT INTO CommentLikes (comment_id, user_id) VALUES (?, ?)",
-                                   (comment_id, user_id))
+            # LIKE
+            await DATABASE.execute(
+                "INSERT INTO CommentLikes (comment_id, user_id) VALUES (?, ?)",
+                (comment_id, user_id)
+            )
             return True
 
     @staticmethod

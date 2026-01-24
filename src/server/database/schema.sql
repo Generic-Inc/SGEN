@@ -133,27 +133,24 @@ BEGIN
     UPDATE Comments SET modified = (DATETIME('now', 'localtime')) WHERE comment_id = OLD.comment_id;
 END;
 
-CREATE TABLE IF NOT EXISTS PostLikes (
-    like_id INTEGER PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE PostLikes (
     post_id INTEGER NOT NULL,
-    user_id INT NOT NULL,
-    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
-
-    FOREIGN KEY (post_id) REFERENCES Posts(post_id),
-    FOREIGN KEY (user_id) REFERENCES Profiles(user_id),
-    UNIQUE(post_id, user_id)
+    user_id INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (post_id, user_id),
+    FOREIGN KEY(post_id) REFERENCES Posts(post_id) ON DELETE CASCADE,
+    FOREIGN KEY(user_id) REFERENCES Profiles(user_id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS CommentLikes (
-    like_id INTEGER PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE CommentLikes (
     comment_id INTEGER NOT NULL,
-    user_id INT NOT NULL,
-    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
-
-    FOREIGN KEY (comment_id) REFERENCES Comments(comment_id),
-    FOREIGN KEY (user_id) REFERENCES Profiles(user_id),
-    UNIQUE(comment_id, user_id)
+    user_id INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (comment_id, user_id),
+    FOREIGN KEY(comment_id) REFERENCES Comments(comment_id) ON DELETE CASCADE,
+    FOREIGN KEY(user_id) REFERENCES Profiles(user_id) ON DELETE CASCADE
 );
+
 
 INSERT INTO Profiles (username, display_name, _email, bio)
 VALUES("admin", "Admin", "ryankgithub@gmail.com", "Hi im Ryan")

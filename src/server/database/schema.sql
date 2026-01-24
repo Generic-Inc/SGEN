@@ -114,8 +114,8 @@ BEGIN
 END;
 
 CREATE TABLE IF NOT EXISTS AuthTokens (
-    user_id INT PRIMARY KEY,
-    token VARCHAR(256) NOT NULL,
+    token_hash VARCHAR(256) PRIMARY KEY,
+    user_id INT NOT NULL,
 
     created DATETIME DEFAULT (DATETIME('now', 'localtime')),
     FOREIGN KEY (user_id) REFERENCES Profiles(user_id)

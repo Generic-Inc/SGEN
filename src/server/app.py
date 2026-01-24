@@ -10,7 +10,7 @@ app = Flask(__name__,
             static_folder=os.path.join(client_folder, "static"))
 
 app.json.sort_keys = False
-app.register_blueprint(api)
+app.register_blueprint(api, url_prefix='/api')
 
 @app.route('/')
 async def index():

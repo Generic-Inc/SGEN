@@ -9,7 +9,7 @@ async function loadPosts() {
     feedContainer.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Loading posts...</div>';
 
     try {
-        const response = await fetch("/api/communities/1/posts");
+        const response = await fetch("/api/community/1/posts");
 
         if (!response.ok) {
             throw new Error(`API Error: ${response.status}`);

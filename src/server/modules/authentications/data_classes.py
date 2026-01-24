@@ -33,7 +33,7 @@ class AuthenticationsUser(User):
 
     async def _clean_devices(self):
         tokens = await DATABASE.fetch_all("""SELECT * FROM AuthTokens WHERE user_id = ?""", (self.user_id,))
-        if len(tokens) >= CONFIG.config["limits"]["max_devices_per_user"]:
+        if len(tokens)+1 > CONFIG.config["limits"]["max_devices_per_user"]:
             await DATABASE.execute("""DELETE FROM AuthTokens 
                                       WHERE token_hash=(
                                           SELECT token_hash 
@@ -51,13 +51,13 @@ class AuthenticationsUser(User):
         computed_hash = sha256((password_string + salt).encode('utf-8')).hexdigest()
         return computed_hash == stored_hash
 
-    async def login(self, password_string: str) -> Union[bool, str]:
-        if not await self.validate_password(password_string):
+    async def login(self, password_string: str, user_agent: str, bypass=False) -> Union[bool, str]:
+        if not await self.validate_password(password_string) and not bypass:
             return False
         await self._clean_devices()
         new_token = AuthKeys.generate_random_key()
-        await DATABASE.execute("""INSERT INTO AuthTokens (user_id, auth_token)
-                                 VALUES (?, ?)""", (self.user_id, new_token))
+        await DATABASE.execute("""INSERT INTO AuthTokens (user_id, user_agent, auth_token)
+                                 VALUES (?,?,?)""", (self.user_id, user_agent, new_token))
         return new_token
 
 

@@ -1,3 +1,4 @@
+from global_src.db import DATABASE
 from global_src.global_classes import User
 from modules.authentications.utils import insert_email
 from . import auth_blueprint
@@ -68,4 +69,54 @@ async def signup():
     return {"error": "Failed to send verification email"}, 500
 
 @auth_blueprint.route("/verify-email", methods=["POST"])
-async def verify_email(): ...
+async def verify_email():
+    """Verify a user's email address using a verification code"""
+    data = request.get_json()
+    if not data:
+        return {"error": "No data provided"}, 400
+
+    email = data.get("email")
+    verification_code = data.get("verificationCode")
+
+    if not email or not verification_code:
+        return {"error": "Email and verification code are required"}, 400
+
+    record = await DATABASE.fetch_one(
+        """SELECT username, display_name, language, avatar_url, bio, password_hash, salt 
+           FROM EmailVerifications 
+           WHERE email=? AND verification_code=?""",
+        (email, verification_code)
+    )
+    if not record:
+        return {"error": "Invalid email or verification code"}, 400
+
+    username, display_name, language, avatar_url, bio, password_hash, salt = record
+
+    try:
+        user_id = await DATABASE.execute(
+            """INSERT INTO Users (username, email, display_name, bio, avatar_url, language) 
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (username, email, display_name, bio, avatar_url, language),
+            commit=False
+        )
+        await DATABASE.execute(
+            """INSERT INTO UserAuthentication (user_id, password_hash, salt) 
+               VALUES (?, ?, ?)""",
+            (user_id, password_hash, salt),
+            commit=False
+        )
+        await DATABASE.execute(
+            """DELETE FROM EmailVerifications WHERE email = ?""",
+            (email,),
+            commit=False
+        )
+        await DATABASE.commit()
+        user = await AuthenticationsUser.get_user_by_username(username=username)
+        agent = request.headers.get("User-Agent") or "Unknown"
+        token = user.login("", user_agent=agent, bypass=True)
+        return {"success": "Email verified and user registered successfully",
+                "user": user.public_json,
+                "token": token}, 201
+    except Exception as e:
+        print(f"Error during email verification: {e}")
+        return {"error": "Failed to register user"}, 500

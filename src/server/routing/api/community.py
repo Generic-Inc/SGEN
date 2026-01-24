@@ -2,7 +2,7 @@ from flask import request
 
 from config.config import CONFIG
 from global_src.global_classes import Community, User, CommunityMember
-from modules.authentications import Permissions
+from modules.authentications import Permissions, PresetRoles, ROLE_HIERARCHY
 from . import community_blueprint
 
 @community_blueprint.route('/', methods=['POST'])
@@ -168,6 +168,76 @@ async def get_community_members(community_id: int):
             return {"members": [i.public_json for i in members]}
         except Exception as e:
             return {"error": e}, 500
+
+@community_blueprint.route("/<int:community_id>/members/<int:user_id>", methods=["GET", "PATCH", "DELETE"])
+async def get_community_member(community_id: int, user_id: int):
+    """
+    GET: Get a member in a community by the community ID and user ID
+    PATCH: Update a member in a community by the community ID and user ID
+    DELETE: Remove a member from a community by the community ID and user ID
+    """
+    community_get = await Community.get_community(community_id)
+    if not community_get:
+        return {"error": "Community not found"}, 404
+
+    authorization = request.headers.get('Authorization')
+    if not authorization:
+        return {"error": "Unauthorized"}, 401
+    user = await User.get_user_by_token(authorization)
+    if not user:
+        return {"error": "Unauthorized"}, 401
+    community_member = await CommunityMember.get_member(user.user_id, community_id)
+
+    target_member = await CommunityMember.get_member(user_id, community_id)
+    if not target_member:
+        return {"error": "Member not found"}, 404
+
+    if request.method == "GET":
+        if not community_member:
+            return {"error": "Unauthorized"}, 403
+
+        return target_member.public_json
+
+    elif request.method == "PATCH":
+        if not community_member:
+            return {"error": "Unauthorized"}, 403
+        perms_check = await community_member.has_permission(
+            Permissions.MANAGE_ROLES
+        )
+        if not perms_check[0]:
+            return {"error": perms_check[1]}, 403
+
+        data = request.get_json()
+        role = data.get('role')
+        if not role:
+            return {"error": "No role provided"}, 400
+        member_permissions = PresetRoles.get_permissions(community_member.role)
+        target_permissions = PresetRoles.get_permissions(role)
+        if not member_permissions or not target_permissions:
+            return {"error": "Invalid role"}, 400
+        if ROLE_HIERARCHY.index(target_permissions) >= ROLE_HIERARCHY.index(member_permissions):
+            return {"error": "Cannot assign a role equal to or higher than your own"}, 403
+        target_member_new = await target_member.update_role(role)
+        return target_member_new.public_json
+
+    elif request.method == "DELETE":
+        if not community_member:
+            return {"error": "Unauthorized"}, 403
+        perms_check = await community_member.has_permission(
+            Permissions.MANAGE_MEMBERS
+        )
+        if not perms_check[0]:
+            return {"error": perms_check[1]}, 403
+
+        member_permissions = PresetRoles.get_permissions(community_member.role)
+        target_permissions = PresetRoles.get_permissions(target_member.role)
+        if not member_permissions or not target_permissions:
+            return {"error": "Invalid role"}, 400
+        if ROLE_HIERARCHY.index(target_permissions) >= ROLE_HIERARCHY.index(member_permissions):
+            return {"error": "Cannot ban a member with a role equal to or higher than your own"}, 403
+
+        target_member_updated = await target_member.update_role("banned")
+        return target_member_updated.public_json
 
             
 

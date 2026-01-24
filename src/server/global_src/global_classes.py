@@ -1,12 +1,12 @@
 import asyncio
 from datetime import datetime
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, Literal
 from hashlib import sha256
 
 from slugify import slugify
 
-from modules.authentications import Permissions, PresetRoles
+from modules.authentications import Permissions, PresetRoles, ROLE_HIERARCHY
 from .db import DATABASE
 
 class BaseClass(ABC):
@@ -487,6 +487,14 @@ class CommunityMember(BaseClass):
             "role": self.role,
             "joined": self.created
         }
+
+    async def update_role(self, new_role: str):
+        if not new_role.upper() in [i.name for i in ROLE_HIERARCHY]:
+            return None
+        await DATABASE.execute("""
+        UPDATE Memberships SET role=? WHERE community_id=? AND member_id=?
+        """, (new_role, self.community_id, self.user.user_id))
+        return await CommunityMember.get_member(self.user.user_id, self.community_id)
 
     def requires_permissions(self, *permissions: Permissions):
         roles = PresetRoles.get_permissions(self.role)

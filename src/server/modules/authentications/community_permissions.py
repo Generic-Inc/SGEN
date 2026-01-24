@@ -41,6 +41,8 @@ class PresetRoles(Enum):
         role = cls[role_name.upper()]
         return role
 
+ROLE_HIERARCHY = [PresetRoles.BANNED, PresetRoles.MUTED, PresetRoles.MEMBER, PresetRoles.MODERATOR, PresetRoles.ADMIN, PresetRoles.OWNER]
+
 if __name__ == "__main__":
     print(PresetRoles.get_permissions("moderator").value)
 

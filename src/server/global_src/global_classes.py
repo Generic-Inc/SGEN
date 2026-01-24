@@ -1,13 +1,16 @@
+from __future__ import annotations
 import asyncio
 from datetime import datetime
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Union, Literal
 from hashlib import sha256
+from typing import TYPE_CHECKING
 
 from slugify import slugify
 
-from modules.authentications import Permissions, PresetRoles, ROLE_HIERARCHY
 from .db import DATABASE
+if TYPE_CHECKING:
+    from modules.authentications import Permissions
 
 class BaseClass(ABC):
 
@@ -452,6 +455,7 @@ FROM Communities
                                """, (self.community_id, user_id))
         return await CommunityMember.get_member(user_id=user_id, community_id=self.community_id)
 
+
 class CommunityMember(BaseClass):
     def __init__(self, created: datetime, community_id: int, user: User, role: str):
         self.created = created
@@ -489,6 +493,7 @@ class CommunityMember(BaseClass):
         }
 
     async def update_role(self, new_role: str):
+        from modules.authentications import ROLE_HIERARCHY
         if not new_role.upper() in [i.name for i in ROLE_HIERARCHY]:
             return None
         await DATABASE.execute("""
@@ -497,6 +502,7 @@ class CommunityMember(BaseClass):
         return await CommunityMember.get_member(self.user.user_id, self.community_id)
 
     def requires_permissions(self, *permissions: Permissions):
+        from modules.authentications import PresetRoles
         roles = PresetRoles.get_permissions(self.role)
         for permission in permissions:
             if permission not in roles.value:

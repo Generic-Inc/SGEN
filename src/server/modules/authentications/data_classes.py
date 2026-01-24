@@ -1,12 +1,12 @@
+from __future__ import annotations
 from datetime import datetime
 from hashlib import sha256
 import os
 from typing import Union
 
 from global_src.db import DATABASE
-from global_src.global_classes import User
 from config.config import CONFIG
-
+from global_src.global_classes import User
 
 class SaltHash:
     def __init__(self, salt: str, hash_value: str):

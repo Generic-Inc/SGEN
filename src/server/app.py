@@ -6,6 +6,7 @@ from hypercorn.asyncio import serve
 from asgiref.wsgi import WsgiToAsgi
 
 from config.config import CONFIG
+from global_src.db import DATABASE
 from routing.api import api
 
 app = Flask(__name__)
@@ -15,6 +16,7 @@ app.register_blueprint(api)
 
 async def main():
     # Schedule your background task
+    await DATABASE.initialize()
     asyncio.create_task(CONFIG.auto_reload())
     print("task started")
 

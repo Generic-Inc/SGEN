@@ -142,6 +142,7 @@ celerybeat.pid
 
 # Environments
 src/server/.env
+.env
 .envrc
 .venv
 env/

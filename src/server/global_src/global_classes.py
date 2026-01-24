@@ -104,6 +104,45 @@ FROM Profiles
             return None
         role, = role_fetch
         return role
+    
+    async def update_user(self,
+                          display_name: str=None,
+                          avatar_url: str=None,
+                          bio: str=None,
+                          language: str=None,
+                          email: str=None
+                          ):
+        fields = []
+        values = []
+        if display_name:
+            fields.append("display_name=?")
+            values.append(display_name)
+        if avatar_url:
+            fields.append("avatar_url=?")
+            values.append(avatar_url)
+        if bio:
+            fields.append("bio=?")
+            values.append(bio)
+        if language:
+            fields.append("language=?")
+            values.append(language)
+        if email:
+            fields.append("_email=?")
+            values.append(email)
+        fields = ",".join(fields)
+        await DATABASE.execute(f"""
+        UPDATE Profiles SET {fields} WHERE user_id=?
+        """, tuple(values + [self.user_id]))
+        return await User.get_user(self.user_id)
+
+    async def delete_user(self):
+        await DATABASE.execute("""
+        UPDATE Profiles SET active=0 WHERE user_id=?
+        """, (self.user_id,))
+        check = await DATABASE.fetch_one("SELECT active FROM Profiles WHERE user_id=?", (self.user_id,))
+        if check[0] == 0:
+            return True
+        return False
 
 class Community(BaseClass):
     """A class representing a community"""

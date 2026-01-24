@@ -13,6 +13,26 @@ async def get_user(user_id: int):
         return user_get.public_json
     elif request.method == "PATCH":
         data = request.get_json()
+        kwargs = {}
+        if "displayName" in data:
+            kwargs["display_name"] = data["displayName"]
+        if "bio" in data:
+            kwargs["bio"] = data["bio"]
+        if "avatarUrl" in data:
+            kwargs["avatar_url"] = data["avatarUrl"]
+        if "language" in data:
+            kwargs["language"] = data["language"]
+        if "email" in data:
+            kwargs["email"] = data["email"]
+        updated_user = await user_get.update_user(**kwargs)
+        if not updated_user:
+            return {"error": "Failed to update user"}, 400
+        return updated_user.public_json
+    elif request.method == "DELETE":
+        deleted = await user_get.delete_user()
+        if not deleted:
+            return {"error": "Failed to delete user"}, 400
+        return {"success": "User deleted successfully"}
 
 
 

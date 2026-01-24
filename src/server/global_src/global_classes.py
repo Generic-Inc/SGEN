@@ -106,7 +106,7 @@ FROM Profiles
         SELECT 
             user_id
         FROM AuthTokens
-            WHERE token=?
+            WHERE token_hash=?
         """, (token_hash,))
         if not token_fetch:
             return None
@@ -364,6 +364,7 @@ FROM Communities
             return False
         community = await cls.get_community(community_id[0])
         await community.add_member(owner.user_id, role="owner")
+        community.member_count += 1
         return community
 
     async def delete_community(self):

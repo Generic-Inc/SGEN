@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("SGEN Client Loaded!");
+    console.log("SGEN Client Loaded! 🚀");
     loadPosts();
 });
 
@@ -15,12 +15,15 @@ async function loadPosts() {
             throw new Error(`API Error: ${response.status}`);
         }
 
-        const posts = await response.json();
+        const data = await response.json();
+
+        const posts = data.posts;
+
         console.log("Posts received:", posts);
 
         feedContainer.innerHTML = "";
 
-        if (posts.length === 0) {
+        if (!posts || posts.length === 0) {
             feedContainer.innerHTML = '<div style="text-align:center; padding:20px;">No posts yet. Be the first!</div>';
             return;
         }
@@ -63,8 +66,14 @@ function createPostHTML(post) {
             <button class="action-btn" onclick="toggleLike(${post.communityId}, ${post.postId})">
                 <i class="fa-regular fa-heart"></i> ${post.likeCount} Likes
             </button>
-            <button class="action-btn"><i class="fa-regular fa-comment"></i> Comment</button>
-            <button class="action-btn"><i class="fa-solid fa-share"></i> Share</button>
+            
+            <button class="action-btn">
+                <i class="fa-regular fa-comment"></i> Comment
+            </button>
+            
+            <button class="action-btn">
+                <i class="fa-solid fa-share"></i> Share
+            </button>
         </div>
     </div>
     `;
@@ -72,8 +81,19 @@ function createPostHTML(post) {
 
 async function toggleLike(communityId, postId) {
     try {
-        await fetch(`/api/communities/${communityId}/posts/${postId}/likes`, { method: "POST" });
-        loadPosts();
+        const response = await fetch(`/api/community/${communityId}/posts/${postId}/likes`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ userId: 1 })
+        });
+
+        if (response.ok) {
+            loadPosts();
+        } else {
+            console.error("Failed to like post");
+        }
     } catch (error) {
         console.error("Like error:", error);
     }

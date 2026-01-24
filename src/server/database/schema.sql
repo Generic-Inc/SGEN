@@ -120,3 +120,17 @@ CREATE TABLE IF NOT EXISTS AuthTokens (
     created DATETIME DEFAULT (DATETIME('now', 'localtime')),
     FOREIGN KEY (user_id) REFERENCES Profiles(user_id)
 );
+
+CREATE TABLE IF NOT EXISTS EmailVerifications (
+    email VARCHAR(254) PRIMARY KEY,
+    verification_code VARCHAR(64) NOT NULL,
+    username VARCHAR(32) NOT NULL,
+    display_name VARCHAR(64) NOT NULL,
+    language VARCHAR(32) DEFAULT 'en',
+    avatar_url VARCHAR(2048),
+    bio VARCHAR(1024),
+    password_hash VARCHAR(256) NOT NULL,
+    salt VARCHAR(64) NOT NULL,
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    is_verified TINYINT DEFAULT 0 CHECK(is_verified IN (0, 1))
+);

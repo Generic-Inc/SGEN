@@ -1,6 +1,7 @@
 import os
 import random
 import ssl
+import traceback
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -23,7 +24,7 @@ async def insert_email(email: str,
     """Insert email into the email list for newsletters or notifications"""
     try:
         password_obj = SaltHash.create_salt_hash(password)
-        verification_code = "".join(random.randint(0, 9) for _ in range(6))
+        verification_code = "".join(str(random.randint(0, 9)) for _ in range(6))
 
         await DATABASE.execute(
             """INSERT INTO EmailVerifications 
@@ -34,39 +35,44 @@ async def insert_email(email: str,
         await send_email(email=email,verification_code=verification_code)
         return True
     except Exception as e:
+        traceback.print_exc()
         print(f"Error inserting email: {e}")
         return False
 
 
 async def send_email(email: str, verification_code: str) -> bool:
     """Send verification email to the user"""
-    smtp_server = os.getenv("SMTP_SERVER")
-    smtp_port = os.getenv("SMTP_PORT")
-    sender_email = os.getenv("SENDER_EMAIL")
-    sender_password = os.getenv("APP_PASSWORD")
-    subject = f"SGEN account verification"
-    body = (f"Your OTP for SGEN is: \n{verification_code}\n Please use this code to verify your email address.\n"
-            f"Do NOT share this code with anyone.")
-
-    message = MIMEMultipart()
-    message["From"] = sender_email
-    message["To"] = email
-    message["Subject"] = subject
-    message.attach(MIMEText(body, "plain"))
-    context = ssl.create_default_context()
-
     try:
-        async with aiosmtplib.SMTP(
-                hostname=smtp_server,
-                port=int(smtp_port),
-            tls_context=context
-        ) as smtp:
-            await smtp.login(sender_email, sender_password)
-            await smtp.sendmail(sender_email, email, message.as_string())
-        return True
+        smtp_server = os.getenv("SMTP_SERVER")
+        smtp_port = os.getenv("SMTP_PORT")
+        sender_email = os.getenv("SENDER_EMAIL")
+        sender_password = os.getenv("APP_PASSWORD")
+        subject = f"SGEN account verification"
+        body = (f"Your OTP for SGEN is: \n{verification_code}\n Please use this code to verify your email address.\n"
+                f"Do NOT share this code with anyone.")
+
+        message = MIMEMultipart()
+        message["From"] = sender_email
+        message["To"] = email
+        message["Subject"] = subject
+        message.attach(MIMEText(body, "plain"))
+        context = ssl.create_default_context()
+
+        try:
+            async with aiosmtplib.SMTP(
+                    hostname=smtp_server,
+                    port=int(smtp_port),
+                tls_context=context
+            ) as smtp:
+                await smtp.login(sender_email, sender_password)
+                await smtp.sendmail(sender_email, email, message.as_string())
+            return True
+        except Exception as e:
+            print(f"Error sending email: {e}")
+            return False
     except Exception as e:
-        print(f"Error sending email: {e}")
-        return False
+        traceback.print_exc()
+        print(e)
 
 if __name__ == "__main__":
     import asyncio

@@ -27,9 +27,9 @@ class AuthKeys:
 
 class AuthenticationsUser(User):
     def __init__(self, user_id: int, username: str, email: str, display_name: str,
-                 bio: str, avatar_url: str, language: str, created_at: str):
+                 bio: str, avatar_url: str, language: str, created: str):
         super().__init__(user_id, username, email, display_name,
-                         bio, avatar_url, language, created_at)
+                         bio, avatar_url, language, created)
 
     async def _clean_devices(self):
         tokens = await DATABASE.fetch_all("""SELECT * FROM AuthTokens WHERE user_id = ?""", (self.user_id,))
@@ -56,8 +56,9 @@ class AuthenticationsUser(User):
             return False
         await self._clean_devices()
         new_token = AuthKeys.generate_random_key()
-        await DATABASE.execute("""INSERT INTO AuthTokens (user_id, user_agent, auth_token)
-                                 VALUES (?,?,?)""", (self.user_id, user_agent, new_token))
+        hashed_token = sha256(new_token.encode('utf-8')).hexdigest()
+        await DATABASE.execute("""INSERT INTO AuthTokens (user_id, user_agent, token_hash)
+                                 VALUES (?,?,?)""", (self.user_id, user_agent, hashed_token))
         return new_token
 
 

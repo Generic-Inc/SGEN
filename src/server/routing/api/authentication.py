@@ -1,3 +1,5 @@
+import traceback
+
 from global_src.db import DATABASE
 from global_src.global_classes import User
 from modules.authentications.utils import insert_email
@@ -94,16 +96,18 @@ async def verify_email():
     username, display_name, language, avatar_url, bio, password_hash, salt = record
 
     try:
-        user_id = await DATABASE.execute(
-            """INSERT INTO Users (username, email, display_name, bio, avatar_url, language) 
-               VALUES (?, ?, ?, ?, ?, ?)""",
-            (username, email, display_name, bio, avatar_url, language),
-            commit=False
+        user = await AuthenticationsUser.create_user(
+            username=username,
+            email=email,
+            display_name=display_name,
+            bio=bio,
+            avatar_url=avatar_url,
+            language=language
         )
         await DATABASE.execute(
             """INSERT INTO UserAuthentication (user_id, password_hash, salt) 
                VALUES (?, ?, ?)""",
-            (user_id, password_hash, salt),
+            (user.user_id, password_hash, salt),
             commit=False
         )
         await DATABASE.execute(
@@ -114,10 +118,11 @@ async def verify_email():
         await DATABASE.commit()
         user = await AuthenticationsUser.get_user_by_username(username=username)
         agent = request.headers.get("User-Agent") or "Unknown"
-        token = user.login("", user_agent=agent, bypass=True)
+        token = await user.login("", user_agent=agent, bypass=True)
         return {"success": "Email verified and user registered successfully",
                 "user": user.public_json,
                 "token": token}, 201
     except Exception as e:
+        traceback.print_exc()
         print(f"Error during email verification: {e}")
         return {"error": "Failed to register user"}, 500

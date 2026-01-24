@@ -199,6 +199,23 @@ FROM Profiles
             return True
         return False
 
+    @classmethod
+    async def create_user(cls,
+                            username: str,
+                            display_name: str,
+                            email: str,
+                            language: str=None,
+                            avatar_url: str=None,
+                            bio: str=None
+                            ) -> Union["User"]:
+        check = await DATABASE.execute("""SELECT * FROM Profiles WHERE username=? OR _email=?""", (username, email))
+        if check:
+            return False
+        await DATABASE.execute("""
+        INSERT INTO Profiles (username, display_name, _email, language, avatar_url, bio)
+                               VALUES(?,?,?,?,?,?)""",
+                               (username, display_name, email, language, avatar_url, bio))
+        return await cls.get_user_by_username(username)
 
 
 class Community(BaseClass):

@@ -3,9 +3,6 @@ import sys
 import threading
 
 from flask import Flask
-from hypercorn.config import Config
-from hypercorn.asyncio import serve
-from asgiref.wsgi import WsgiToAsgi
 
 from config.config import CONFIG
 from global_src.db import DATABASE

@@ -15,7 +15,6 @@ app.register_blueprint(api)
 
 
 async def main():
-    # Schedule your background task
     await DATABASE.initialize()
     asyncio.create_task(CONFIG.auto_reload())
     print("task started")

@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import traceback
 
 from global_src.db import DATABASE
@@ -85,7 +86,7 @@ async def verify_email():
         return {"error": "Email and verification code are required"}, 400
 
     record = await DATABASE.fetch_one(
-        """SELECT username, display_name, language, avatar_url, bio, password_hash, salt 
+        """SELECT username, display_name, language, avatar_url, bio, password_hash, salt, created
            FROM EmailVerifications 
            WHERE email=? AND verification_code=?""",
         (email, verification_code)
@@ -93,7 +94,11 @@ async def verify_email():
     if not record:
         return {"error": "Invalid email or verification code"}, 400
 
-    username, display_name, language, avatar_url, bio, password_hash, salt = record
+    username, display_name, language, avatar_url, bio, password_hash, salt, created = record
+
+    if datetime.now() - timedelta(minutes=5) > created:
+        await DATABASE.execute("""DELETE FROM EmailVerifications WHERE email = ?""", (email,))
+        return {"error": "Email verification code expired"}, 400
 
     try:
         user = await AuthenticationsUser.create_user(

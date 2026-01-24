@@ -6,6 +6,7 @@ from hashlib import sha256
 
 from slugify import slugify
 
+from modules.authentications import Permissions, PresetRoles
 from .db import DATABASE
 
 class BaseClass(ABC):
@@ -486,6 +487,13 @@ class CommunityMember(BaseClass):
             "role": self.role,
             "joined": self.created
         }
+
+    def requires_permissions(self, *permissions: Permissions):
+        roles = PresetRoles.get_permissions(self.role)
+        for permission in permissions:
+            if permission not in roles.value:
+                return False, f"Missing permission: {permission.value}"
+        return True, "All permissions granted"
 
 
 

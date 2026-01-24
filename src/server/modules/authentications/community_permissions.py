@@ -14,26 +14,29 @@ class Permissions(Enum):
     TRANSFER_OWNERSHIP = "transfer_ownership"
 
 class PresetRoles(Enum):
-    muted = []
-    member = [
+    MUTED = []
+    MEMBER = [
         Permissions.CREATE_MESSAGES,
         Permissions.CREATE_POSTS,
         Permissions.JOIN_EVENTS
     ]
-    moderator = member.value + [
+    MODERATOR = MEMBER.value + [
         Permissions.MANAGE_MESSAGES,
         Permissions.MANAGE_POSTS,
         Permissions.MANAGE_MEMBERS
     ]
-    admin = moderator.value + [
+    ADMIN = MODERATOR.value + [
         Permissions.MANAGE_COMMUNITY,
         Permissions.MANAGE_ROLES,
     ]
-    owner = admin.value + [
+    OWNER = ADMIN.value + [
         Permissions.DELETE_COMMUNITY,
         Permissions.TRANSFER_OWNERSHIP
     ]
 
-
+    @classmethod
+    def get_permissions(cls, role_name: str):
+        role = cls[role_name.upper()]
+        return role
 
 

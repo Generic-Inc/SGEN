@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Union
+from hashlib import sha256
 
 from slugify import slugify
 
@@ -52,6 +53,24 @@ class User(BaseClass):
         return base_json
 
     @classmethod
+    async def create_user(cls,
+                            username: str,
+                            display_name: str,
+                            email: str,
+                            language: str=None,
+                            avatar_url: str=None,
+                            bio: str=None
+                            ) -> Union["User"]:
+        check = await DATABASE.execute("""SELECT * FROM Profiles WHERE username=? OR _email=?""", (username, email))
+        if check:
+            return False
+        await DATABASE.execute("""
+        INSERT INTO Profiles (username, display_name, _email, language, avatar_url, bio)
+                               VALUES(?,?,?,?,?,?)""",
+                               (username, display_name, email, language, avatar_url, bio))
+        return await cls.get_user_by_username(username)
+
+    @classmethod
     async def get_user(cls, user_id: int) -> "User":
         """Form a user obj after fetching a user from the user id"""
         profile = await DATABASE.fetch_one("""
@@ -80,6 +99,21 @@ FROM Profiles
         )
 
     @classmethod
+    async def get_user_by_token(cls, token: str) -> "User":
+        """Form a user obj after fetching a user from the auth token"""
+        token_hash = sha256(token.encode('utf-8')).hexdigest()
+        token_fetch = await DATABASE.fetch_one("""
+        SELECT 
+            user_id
+        FROM AuthTokens
+            WHERE token=?
+        """, (token_hash,))
+        if not token_fetch:
+            return None
+        user_id, = token_fetch
+        return await cls.get_user(user_id)
+
+    @classmethod
     async def get_user_by_username(cls, username: str) -> "User":
         """Form a user obj after fetching a user from the username"""
         profile = await DATABASE.fetch_one("""
@@ -106,6 +140,7 @@ FROM Profiles
             bio=bio,
             created=created
         )
+
     @classmethod
     async def get_user_by_email(cls, email: str) -> "User":
         """Form a user obj after fetching a user from the email"""
@@ -147,7 +182,7 @@ FROM Profiles
         community_ids = [row[0] for row in community_fetch]
         communities = [Community.get_community(i) for i in community_ids]
         return await asyncio.gather(*communities)
-
+    
     async def get_member(self, community_id: int):
         role_fetch = await DATABASE.fetch_one("""
         SELECT 
@@ -159,7 +194,7 @@ FROM Profiles
             return None
         role, = role_fetch
         return role
-    
+
     async def update_user(self,
                           display_name: str=None,
                           avatar_url: str=None,
@@ -198,24 +233,6 @@ FROM Profiles
         if check[0] == 0:
             return True
         return False
-
-    @classmethod
-    async def create_user(cls,
-                            username: str,
-                            display_name: str,
-                            email: str,
-                            language: str=None,
-                            avatar_url: str=None,
-                            bio: str=None
-                            ) -> Union["User"]:
-        check = await DATABASE.execute("""SELECT * FROM Profiles WHERE username=? OR _email=?""", (username, email))
-        if check:
-            return False
-        await DATABASE.execute("""
-        INSERT INTO Profiles (username, display_name, _email, language, avatar_url, bio)
-                               VALUES(?,?,?,?,?,?)""",
-                               (username, display_name, email, language, avatar_url, bio))
-        return await cls.get_user_by_username(username)
 
 
 class Community(BaseClass):

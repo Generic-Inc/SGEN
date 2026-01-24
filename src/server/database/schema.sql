@@ -94,3 +94,14 @@ FOR EACH ROW
 BEGIN
     UPDATE Memberships SET modified = (DATETIME('now', 'localtime')) WHERE member_id = OLD.member_id AND community_id = OLD.community_id;
 END;
+
+CREATE TABLE IF NOT EXISTS UserAuthentication (
+    user_id INT PRIMARY KEY,
+    password_hash VARCHAR(256) NOT NULL,
+    salt VARCHAR(64) NOT NULL,
+
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    modified DATETIME DEFAULT (DATETIME('now', 'localtime')),
+
+    FOREIGN KEY (user_id) REFERENCES Profiles(user_id)
+)

@@ -49,6 +49,7 @@ class AuthenticationsUser(User):
             return False
         salt, stored_hash = record
         computed_hash = sha256((password_string + salt).encode('utf-8')).hexdigest()
+        print(computed_hash)
         return computed_hash == stored_hash
 
     async def login(self, password_string: str, user_agent: str, bypass=False) -> Union[bool, str]:

@@ -28,7 +28,7 @@ async def login():
     elif email:
         user = await AuthenticationsUser.get_user_by_email(email=email)
     if not user:
-        return {"error": "Invalid username/email or password"}, 401
+        return {"error": "Invalid username/email"}, 401
     agent = request.headers.get("User-Agent") or "Unknown"
     login = await user.login(password, user_agent=agent)
     if not login:
@@ -96,7 +96,7 @@ async def verify_email():
 
     username, display_name, language, avatar_url, bio, password_hash, salt, created = record
 
-    if datetime.now() - timedelta(minutes=5) > created:
+    if datetime.now() - timedelta(minutes=5) > datetime.fromisoformat(created):
         await DATABASE.execute("""DELETE FROM EmailVerifications WHERE email = ?""", (email,))
         return {"error": "Email verification code expired"}, 400
 

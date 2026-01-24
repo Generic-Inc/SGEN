@@ -18,6 +18,7 @@ app.register_blueprint(api)
 
 async def main():
     await DATABASE.initialize()
+    await CONFIG.load_config()
     asyncio.create_task(CONFIG.auto_reload())
 
 def start_main():
@@ -29,6 +30,6 @@ def test():
 
 
 if __name__ == '__main__':
-    thread = threading.Thread(target=start_main)
+    thread = threading.Thread(target=start_main, daemon=True)
     thread.start()
     app.run(use_reloader=False)

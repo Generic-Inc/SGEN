@@ -68,7 +68,7 @@ END;
 
 INSERT INTO Profiles (username, display_name, _email, bio)
 VALUES("admin", "Admin", "ryankgithub@gmail.com", "Hi im Ryan")
-ON CONFLICT(username) DO NOTHING;
+ON CONFLICT DO NOTHING;
 INSERT INTO Communities (community_name, display_name, owner_id, description)
 VALUES("sgen", "SGEN Community", 1, "The official community for SGEN users.")
 ON CONFLICT(community_name) DO NOTHING;

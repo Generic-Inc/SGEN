@@ -94,6 +94,7 @@ async def get_community(community_id: int):
 
         community_update = await community_get.update_community(community_id, **kwargs)
         return community_update.public_json
+
     elif request.method == "DELETE":
         authorization = request.headers.get('Authorization')
         if not authorization:

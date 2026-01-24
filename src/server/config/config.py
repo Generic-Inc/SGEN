@@ -24,6 +24,7 @@ class ConfigRoot:
     async def auto_reload(self) -> None:
         """Automatically reloads the config every 5 minutes, this should only be run as a separate task"""
         while True:
+            print("reloading config...")
             await self.load_config()
             await asyncio.sleep(300)
 

@@ -68,7 +68,7 @@ END;
 
 INSERT INTO Profiles (username, display_name, _email, bio)
 VALUES("admin", "Admin", "ryankgithub@gmail.com", "Hi im Ryan")
-ON CONFLICT(username) DO NOTHING;
+ON CONFLICT DO NOTHING;
 INSERT INTO Communities (community_name, display_name, owner_id, description)
 VALUES("sgen", "SGEN Community", 1, "The official community for SGEN users.")
 ON CONFLICT(community_name) DO NOTHING;
@@ -94,3 +94,44 @@ FOR EACH ROW
 BEGIN
     UPDATE Memberships SET modified = (DATETIME('now', 'localtime')) WHERE member_id = OLD.member_id AND community_id = OLD.community_id;
 END;
+
+CREATE TABLE IF NOT EXISTS UserAuthentication (
+    user_id INT PRIMARY KEY,
+    password_hash VARCHAR(256) NOT NULL,
+    salt VARCHAR(64) NOT NULL,
+
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    modified DATETIME DEFAULT (DATETIME('now', 'localtime')),
+
+    FOREIGN KEY (user_id) REFERENCES Profiles(user_id)
+);
+
+CREATE TRIGGER IF NOT EXISTS UpdateUserAuthenticationModified
+AFTER UPDATE ON UserAuthentication
+FOR EACH ROW
+BEGIN
+    UPDATE UserAuthentication SET modified = (DATETIME('now', 'localtime')) WHERE user_id = OLD.user_id;
+END;
+
+CREATE TABLE IF NOT EXISTS AuthTokens (
+    token_hash VARCHAR(256) PRIMARY KEY,
+    user_id INT NOT NULL,
+    user_agent VARCHAR(512),
+
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    FOREIGN KEY (user_id) REFERENCES Profiles(user_id)
+);
+
+CREATE TABLE IF NOT EXISTS EmailVerifications (
+    email VARCHAR(254) PRIMARY KEY,
+    verification_code VARCHAR(64) NOT NULL,
+    username VARCHAR(32) NOT NULL,
+    display_name VARCHAR(64) NOT NULL,
+    language VARCHAR(32) DEFAULT 'en',
+    avatar_url VARCHAR(2048),
+    bio VARCHAR(1024),
+    password_hash VARCHAR(256) NOT NULL,
+    salt VARCHAR(64) NOT NULL,
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    is_verified TINYINT DEFAULT 0 CHECK(is_verified IN (0, 1))
+);

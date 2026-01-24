@@ -1,11 +1,16 @@
+from __future__ import annotations
 import asyncio
 from datetime import datetime
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, Literal
+from hashlib import sha256
+from typing import TYPE_CHECKING
 
 from slugify import slugify
 
 from .db import DATABASE
+if TYPE_CHECKING:
+    from modules.authentications import Permissions
 
 class BaseClass(ABC):
 
@@ -52,6 +57,24 @@ class User(BaseClass):
         return base_json
 
     @classmethod
+    async def create_user(cls,
+                            username: str,
+                            display_name: str,
+                            email: str,
+                            language: str=None,
+                            avatar_url: str=None,
+                            bio: str=None
+                            ) -> Union["User"]:
+        check = await DATABASE.execute("""SELECT * FROM Profiles WHERE username=? OR _email=?""", (username, email))
+        if check:
+            return False
+        await DATABASE.execute("""
+        INSERT INTO Profiles (username, display_name, _email, language, avatar_url, bio)
+                               VALUES(?,?,?,?,?,?)""",
+                               (username, display_name, email, language, avatar_url, bio))
+        return await cls.get_user_by_username(username)
+
+    @classmethod
     async def get_user(cls, user_id: int) -> "User":
         """Form a user obj after fetching a user from the user id"""
         profile = await DATABASE.fetch_one("""
@@ -79,6 +102,77 @@ FROM Profiles
             created=created
         )
 
+    @classmethod
+    async def get_user_by_token(cls, token: str) -> "User":
+        """Form a user obj after fetching a user from the auth token"""
+        token_hash = sha256(token.encode('utf-8')).hexdigest()
+        token_fetch = await DATABASE.fetch_one("""
+        SELECT 
+            user_id
+        FROM AuthTokens
+            WHERE token_hash=?
+        """, (token_hash,))
+        if not token_fetch:
+            return None
+        user_id, = token_fetch
+        return await cls.get_user(user_id)
+
+    @classmethod
+    async def get_user_by_username(cls, username: str) -> "User":
+        """Form a user obj after fetching a user from the username"""
+        profile = await DATABASE.fetch_one("""
+SELECT 
+      user_id, 
+      display_name, 
+      _email, 
+      language, 
+      avatar_url, 
+      bio, 
+    created
+FROM Profiles
+    WHERE username=?
+""", (username,))
+        if not profile: return None
+        user_id, display_name, email, language, avatar_url, bio, created = profile
+        return cls(
+            user_id=user_id,
+            username=username,
+            display_name=display_name,
+            email=email,
+            language=language,
+            avatar_url=avatar_url,
+            bio=bio,
+            created=created
+        )
+
+    @classmethod
+    async def get_user_by_email(cls, email: str) -> "User":
+        """Form a user obj after fetching a user from the email"""
+        profile = await DATABASE.fetch_one("""
+SELECT 
+      user_id, 
+      username, 
+      display_name, 
+      language, 
+      avatar_url, 
+      bio, 
+    created
+FROM Profiles
+    WHERE _email=?
+""", (email,))
+        if not profile: return None
+        user_id, username, display_name, language, avatar_url, bio, created = profile
+        return cls(
+            user_id=user_id,
+            username=username,
+            display_name=display_name,
+            email=email,
+            language=language,
+            avatar_url=avatar_url,
+            bio=bio,
+            created=created
+        )
+
     async def get_communities(self, limit=25) -> list["Community"]:
         community_fetch = await DATABASE.fetch_all("""
         SELECT 
@@ -92,7 +186,7 @@ FROM Profiles
         community_ids = [row[0] for row in community_fetch]
         communities = [Community.get_community(i) for i in community_ids]
         return await asyncio.gather(*communities)
-
+    
     async def get_member(self, community_id: int):
         role_fetch = await DATABASE.fetch_one("""
         SELECT 
@@ -104,7 +198,7 @@ FROM Profiles
             return None
         role, = role_fetch
         return role
-    
+
     async def update_user(self,
                           display_name: str=None,
                           avatar_url: str=None,
@@ -143,6 +237,20 @@ FROM Profiles
         if check[0] == 0:
             return True
         return False
+
+    async def get_communities_owned(self):
+        community_fetch = await DATABASE.fetch_all("""
+        SELECT 
+            community_id
+        FROM Communities
+            WHERE owner_id=?
+        """, (self.user_id,))
+        if not community_fetch:
+            return []
+        community_ids = [row[0] for row in community_fetch]
+        communities = [Community.get_community(i) for i in community_ids]
+        return await asyncio.gather(*communities)
+
 
 class Community(BaseClass):
     """A class representing a community"""
@@ -259,7 +367,8 @@ FROM Communities
         if not community_id:
             return False
         community = await cls.get_community(community_id[0])
-        await community.add_member(owner.user_id)
+        await community.add_member(owner.user_id, role="owner")
+        community.member_count += 1
         return community
 
     async def delete_community(self):
@@ -329,13 +438,13 @@ FROM Communities
         members = [CommunityMember.get_member(i, self.community_id) for i in member_ids]
         return await asyncio.gather(*members)
 
-    async def add_member(self, user_id: int):
+    async def add_member(self, user_id: int, role: str="member"):
         await DATABASE.execute("""
-        INSERT INTO Memberships (community_id, member_id)
-            VALUES (?, ?)
+        INSERT INTO Memberships (community_id, member_id, role)
+            VALUES (?,?,?)
         ON CONFLICT 
         DO UPDATE SET active=1
-        """, (self.community_id, user_id))
+        """, (self.community_id, user_id, role))
         return await CommunityMember.get_member(user_id=user_id, community_id=self.community_id)
 
     async def delete_member(self, user_id: int):
@@ -345,6 +454,7 @@ FROM Communities
                                WHERE community_id=? AND member_id=?
                                """, (self.community_id, user_id))
         return await CommunityMember.get_member(user_id=user_id, community_id=self.community_id)
+
 
 class CommunityMember(BaseClass):
     def __init__(self, created: datetime, community_id: int, user: User, role: str):
@@ -381,6 +491,23 @@ class CommunityMember(BaseClass):
             "role": self.role,
             "joined": self.created
         }
+
+    async def update_role(self, new_role: str):
+        from modules.authentications import ROLE_HIERARCHY
+        if not new_role.upper() in [i.name for i in ROLE_HIERARCHY]:
+            return None
+        await DATABASE.execute("""
+        UPDATE Memberships SET role=? WHERE community_id=? AND member_id=?
+        """, (new_role, self.community_id, self.user.user_id))
+        return await CommunityMember.get_member(self.user.user_id, self.community_id)
+
+    def requires_permissions(self, *permissions: Permissions):
+        from modules.authentications import PresetRoles
+        roles = PresetRoles.get_permissions(self.role)
+        for permission in permissions:
+            if permission not in roles.value:
+                return False, f"Missing permission: {permission.value}"
+        return True, "All permissions granted"
 
 
 

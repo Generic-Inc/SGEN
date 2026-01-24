@@ -17,21 +17,21 @@ class Permissions(Enum):
 class PresetRoles(Enum):
     BANNED = []
     MUTED = [Permissions.JOIN_COMMUNITY]
-    MEMBER = MUTED.value + [
+    MEMBER = MUTED + [
         Permissions.CREATE_MESSAGES,
         Permissions.CREATE_POSTS,
         Permissions.JOIN_EVENTS
     ]
-    MODERATOR = MEMBER.value + [
+    MODERATOR = MEMBER + [
         Permissions.MANAGE_MESSAGES,
         Permissions.MANAGE_POSTS,
         Permissions.MANAGE_MEMBERS
     ]
-    ADMIN = MODERATOR.value + [
+    ADMIN = MODERATOR + [
         Permissions.MANAGE_COMMUNITY,
         Permissions.MANAGE_ROLES,
     ]
-    OWNER = ADMIN.value + [
+    OWNER = ADMIN + [
         Permissions.DELETE_COMMUNITY,
         Permissions.TRANSFER_OWNERSHIP
     ]
@@ -40,5 +40,8 @@ class PresetRoles(Enum):
     def get_permissions(cls, role_name: str):
         role = cls[role_name.upper()]
         return role
+
+if __name__ == "__main__":
+    print(PresetRoles.get_permissions("moderator").value)
 
 

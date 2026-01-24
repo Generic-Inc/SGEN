@@ -149,7 +149,7 @@ async def get_community_members(community_id: int):
     elif request.method == "POST":
         try:
             if community_member:
-                check = await community_member.requires_permissions(
+                check = community_member.requires_permissions(
                     Permissions.JOIN_COMMUNITY
                 )
                 if not check[0]:
@@ -201,7 +201,7 @@ async def get_community_member(community_id: int, user_id: int):
     elif request.method == "PATCH":
         if not community_member:
             return {"error": "Unauthorized"}, 403
-        perms_check = await community_member.has_permission(
+        perms_check = community_member.requires_permissions(
             Permissions.MANAGE_ROLES
         )
         if not perms_check[0]:
@@ -223,7 +223,7 @@ async def get_community_member(community_id: int, user_id: int):
     elif request.method == "DELETE":
         if not community_member:
             return {"error": "Unauthorized"}, 403
-        perms_check = await community_member.has_permission(
+        perms_check = community_member.requires_permissions(
             Permissions.MANAGE_MEMBERS
         )
         if not perms_check[0]:

@@ -42,7 +42,7 @@ async def create_community():
             online_text=online_text,
         )
         if not community_post:
-            return {"error": "Invalid data or community exist"}, 400
+            return {"error": "Invalid data or community already exists"}, 400
         else:
             return community_post.public_json
 

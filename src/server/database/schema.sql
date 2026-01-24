@@ -43,6 +43,19 @@ CREATE TABLE IF NOT EXISTS Communities (
     FOREIGN KEY (owner_id) REFERENCES Profiles(user_id)
 );
 
+CREATE TABLE IF NOT EXISTS Events (
+    events_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    community_id INTEGER NOT NULL,
+    creator INTEGER NOT NULL,
+    event_name VARCHAR NOT NULL,
+    scheduled_date DATETIME NOT NULL DEFAULT (DATETIME('now', 'localtime')),
+    event_description VARCHAR NULL,
+    attendance TINYINT NOT NULL DEFAULT 0,
+    FOREIGN KEY(community_id) REFERENCES Communities(community_id),
+    FOREIGN KEY(creator) REFERENCES Profiles(user_id),
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    modified DATETIME DEFAULT (DATETIME('now', 'localtime'))
+)
 CREATE UNIQUE INDEX IF NOT EXISTS idx_communities_name ON Communities(community_name);
 
 CREATE TRIGGER IF NOT EXISTS UpdateCommunitiesModified

@@ -1,0 +1,79 @@
+{% from 'components.html' import topnav, sidenav %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Events</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="src\client\static\styles\styles.css">
+</head>
+<body>
+    {{ topnav() }}
+    
+    <div class="container">
+        {{ sidenav() }}
+        
+        <div class="main-content">
+            <div class="form-section">
+                <h1 class="page-title">Add event</h1>
+                
+                <div class="image-upload">
+                    <div class="upload-icon">+</div>
+                    <div class="upload-text">Add an image</div>
+                </div>
+
+                <input type="text" class="input-field" placeholder="Add a Title for the event">
+                <input type="text" class="input-field" placeholder="Add a description to the event">
+                <input type="text" class="input-field" placeholder="Add a date to the event">
+
+                <div class="submit-section">
+                    <button class="post-btn">Post</button>
+                </div>
+            </div>
+
+            <div class="guidelines">
+                <div class="guidelines-title">SG Explorers Guidelines</div>
+                
+                <div class="guideline-item">
+                    <span class="guideline-label">Rule 1:</span>
+                    <span class="guideline-text">Be respectful to all members. Harassment, hate speech, discrimination, or personal attacks are not tolerated.</span>
+                </div>
+
+                <div class="guideline-item">
+                    <span class="guideline-label">Rule 2:</span>
+                    <span class="guideline-text">Keep discussions relevant to the community's purpose. Avoid excessive off-topic posts, spam, or self-promotion without permission.</span>
+                </div>
+
+                <div class="guideline-item">
+                    <span class="guideline-label">Rule 3:</span>
+                    <span class="guideline-text">Follow all applicable laws and platform guidelines. Do not share illegal content or engage in harmful activities.</span>
+                </div>
+
+                <div class="guideline-item">
+                    <span class="guideline-label">Rule 4:</span>
+                    <span class="guideline-text">Protect privacy and personal information. Do not share your own or others' private details without explicit consent.</span>
+                </div>
+
+                <div class="guideline-item">
+                    <span class="guideline-label">Rule 5:</span>
+                    <span class="guideline-text">Use appropriate language and content. Avoid explicit, graphic, or otherwise inappropriate material unless clearly labeled.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.querySelector('.image-upload').addEventListener('click', function() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.click();
+        });
+
+        document.querySelector('.post-btn').addEventListener('click', function() {
+            alert('Event posted!');
+        });
+    </script>
+</body>
+</html>

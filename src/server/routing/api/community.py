@@ -1,7 +1,8 @@
 from flask import request
 
 from config.config import CONFIG
-from global_src.global_classes import Community, User
+from global_src.global_classes import Community, User, CommunityMember
+from modules.authentications import Permissions
 from . import community_blueprint
 
 @community_blueprint.route('/', methods=['POST'])
@@ -62,18 +63,29 @@ async def get_community(community_id: int):
     community_get = await Community.get_community(community_id)
     if not community_get:
         return {"error": "Community not found"}, 404
+
+    authorization = request.headers.get('Authorization')
+    if not authorization:
+        return {"error": "Unauthorized"}, 401
+    user = await User.get_user_by_token(authorization)
+    if not user:
+        return {"error": "Unauthorized"}, 401
+    community_member = await CommunityMember.get_member(user.user_id, community_id)
+
+
+
     if request.method == "GET":
         return community_get.public_json
+
+
     elif request.method == "PATCH":
-        authorization = request.headers.get('Authorization')
-        if not authorization:
-            return {"error": "Unauthorized"}, 401
-        user = await User.get_user_by_token(authorization)
-        if not user:
-            return {"error": "Unauthorized"}, 401
-        community = await Community.get_community(community_id)
-        if community.owner.user_id != user.user_id:
+        if not community_member:
             return {"error": "Unauthorized"}, 403
+        perms_check = await community_member.has_permission(
+            Permissions.MANAGE_COMMUNITY
+        )
+        if not perms_check[0]:
+            return {"error": perms_check[1]}, 403
 
         data = request.get_json()
         kwargs = {}
@@ -96,16 +108,13 @@ async def get_community(community_id: int):
         return community_update.public_json
 
     elif request.method == "DELETE":
-        authorization = request.headers.get('Authorization')
-        if not authorization:
-            return {"error": "Unauthorized"}, 401
-        user = await User.get_user_by_token(authorization)
-        if not user:
-            return {"error": "Unauthorized"}, 401
-        community = await Community.get_community(community_id)
-        if community.owner.user_id != user.user_id:
+        if not community_member:
             return {"error": "Unauthorized"}, 403
-
+        perms_check = await community_member.has_permission(
+            Permissions.DELETE_COMMUNITY
+        )
+        if not perms_check[0]:
+            return {"error": perms_check[1]}, 403
         check = await community_get.delete_community()
         if not check: return {"error": "Community never existed"}
         return {"success": True}
@@ -120,26 +129,42 @@ async def get_community_members(community_id: int):
     community_get = await Community.get_community(community_id)
     if not community_get:
         return {"error": "Community not found"}, 404
+
+    authorization = request.headers.get('Authorization')
+    if not authorization:
+        return {"error": "Unauthorized"}, 401
+    user = await User.get_user_by_token(authorization)
+    if not user:
+        return {"error": "Unauthorized"}, 401
+    community_member = await CommunityMember.get_member(user.user_id, community_id)
+
+
     if request.method == "GET":
+        if not community_member:
+            return {"error": "Unauthorized"}, 403
+
         members = await community_get.get_members()
         return {"members": [i.public_json for i in members]}
+
     elif request.method == "POST":
         try:
-            data = request.get_json()
-            user_id = data.get("userId")
-            user_get = await User.get_user(user_id)
-            if not user_get:
-                return {"error": "User not found"}, 404
-            await community_get.add_member(user_id)
+            if community_member:
+                check = await community_member.requires_permissions(
+                    Permissions.JOIN_COMMUNITY
+                )
+                if not check[0]:
+                    return {"error": check[1]}, 403
+                else:
+                    return {"error": "Already a member"}, 400
+            await community_get.add_member(user.user_id)
             members = await community_get.get_members()
             return {"members": [i.public_json for i in members]}
         except Exception as e:
             return {"error": e}, 500
+
     elif request.method == "DELETE":
         try:
-            data = request.get_json()
-            user_id = data.get("userId")
-            members = await community_get.delete_member(user_id)
+            members = await community_get.delete_member(user.user_id)
             return {"members": [i.public_json for i in members]}
         except Exception as e:
             return {"error": e}, 500

@@ -2,6 +2,7 @@ from enum import Enum
 
 
 class Permissions(Enum):
+    JOIN_COMMUNITY = "join_community"
     CREATE_MESSAGES = "send_messages"
     CREATE_POSTS = "create_posts"
     JOIN_EVENTS = "join_events"
@@ -14,8 +15,9 @@ class Permissions(Enum):
     TRANSFER_OWNERSHIP = "transfer_ownership"
 
 class PresetRoles(Enum):
-    MUTED = []
-    MEMBER = [
+    BANNED = []
+    MUTED = [Permissions.JOIN_COMMUNITY]
+    MEMBER = MUTED.value + [
         Permissions.CREATE_MESSAGES,
         Permissions.CREATE_POSTS,
         Permissions.JOIN_EVENTS

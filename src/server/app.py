@@ -1,16 +1,20 @@
-from flask import Flask
-
+import os
+from flask import Flask, render_template
 from routing.api import api
 
-app = Flask(__name__)
+base_dir = os.path.dirname(os.path.abspath(__file__))
+client_folder = os.path.join(base_dir, "..", "client")
+
+app = Flask(__name__,
+            template_folder=os.path.join(client_folder, "templates"),
+            static_folder=os.path.join(client_folder, "static"))
+
 app.json.sort_keys = False
 app.register_blueprint(api)
 
 @app.route('/')
-def test():
-    return "yep, the root route works!"
-
+async def index():
+    return render_template('index.html')
 
 if __name__ == '__main__':
-    import subprocess
-    subprocess.run(["flask", "run"])
+    app.run(debug=True)

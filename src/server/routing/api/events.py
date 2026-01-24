@@ -1,4 +1,3 @@
-
 from flask import request
 from global_src.global_classes import Community, User
 from modules.events import Event, EventAttendance

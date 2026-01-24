@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat Test</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e5ddd5; display: flex; justify-content: center; height: 100vh; margin: 0; }
+
+        .chat-container { width: 100%; max-width: 600px; background: white; display: flex; flex-direction: column; height: 100%; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+
+        /* Header / Login Area */
+        .header { background-color: #075e54; color: white; padding: 15px; display: flex; align-items: center; gap: 10px; font-size: 14px; }
+        .header label { margin-right: 5px; }
+        .header input { background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px; border-radius: 5px; width: 50px; text-align: center; }
+        .header button { background-color: white; color: #075e54; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-weight: bold; }
+
+        /* Chat Window */
+        .chat-window { flex-grow: 1; padding: 20px; overflow-y: auto; background-color: #d5d5d5; /* Simple gray BG */ }
+
+        /* Message Bubbles */
+        .message-row { display: flex; margin-bottom: 10px; }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 8px 12px;
+            border-radius: 7.5px;
+            position: relative;
+            font-size: 14px;
+            line-height: 1.4;
+            box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+            word-wrap: break-word;
+        }
+
+        /* Styles for MY messages (Right side, Green) */
+        .my-message { justify-content: flex-end; }
+        .my-message .message-bubble {
+            background-color: #dcf8c6;
+            border-top-right-radius: 0;
+        }
+
+        /* Styles for OTHER messages (Left side, White) */
+        .other-message { justify-content: flex-start; }
+        .other-message .message-bubble {
+            background-color: white;
+            border-top-left-radius: 0;
+        }
+
+        .sender-name { font-size: 10px; color: #999; margin-bottom: 2px; font-weight: bold; }
+
+        /* Button Area inside Bubble */
+        .bubble-controls { margin-top: 5px; text-align: right; font-size: 10px; opacity: 0.7; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 4px;}
+        .bubble-controls button { background: none; border: none; cursor: pointer; padding: 0 5px; font-size: 10px; text-decoration: underline; color: #555; }
+        .bubble-controls button:hover { color: #000; }
+
+        /* Input Area */
+        .footer { background-color: #f0f0f0; padding: 10px; display: flex; gap: 10px; border-top: 1px solid #ddd; }
+        .footer input { flex-grow: 1; padding: 10px; border-radius: 20px; border: 1px solid #ccc; outline: none; }
+        .footer button { background-color: #075e54; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; }
+        .footer button:hover { background-color: #064e46; }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <div class="header">
+            <label>Comm ID:</label> <input type="number" id="commId" value="1">
+            <label>User ID:</label> <input type="number" id="userId" value="1">
+            <button onclick="loadMessages()">Refresh</button>
+        </div>
+
+        <div id="chatWindow" class="chat-window"></div>
+
+        <div class="footer">
+            <input type="text" id="msgContent" placeholder="Type a message..." onkeydown="if(event.key==='Enter') sendMessage()">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:5000/api";
+
+        // --- READ (GET) ---
+        async function loadMessages() {
+            const commId = document.getElementById('commId').value;
+            const currentUserId = document.getElementById('userId').value;
+            const chatWindow = document.getElementById('chatWindow');
+
+            try {
+                // Fetch list of messages
+                const response = await fetch(`${API_URL}/community/${commId}/messages`);
+                const data = await response.json();
+
+                // Save scroll position so we don't jump around if user is scrolling up
+                const wasAtBottom = chatWindow.scrollHeight - chatWindow.scrollTop === chatWindow.clientHeight;
+
+                chatWindow.innerHTML = ""; // Clear old messages
+                if(data.messages) {
+                    data.messages.forEach(msg => {
+                        const name = msg.author ? msg.author.displayName : "User " + msg.author_id;
+
+                        // Check if this message belongs to the current user
+                        // We use '==' to handle string vs integer comparison safely
+                        const isMe = (msg.author && msg.author.userId == currentUserId);
+
+                        // Decide Bubble Style
+                        const rowClass = isMe ? "message-row my-message" : "message-row other-message";
+
+                        // Hide name for me (cleaner), show for others
+                        const nameHtml = isMe ? "" : `<div class="sender-name">${name}</div>`;
+
+                        // Show Edit/Delete buttons ONLY if it is my message
+                        let buttons = "";
+                        if (isMe) {
+                            buttons = `
+                                <div class="bubble-controls">
+                                    <button onclick="editMessage(${msg.messageId}, '${msg.content}')">Edit</button>
+                                    <button onclick="deleteMessage(${msg.messageId})" style="color:red;">Delete</button>
+                                </div>
+                            `;
+                        }
+
+                        chatWindow.innerHTML += `
+                            <div class="${rowClass}">
+                                <div class="message-bubble">
+                                    ${nameHtml}
+                                    <span>${msg.content}</span>
+                                    ${buttons}
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    // Auto-scroll to bottom if we were already there or it's first load
+                    if(wasAtBottom) {
+                        chatWindow.scrollTop = chatWindow.scrollHeight;
+                    }
+                }
+            } catch (error) {
+                console.error(error);
+                // Don't overwrite chat with error if polling fails once
+                // chatWindow.innerHTML = `<div style="color:red; text-align:center;">Connection Error</div>`;
+            }
+        }
+
+        // --- CREATE (POST) ---
+        async function sendMessage() {
+            const commId = document.getElementById('commId').value;
+            const userId = document.getElementById('userId').value;
+            const content = document.getElementById('msgContent').value;
+
+            if(!content) return;
+
+            await fetch(`${API_URL}/community/${commId}/messages`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    userId: userId,
+                    content: content
+                })
+            });
+
+            document.getElementById('msgContent').value = ""; // Clear input
+            loadMessages(); // Refresh chat immediately
+
+            // Force scroll to bottom on send
+            const chatWindow = document.getElementById('chatWindow');
+            setTimeout(() => chatWindow.scrollTop = chatWindow.scrollHeight, 100);
+        }
+
+        // --- UPDATE (PATCH) ---
+        async function editMessage(messageId, oldContent) {
+            const newContent = prompt("Edit your message:", oldContent);
+            if (!newContent || newContent === oldContent) return;
+
+            const commId = document.getElementById('commId').value;
+            const userId = document.getElementById('userId').value; // Need for verification if you added that security check
+
+            await fetch(`${API_URL}/community/${commId}/messages/${messageId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    content: newContent,
+                    userId: userId // Include userId just in case your backend checks for it
+                })
+            });
+
+            loadMessages();
+        }
+
+        // --- DELETE (DELETE) ---
+        async function deleteMessage(messageId) {
+            if(!confirm("Are you sure you want to delete this message?")) return;
+
+            const commId = document.getElementById('commId').value;
+            const userId = document.getElementById('userId').value; // Need for verification
+
+            await fetch(`${API_URL}/community/${commId}/messages/${messageId}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" }, // Delete requests usually don't need headers, but good for custom APIs
+                body: JSON.stringify({
+                    userId: userId // Sending userId for security check
+                })
+            });
+
+            loadMessages();
+        }
+
+        // Initial Load
+        loadMessages();
+
+        // POLLING: Run loadMessages every 3 seconds to get new chats automatically
+        setInterval(loadMessages, 3000);
+    </script>
+</body>
+</html>

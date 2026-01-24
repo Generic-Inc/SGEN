@@ -6,15 +6,11 @@ CREATE TABLE IF NOT EXISTS Profiles (
     language VARCHAR(32) DEFAULT 'en',
     avatar_url VARCHAR(2048),
     bio VARCHAR(1024),
+    active INT DEFAULT 1,
 
     created DATETIME DEFAULT (DATETIME('now', 'localtime')),
-    modified DATETIME DEFAULT (DATETIME('now', 'localtime')),
-
-    active TINYINT DEFAULT 1 CHECK(active IN (0, 1))
+    modified DATETIME DEFAULT (DATETIME('now', 'localtime'))
 );
-
-CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_username ON Profiles(username);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_email ON Profiles(_email);
 
 CREATE TRIGGER IF NOT EXISTS UpdateProfilesModified
 AFTER UPDATE ON Profiles
@@ -34,16 +30,13 @@ CREATE TABLE IF NOT EXISTS Communities (
     messages_guidelines VARCHAR(4096),
     offline_text VARCHAR(16),
     online_text VARCHAR(16),
+    active INT DEFAULT 1,
 
     created DATETIME DEFAULT (DATETIME('now', 'localtime')),
     modified DATETIME DEFAULT (DATETIME('now', 'localtime')),
 
-    active TINYINT DEFAULT 1 CHECK(active IN (0, 1)),
-
     FOREIGN KEY (owner_id) REFERENCES Profiles(user_id)
 );
-
-CREATE UNIQUE INDEX IF NOT EXISTS idx_communities_name ON Communities(community_name);
 
 CREATE TRIGGER IF NOT EXISTS UpdateCommunitiesModified
 AFTER UPDATE ON Communities
@@ -52,45 +45,23 @@ BEGIN
     UPDATE Communities SET modified = (DATETIME('now', 'localtime')) WHERE community_id = OLD.community_id;
 END;
 
-CREATE TRIGGER IF NOT EXISTS InsertCommunityNameLower
-BEFORE INSERT ON Communities
-FOR EACH ROW
-BEGIN
-    UPDATE Communities SET community_name = lower(NEW.community_name) WHERE community_id = NEW.community_id;
-END;
-
-CREATE TRIGGER IF NOT EXISTS UpdateCommunityNameLower
-BEFORE INSERT ON Communities
-FOR EACH ROW
-BEGIN
-    UPDATE Communities SET community_name = lower(NEW.community_name) WHERE community_id = NEW.community_id;
-END;
-
-INSERT INTO Profiles (username, display_name, _email, bio)
-VALUES("admin", "Admin", "ryankgithub@gmail.com", "Hi im Ryan")
-ON CONFLICT(username) DO NOTHING;
-INSERT INTO Communities (community_name, display_name, owner_id, description)
-VALUES("sgen", "SGEN Community", 1, "The official community for SGEN users.")
-ON CONFLICT(community_name) DO NOTHING;
-
-CREATE TABLE IF NOT EXISTS Memberships (
-    member_id INT NOT NULL,
+CREATE TABLE IF NOT EXISTS ChatMessage(
+    message_id INTEGER PRIMARY KEY AUTOINCREMENT,
     community_id INT NOT NULL,
-    role VARCHAR(32) DEFAULT 'member',
+    author_id INT NOT NULL,
+    content VARCHAR(2048) NOT NULL,
 
     created DATETIME DEFAULT (DATETIME('now', 'localtime')),
     modified DATETIME DEFAULT (DATETIME('now', 'localtime')),
 
-    active TINYINT DEFAULT 1 CHECK(active IN (0, 1)),
-
-    PRIMARY KEY (member_id, community_id),
-    FOREIGN KEY (member_id) REFERENCES Profiles(user_id),
-    FOREIGN KEY (community_id) REFERENCES Communities(community_id)
+    FOREIGN KEY (community_id) REFERENCES Communities(community_id),
+    FOREIGN KEY (author_id) REFERENCES Profiles(user_id)
 );
 
-CREATE TRIGGER IF NOT EXISTS UpdateMembershipsModified
-AFTER UPDATE ON Memberships
+
+CREATE TRIGGER IF NOT EXISTS UpdateChatMessageModified
+AFTER UPDATE ON ChatMessage
 FOR EACH ROW
 BEGIN
-    UPDATE Memberships SET modified = (DATETIME('now', 'localtime')) WHERE member_id = OLD.member_id AND community_id = OLD.community_id;
+    UPDATE ChatMessage SET modified = DATETIME('now', 'localtime') WHERE message_id = OLD.message_id;
 END;

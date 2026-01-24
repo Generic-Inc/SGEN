@@ -65,6 +65,7 @@ SELECT
     created
 FROM Profiles
     WHERE user_id=?
+    AND active=1
 """, (user_id,))
         if not profile: return None
         username, display_name, email, language, avatar_url, bio, created = profile

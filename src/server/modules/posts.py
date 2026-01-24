@@ -118,13 +118,12 @@ class Post(BaseClass):
 
         return cls(p_id, p_content, p_comm_id, author_obj, p_created, p_mod, p_active, p_img, like_cnt)
 
-    async def update(self, new_content: str):
-        """Update the content of this post"""
+    async def update(self, new_content: str) -> "Post":
         await DATABASE.execute(
             "UPDATE Posts SET content = ? WHERE post_id = ?",
             (new_content, self.post_id)
         )
-        self.content = new_content
+        return await self.get_by_id(self.post_id)
 
 class Comment(BaseClass):
     def __init__(self,
@@ -235,13 +234,12 @@ class Comment(BaseClass):
         author = User(u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio)
         return cls(c_id, c_content, c_post_id, author, c_created, c_mod, c_active, like_cnt)
 
-    async def update(self, new_content: str):
-        """Update the content of this comment"""
+    async def update(self, new_content: str) -> "Comment":
         await DATABASE.execute(
             "UPDATE Comments SET content = ? WHERE comment_id = ?",
             (new_content, self.comment_id)
         )
-        self.content = new_content
+        return await self.get_by_id(self.comment_id)
 
 class Like:
     @staticmethod

@@ -46,7 +46,7 @@ async def single_post(community_id: int, post_id: int):
         await post.update(new_content)
         return post.public_json
 
-@community_blueprint.route("/<int:community_id>/posts/<int:post_id>/likes", methods=["PUT"])
+@community_blueprint.route("/<int:community_id>/posts/<int:post_id>/likes", methods=["POST"])
 async def post_likes(community_id: int, post_id: int):
     post = await Post.get_by_id(post_id)
     if not post: return {"error": "Post not found"}, 404
@@ -100,7 +100,7 @@ async def single_comment(community_id: int, post_id: int, comment_id: int):
         await comment.update(new_content)
         return comment.public_json
 
-@community_blueprint.route("/<int:community_id>/posts/<int:post_id>/comments/<int:comment_id>/likes", methods=["PUT"])
+@community_blueprint.route("/<int:community_id>/posts/<int:post_id>/comments/<int:comment_id>/likes", methods=["POST"])
 async def comment_likes(community_id: int, post_id: int, comment_id: int):
     comment = await Comment.get_by_id(comment_id)
     if not comment: return {"error": "Comment not found"}, 404

@@ -1,10 +1,21 @@
 from flask import request
 
+from config.config import CONFIG
 from global_src.global_classes import Community, User
 from . import community_blueprint
 
 @community_blueprint.route('/', methods=['POST'])
 async def create_community():
+    authorization = request.headers.get('Authorization')
+    if not authorization:
+        return {"error": "Unauthorized"}, 401
+    user = await User.get_user_by_token(authorization)
+    if not user:
+        return {"error": "Unauthorized"}, 401
+    communities = await user.get_communities_owned()
+    if len(communities) >= CONFIG.config['limits']["max_owned_communities_per_user"]:
+        return {"error": "Community creation limit reached"}, 403
+
     if request.method == "POST":
         data = request.get_json()
         if not data: return {"error": "No data"}, 400
@@ -28,8 +39,7 @@ async def create_community():
         if not "offlineText" in data: return {"error": "No offline text"}, 400
         if not "onlineText" in data: return {"error": "No online text"}, 400
 
-
-        owner = await User.get_user(user_id=data["userId"])
+        owner = user
         community_post = await Community.create_community(
             community_name=community_name,
             display_name=display_name,
@@ -55,6 +65,16 @@ async def get_community(community_id: int):
     if request.method == "GET":
         return community_get.public_json
     elif request.method == "PATCH":
+        authorization = request.headers.get('Authorization')
+        if not authorization:
+            return {"error": "Unauthorized"}, 401
+        user = await User.get_user_by_token(authorization)
+        if not user:
+            return {"error": "Unauthorized"}, 401
+        community = await Community.get_community(community_id)
+        if community.owner.user_id != user.user_id:
+            return {"error": "Unauthorized"}, 403
+
         data = request.get_json()
         kwargs = {}
         if "displayName" in data:
@@ -75,6 +95,16 @@ async def get_community(community_id: int):
         community_update = await community_get.update_community(community_id, **kwargs)
         return community_update.public_json
     elif request.method == "DELETE":
+        authorization = request.headers.get('Authorization')
+        if not authorization:
+            return {"error": "Unauthorized"}, 401
+        user = await User.get_user_by_token(authorization)
+        if not user:
+            return {"error": "Unauthorized"}, 401
+        community = await Community.get_community(community_id)
+        if community.owner.user_id != user.user_id:
+            return {"error": "Unauthorized"}, 403
+
         check = await community_get.delete_community()
         if not check: return {"error": "Community never existed"}
         return {"success": True}

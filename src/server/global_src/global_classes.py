@@ -234,6 +234,19 @@ FROM Profiles
             return True
         return False
 
+    async def get_communities_owned(self):
+        community_fetch = await DATABASE.fetch_all("""
+        SELECT 
+            community_id
+        FROM Communities
+            WHERE owner_id=?
+        """, (self.user_id,))
+        if not community_fetch:
+            return []
+        community_ids = [row[0] for row in community_fetch]
+        communities = [Community.get_community(i) for i in community_ids]
+        return await asyncio.gather(*communities)
+
 
 class Community(BaseClass):
     """A class representing a community"""
@@ -350,7 +363,7 @@ FROM Communities
         if not community_id:
             return False
         community = await cls.get_community(community_id[0])
-        await community.add_member(owner.user_id)
+        await community.add_member(owner.user_id, role="owner")
         return community
 
     async def delete_community(self):
@@ -420,13 +433,13 @@ FROM Communities
         members = [CommunityMember.get_member(i, self.community_id) for i in member_ids]
         return await asyncio.gather(*members)
 
-    async def add_member(self, user_id: int):
+    async def add_member(self, user_id: int, role: str="member"):
         await DATABASE.execute("""
-        INSERT INTO Memberships (community_id, member_id)
-            VALUES (?, ?)
+        INSERT INTO Memberships (community_id, member_id, role)
+            VALUES (?,?,?)
         ON CONFLICT 
         DO UPDATE SET active=1
-        """, (self.community_id, user_id))
+        """, (self.community_id, user_id, role))
         return await CommunityMember.get_member(user_id=user_id, community_id=self.community_id)
 
     async def delete_member(self, user_id: int):

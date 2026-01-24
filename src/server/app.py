@@ -1,4 +1,6 @@
 import asyncio
+import sys
+import threading
 
 from flask import Flask
 from hypercorn.config import Config
@@ -17,11 +19,9 @@ app.register_blueprint(api)
 async def main():
     await DATABASE.initialize()
     asyncio.create_task(CONFIG.auto_reload())
-    print("task started")
 
-    config = Config()
-    config.bind = ["localhost:5000"]
-    await serve(WsgiToAsgi(app), config)
+def start_main():
+    asyncio.run(main())
 
 @app.route('/')
 def test():
@@ -29,4 +29,6 @@ def test():
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    thread = threading.Thread(target=start_main)
+    thread.start()
+    app.run(use_reloader=False)

@@ -226,7 +226,7 @@ class EventAttendance:
 
     @staticmethod
     async def get_attendees(event_id: int, status: Optional[str] = None) -> list[User]:
-        """Get all attendees for an event, optionally filtered by status"""
+        """Get all attendees for an event"""
         if status:
             query = """
                     SELECT u.user_id, u.username, u.display_name, u._email, 

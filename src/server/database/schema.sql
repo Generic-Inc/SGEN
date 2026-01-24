@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS EventAttendance (
     attendance_id INTEGER PRIMARY KEY AUTOINCREMENT,
     event_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
-    status VARCHAR(20) DEFAULT 'going' CHECK(status IN ('going', 'interested', 'not_going')),
+    status VARCHAR(20) DEFAULT 'interested' CHECK(status IN ('interested',)),
     created DATETIME DEFAULT (DATETIME('now', 'localtime')),
     FOREIGN KEY (event_id) REFERENCES Events(event_id),
     FOREIGN KEY (user_id) REFERENCES Profiles(user_id),
@@ -141,4 +141,4 @@ VALUES (
 ) ON CONFLICT DO NOTHING;
 
 INSERT INTO EventAttendance (event_id, user_id, status)
-VALUES (1, 1, 'going');
+VALUES (1, 1, 'interested');

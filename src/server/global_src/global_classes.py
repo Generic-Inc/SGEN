@@ -79,6 +79,61 @@ FROM Profiles
             created=created
         )
 
+    @classmethod
+    async def get_user_by_username(cls, username: str) -> "User":
+        """Form a user obj after fetching a user from the username"""
+        profile = await DATABASE.fetch_one("""
+SELECT 
+      user_id, 
+      display_name, 
+      _email, 
+      language, 
+      avatar_url, 
+      bio, 
+    created
+FROM Profiles
+    WHERE username=?
+""", (username,))
+        if not profile: return None
+        user_id, display_name, email, language, avatar_url, bio, created = profile
+        return cls(
+            user_id=user_id,
+            username=username,
+            display_name=display_name,
+            email=email,
+            language=language,
+            avatar_url=avatar_url,
+            bio=bio,
+            created=created
+        )
+    @classmethod
+    async def get_user_by_email(cls, email: str) -> "User":
+        """Form a user obj after fetching a user from the email"""
+        profile = await DATABASE.fetch_one("""
+SELECT 
+      user_id, 
+      username, 
+      display_name, 
+      language, 
+      avatar_url, 
+      bio, 
+    created
+FROM Profiles
+    WHERE _email=?
+""", (email,))
+        if not profile: return None
+        user_id, username, display_name, language, avatar_url, bio, created = profile
+        return cls(
+            user_id=user_id,
+            username=username,
+            display_name=display_name,
+            email=email,
+            language=language,
+            avatar_url=avatar_url,
+            bio=bio,
+            created=created
+        )
+
     async def get_communities(self, limit=25) -> list["Community"]:
         community_fetch = await DATABASE.fetch_all("""
         SELECT 
@@ -143,6 +198,8 @@ FROM Profiles
         if check[0] == 0:
             return True
         return False
+
+
 
 class Community(BaseClass):
     """A class representing a community"""

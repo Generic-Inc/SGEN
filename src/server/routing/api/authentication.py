@@ -26,7 +26,8 @@ async def login():
         user = await AuthenticationsUser.get_user_by_email(email=email)
     if not user:
         return {"error": "Invalid username/email or password"}, 401
-    login = await user.login(password)
+    agent = request.headers.get("User-Agent") or "Unknown"
+    login = await user.login(password, user_agent=agent)
     if not login:
         return {"error": "Invalid username/email or password"}, 401
     return {"token": login}

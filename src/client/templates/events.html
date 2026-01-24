@@ -1,16 +1,19 @@
+{% from 'components.html' import topnav, sidenav %}
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Events</title>
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-        <link rel="stylesheet" href="\static\styles\styles.css">
-    </head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Events</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="src\client\static\styles\styles.css">
+</head>
 <body>
-    {% from 'components.html' import topnav, sidenav %}
     {{ topnav() }}
-    {{ sidenav() }}
+    
+    <div class="container">
+        {{ sidenav() }}
+        
         <div class="main-content">
             <div class="form-section">
                 <h1 class="page-title">Add event</h1>

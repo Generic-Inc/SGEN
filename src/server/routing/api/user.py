@@ -54,6 +54,7 @@ async def get_user_communities(user_id: int):
     user_get = await User.get_user(user_id)
     if not user_get:
         return {"error": "User not found"}, 404
+
     communities = await user_get.get_communities()
     return {"communities": [i.public_json for i in communities]}
 

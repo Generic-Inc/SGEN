@@ -55,7 +55,7 @@ async def community_events_page(community_id: int):
 
     return render_template(
         'events.html',
-        community=community.public_json,
+        community=community,
         user=user.public_json,
         user_communities=[c.public_json for c in user_communities],
         events=formatted_events,

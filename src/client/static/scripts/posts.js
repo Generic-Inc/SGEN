@@ -1,3 +1,95 @@
+async function openCreateModal() {
+    const modal = document.getElementById("create-modal");
+    const selectWrapper = document.getElementById("community-select-wrapper");
+    const selectBox = document.getElementById("modal-community-select");
+    const hiddenId = document.getElementById("modal-community-id-hidden");
+    const guideName = document.getElementById("guide-comm-name");
+
+    document.getElementById("post-title").value = "";
+    document.getElementById("post-desc").value = "";
+
+    modal.style.display = "flex";
+
+    if (window.currentCommunityId) {
+        console.log("Modal Mode: Community " + window.currentCommunityId);
+        selectWrapper.style.display = "none";
+        hiddenId.value = window.currentCommunityId;
+
+        const titleEl = document.getElementById("info-title");
+        guideName.innerText = titleEl ? titleEl.innerText : "Community";
+    } else {
+        console.log("Modal Mode: Home Feed");
+        selectWrapper.style.display = "block";
+        hiddenId.value = "";
+        guideName.innerText = "General";
+
+        selectBox.innerHTML = `<option value="">Select a community...</option>`;
+        try {
+            const res = await authFetch('/api/my-communities');
+            const data = await res.json();
+            data.communities.forEach(comm => {
+                const opt = document.createElement("option");
+                opt.value = comm.communityId;
+                opt.innerText = comm.displayName;
+                selectBox.appendChild(opt);
+            });
+        } catch (e) { console.error(e); }
+    }
+}
+
+function closeCreateModal() {
+    document.getElementById("create-modal").style.display = "none";
+}
+
+async function submitNewPost() {
+    const hiddenId = document.getElementById("modal-community-id-hidden").value;
+    const selectId = document.getElementById("modal-community-select").value;
+    const targetId = hiddenId || selectId;
+
+    if (!targetId) {
+        alert("Please select a community.");
+        return;
+    }
+
+    const title = document.getElementById("post-title").value.trim();
+    const desc = document.getElementById("post-desc").value.trim();
+
+    if (!desc) {
+        alert("Please write a description.");
+        return;
+    }
+
+    let finalContent = desc;
+    if (title) {
+        finalContent = `**${title}**\n\n${desc}`;
+    }
+
+    try {
+        const res = await authFetch(`/api/community/${targetId}/posts`, {
+            method: "POST",
+            body: JSON.stringify({
+                content: finalContent,
+                imageUrl: null
+            })
+        });
+
+        if (res.ok) {
+            closeCreateModal();
+            if (window.currentCommunityId == targetId) {
+                loadCommunityFeed(targetId);
+            } else {
+                alert("Post created successfully!");
+            }
+        } else {
+            const err = await res.json();
+            alert(err.error || "Failed to post.");
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Connection error");
+    }
+}
+
 function renderFeed(posts, container, showContext) {
     container.innerHTML = "";
     if (!posts || posts.length === 0) {
@@ -24,6 +116,10 @@ function createPostHTML(post, showContext) {
         `;
     }
 
+    let contentDisplay = post.content;
+    contentDisplay = contentDisplay.replace(/\n/g, '<br>');
+    contentDisplay = contentDisplay.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
     return `
     <div class="post-card" id="post-${post.postId}">
         <div class="post-header" style="flex-direction: column; align-items: flex-start;">
@@ -33,7 +129,7 @@ function createPostHTML(post, showContext) {
                 <div class="user-info"><h4>${post.author.displayName}</h4><span>${dateStr}</span></div>
             </div>
         </div>
-        <div class="post-content">${post.content}</div>
+        <div class="post-content">${contentDisplay}</div>
         ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" style="width:100%; display:block; margin-top:10px;">` : ''}
         <div class="post-actions">
             <button class="action-btn ${colorClass}" onclick="toggleLike(${post.communityId}, ${post.postId}, this)">
@@ -60,9 +156,14 @@ async function toggleLike(communityId, postId, btn) {
     await authFetch(`/api/community/${communityId}/posts/${postId}/likes`, { method: "POST" });
 }
 
-async function toggleComments(communityId, postId) {
+async function toggleComments(communityId, postId, forceRefresh = false) {
     const section = document.getElementById(`comments-${postId}`);
-    if (section.style.display === "block") { section.style.display = "none"; return; }
+
+    if (!forceRefresh && section.style.display === "block") {
+        section.style.display = "none";
+        return;
+    }
+
     section.style.display = "block";
     section.innerHTML = `<div style="color:#888; text-align:center;">Loading comments...</div>`;
 
@@ -92,7 +193,7 @@ async function toggleComments(communityId, postId) {
                             ${new Date(c.created).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                         </div>
                     </div>
-                    <div style="text-align:center; cursor:pointer; min-width:30px;" 
+                     <div style="text-align:center; cursor:pointer; min-width:30px;" 
                          onclick="toggleCommentLike(${communityId}, ${postId}, ${c.commentId}, this)">
                         <i class="${heartType} fa-heart" style="color: ${heartColor};"></i>
                         <div class="comment-like-count" style="font-size:11px;">${likeCount > 0 ? likeCount : ''}</div>
@@ -100,15 +201,52 @@ async function toggleComments(communityId, postId) {
                 </div>`;
             });
         }
+
         section.innerHTML += `
             <div style="display:flex; gap:10px; margin-top:10px; align-items:center;">
                  <div style="width:32px; height:32px; border-radius:50%; background:#ddd;"></div>
                  <div style="flex:1; background:#f0f2f5; border-radius:20px; padding:8px 15px; display:flex; align-items:center;">
-                    <input type="text" placeholder="Write a comment..." style="flex:1; border:none; background:transparent; outline:none;">
-                    <i class="fa-regular fa-paper-plane" style="color:#65676B; cursor:pointer;"></i>
+                    
+                    <input type="text" 
+                           placeholder="Write a comment..." 
+                           onkeydown="handleCommentKey(event, ${postId}, this)"
+                           style="flex:1; border:none; background:transparent; outline:none;">
+                    
+                    <i class="fa-regular fa-paper-plane" 
+                       onclick="submitComment(${postId}, this.previousElementSibling)"
+                       style="color:#65676B; cursor:pointer;"></i>
                  </div>
             </div>`;
+
     } catch(e) { section.innerHTML = "Error loading comments."; }
+}
+
+async function submitComment(postId, inputElement) {
+    const content = inputElement.value.trim();
+    if (!content) return;
+
+    if (!window.currentCommunityId) {
+        alert("Please enter the community to comment.");
+        return;
+    }
+
+    try {
+        const res = await authFetch(`/api/community/${window.currentCommunityId}/posts/${postId}/comments`, {
+            method: "POST",
+            body: JSON.stringify({ content: content })
+        });
+
+        if (res.ok) {
+            inputElement.value = "";
+            toggleComments(window.currentCommunityId, postId, true);
+        }
+    } catch (e) { console.error(e); }
+}
+
+function handleCommentKey(event, postId, inputElement) {
+    if (event.key === "Enter") {
+        submitComment(postId, inputElement);
+    }
 }
 
 async function toggleCommentLike(communityId, postId, commentId, btnElement) {

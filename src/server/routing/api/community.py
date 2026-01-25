@@ -60,16 +60,15 @@ async def create_community():
 @community_blueprint.route("/<int:community_id>", methods=["GET", "PATCH", "DELETE"])
 async def get_community(community_id: int):
     """Get a community's public information by their community ID"""
-    community_get = await Community.get_community(community_id)
-    if not community_get:
-        return {"error": "Community not found"}, 404
-
     authorization = request.headers.get('Authorization')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)
     if not user:
         return {"error": "Unauthorized"}, 401
+    community_get = await Community.get_community(community_id)
+    if not community_get:
+        return {"error": "Community not found"}, 404
     community_member = await CommunityMember.get_member(user.user_id, community_id)
 
 
@@ -126,9 +125,6 @@ async def get_community_members(community_id: int):
     GET: Get a list of members in a community by the community ID
     POST: join a community by the community ID
     """
-    community_get = await Community.get_community(community_id)
-    if not community_get:
-        return {"error": "Community not found"}, 404
 
     authorization = request.headers.get('Authorization')
     if not authorization:
@@ -136,6 +132,9 @@ async def get_community_members(community_id: int):
     user = await User.get_user_by_token(authorization)
     if not user:
         return {"error": "Unauthorized"}, 401
+    community_get = await Community.get_community(community_id)
+    if not community_get:
+        return {"error": "Community not found"}, 404
     community_member = await CommunityMember.get_member(user.user_id, community_id)
 
 
@@ -176,9 +175,6 @@ async def get_community_member(community_id: int, user_id: int):
     PATCH: Update a member in a community by the community ID and user ID
     DELETE: Remove a member from a community by the community ID and user ID
     """
-    community_get = await Community.get_community(community_id)
-    if not community_get:
-        return {"error": "Community not found"}, 404
 
     authorization = request.headers.get('Authorization')
     if not authorization:
@@ -186,6 +182,9 @@ async def get_community_member(community_id: int, user_id: int):
     user = await User.get_user_by_token(authorization)
     if not user:
         return {"error": "Unauthorized"}, 401
+    community_get = await Community.get_community(community_id)
+    if not community_get:
+        return {"error": "Community not found"}, 404
     community_member = await CommunityMember.get_member(user.user_id, community_id)
 
     target_member = await CommunityMember.get_member(user_id, community_id)

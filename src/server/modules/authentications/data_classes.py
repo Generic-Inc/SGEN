@@ -62,6 +62,16 @@ class AuthenticationsUser(User):
                                  VALUES (?,?,?)""", (self.user_id, user_agent, hashed_token))
         return new_token
 
+    async def logout(self, token: str) -> bool:
+        hashed_token = sha256(token.encode('utf-8')).hexdigest()
+        try:
+            result = await DATABASE.execute("""DELETE FROM AuthTokens WHERE user_id = ? AND token_hash = ?""",
+                                            (self.user_id, hashed_token))
+            return True
+        except Exception as e:
+            print(f"Error during logout: {e}")
+        return False
+
 
 
 

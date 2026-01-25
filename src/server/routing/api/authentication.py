@@ -142,5 +142,8 @@ async def logout():
     if not user:
         return {"error": "Unauthorized"}, 401
 
-    await user.logout(authorization)
-    return {"success": "Logged out successfully"}
+    check = await user.logout(authorization)
+    if check:
+        return {"success": "Logged out successfully"}
+    else:
+        return {"error": "Failed to logout"}, 500

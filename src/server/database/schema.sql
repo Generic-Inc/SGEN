@@ -135,3 +135,46 @@ CREATE TABLE IF NOT EXISTS EmailVerifications (
     created DATETIME DEFAULT (DATETIME('now', 'localtime')),
     is_verified TINYINT DEFAULT 0 CHECK(is_verified IN (0, 1))
 );
+
+CREATE TABLE IF NOT EXISTS Posts (
+    post_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    content TEXT NOT NULL,
+    image_url VARCHAR(2048),
+    community_id INT NOT NULL,
+    author_id INT NOT NULL,
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    modified DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    active TINYINT DEFAULT 1 CHECK(active IN (0, 1)),
+    FOREIGN KEY (community_id) REFERENCES Communities(community_id),
+    FOREIGN KEY (author_id) REFERENCES Profiles(user_id)
+);
+
+CREATE TABLE IF NOT EXISTS Comments (
+    comment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    content TEXT NOT NULL,
+    post_id INTEGER NOT NULL,
+    author_id INT NOT NULL,
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    modified DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    active TINYINT DEFAULT 1 CHECK(active IN (0, 1)),
+    FOREIGN KEY (post_id) REFERENCES Posts(post_id),
+    FOREIGN KEY (author_id) REFERENCES Profiles(user_id)
+);
+
+CREATE TABLE IF NOT EXISTS PostLikes (
+    post_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (post_id, user_id),
+    FOREIGN KEY(post_id) REFERENCES Posts(post_id) ON DELETE CASCADE,
+    FOREIGN KEY(user_id) REFERENCES Profiles(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS CommentLikes (
+    comment_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (comment_id, user_id),
+    FOREIGN KEY(comment_id) REFERENCES Comments(comment_id) ON DELETE CASCADE,
+    FOREIGN KEY(user_id) REFERENCES Profiles(user_id) ON DELETE CASCADE
+);

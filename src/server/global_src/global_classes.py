@@ -186,7 +186,7 @@ FROM Profiles
         community_ids = [row[0] for row in community_fetch]
         communities = [Community.get_community(i) for i in community_ids]
         return await asyncio.gather(*communities)
-    
+
     async def get_member(self, community_id: int):
         role_fetch = await DATABASE.fetch_one("""
         SELECT 

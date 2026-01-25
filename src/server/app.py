@@ -2,10 +2,11 @@ import asyncio
 import sys
 import threading
 
-from flask import Flask
+from flask import Flask, render_template
 
 from config.config import CONFIG
 from global_src.db import DATABASE
+import os
 from routing.api import api
 
 app = Flask(__name__)
@@ -22,9 +23,8 @@ def start_main():
     asyncio.run(main())
 
 @app.route('/')
-def test():
-    return "yep, the root route works!"
-
+async def index():
+    return render_template('index.html')
 
 if __name__ == '__main__':
     thread = threading.Thread(target=start_main, daemon=True)

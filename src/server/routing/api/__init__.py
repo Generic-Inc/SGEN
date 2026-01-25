@@ -13,3 +13,4 @@ from . import community
 from . import user
 from . import main
 from . import authentication
+from . import posts

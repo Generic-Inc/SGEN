@@ -342,6 +342,20 @@ FROM Communities
         )
 
     @classmethod
+    async def get_community_by_name(cls, community_name: str) -> "Community":
+        """Form a community obj after fetching a community from the community name"""
+        community_fetch = await DATABASE.fetch_one("""
+SELECT 
+    community_id
+FROM Communities
+    WHERE community_name=?
+    AND active=1
+        """, (community_name,))
+        if not community_fetch: return None
+        community_id, = community_fetch
+        return await cls.get_community(community_id)
+
+    @classmethod
     async def create_community(cls,
                                community_name: str,
                                display_name: str,

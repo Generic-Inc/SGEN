@@ -6,7 +6,6 @@ from flask import Flask, render_template
 from routing.api import api
 from global_src.db import DATABASE
 from config.config import CONFIG
-
 base_dir = os.path.dirname(os.path.abspath(__file__))
 client_folder = os.path.abspath(os.path.join(base_dir, "..", "client"))
 template_folder = os.path.join(client_folder, "templates")

@@ -95,7 +95,6 @@ async def single_event(community_id: int, event_id: int):
         await event.update(active=0)
         return {"message": "Event deleted successfully"}, 200
 
-
 @community_blueprint.route("/<int:community_id>/events/<int:event_id>/attendance", methods=["GET", "PUT", "DELETE"])
 async def event_attendance(community_id: int, event_id: int):
     """Manage event attendance"""

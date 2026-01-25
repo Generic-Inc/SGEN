@@ -7,7 +7,7 @@
         <div class="brand-name">SGEN</div>
     </div>
     <div class="header-actions">
-        <button class="create-btn">
+        <button class="create-btn" onclick="showCreateModal()">
             <span>+</span>
             <span>Create</span>
         </button>
@@ -16,37 +16,77 @@
 </div>
 {% endmacro %}
 
-{% macro sidenav() %}
+{% macro sidenav(communities=[], current_community=None) %}
 <div class="sidebar">
-    <div class="nav-item" onclick="loadHomeFeed()" style="cursor: pointer;">
+    <div class="nav-item" onclick="window.location.href='/'">
         <span class="material-icons">home</span>
         <span>Home</span>
     </div>
 
-    <div id="community-menu" style="display: none;">
-        <div class="nav-item">
+    {% if current_community %}
+    <div id="community-menu">
+        <div class="nav-item" onclick="window.location.href='/community/{{ current_community.community_id }}/chat'">
             <span class="material-icons">chat_bubble_outline</span>
-            <span id="nav-chat-label">Chat</span>
+            <span>{{ current_community.display_name }} Chat</span>
         </div>
-        <div class="nav-item">
+        <div class="nav-item active" onclick="window.location.href='/community/{{ current_community.community_id }}/events'">
             <span class="material-icons">event</span>
-            <span id="nav-events-label">Events</span>
+            <span>{{ current_community.display_name }} Events</span>
         </div>
-        <div class="nav-item">
+        <div class="nav-item" onclick="window.location.href='/community/{{ current_community.community_id }}/posts'">
             <span class="material-icons">article</span>
-            <span id="nav-posts-label">Posts</span>
+            <span>{{ current_community.display_name }} Posts</span>
         </div>
     </div>
+    {% endif %}
 
     <div class="section-title">Your Communities ▼</div>
 
     <div id="my-communities-list">
+        {% for community in communities %}
+        <div class="community-item" onclick="window.location.href='/community/{{ community.community_id }}/events'">
+            <span class="material-icons">groups</span>
+            <span>{{ community.display_name }}</span>
         </div>
+        {% endfor %}
+    </div>
 
     <div class="section-title">Recommended Communities ▼</div>
     <div class="community-item">
         <span class="material-icons">groups</span>
         <span>SG Hawker Centers</span>
+    </div>
+    <div class="community-item">
+        <span class="material-icons">groups</span>
+        <span>SG Stories</span>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro calendar(current_date, events_by_date={}) %}
+<div class="calendar-widget">
+    <div class="calendar-header">
+        <button class="calendar-nav-btn" onclick="previousMonth()">
+            <span class="material-icons">chevron_left</span>
+        </button>
+        <h3 class="calendar-month">{{ current_date.strftime('%B %Y') }}</h3>
+        <button class="calendar-nav-btn" onclick="nextMonth()">
+            <span class="material-icons">chevron_right</span>
+        </button>
+    </div>
+
+    <div class="calendar-weekdays">
+        <div class="calendar-weekday">Mon</div>
+        <div class="calendar-weekday">Tues</div>
+        <div class="calendar-weekday">Wed</div>
+        <div class="calendar-weekday">Thurs</div>
+        <div class="calendar-weekday">Fri</div>
+        <div class="calendar-weekday">Sat</div>
+        <div class="calendar-weekday">Sun</div>
+    </div>
+
+    <div class="calendar-days" id="calendar-days">
+        <!-- Days will be populated by JavaScript -->
     </div>
 </div>
 {% endmacro %}

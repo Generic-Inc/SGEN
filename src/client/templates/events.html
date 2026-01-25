@@ -1,77 +1,295 @@
-{% from 'components.html' import topnav, sidenav %}
+{% from 'components.html' import topnav, sidenav, calendar %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Events</title>
+    <title>{{ community.display_name }} - Events</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="src\client\static\styles\styles.css">
+    <link rel="stylesheet" href="../../static/styles/style.css">
 </head>
 <body>
     {{ topnav() }}
+
     <div class="container">
-        {{ sidenav() }}
+        {{ sidenav(communities=user_communities, current_community=community) }}
+
         <div class="main-content">
-            <div class="form-section">
-                <h1 class="page-title">Add event</h1>
-                
-                <div class="image-upload">
-                    <div class="upload-icon">+</div>
-                    <div class="upload-text">Add an image</div>
+            <div class="events-container">
+                <div class="calendar-section">
+                    {{ calendar(current_date) }}
                 </div>
 
-                <input type="text" class="input-field" placeholder="Add a Title for the event">
-                <input type="text" class="input-field" placeholder="Add a description to the event">
-                <input type="text" class="input-field" placeholder="Add a date to the event">
+                <div class="events-list-section">
+                    <h2 class="section-heading">Upcoming events</h2>
 
-                <div class="submit-section">
-                    <button class="post-btn">Post</button>
-                </div>
-            </div>
+                    <div class="events-scroll" id="events-list">
+                        {% for event in events %}
+                        <div class="event-card" data-event-id="{{ event.eventId }}">
+                            <div class="event-header">
+                                <h3 class="event-title">{{ event.eventName }}</h3>
+                                <span class="event-date-badge">in {{ event.daysUntil }} days</span>
+                            </div>
 
-            <div class="guidelines">
-                <div class="guidelines-title">SG Explorers Guidelines</div>
-                
-                <div class="guideline-item">
-                    <span class="guideline-label">Rule 1:</span>
-                    <span class="guideline-text">Be respectful to all members. Harassment, hate speech, discrimination, or personal attacks are not tolerated.</span>
-                </div>
+                            <p class="event-description">{{ event.eventDescription }}</p>
 
-                <div class="guideline-item">
-                    <span class="guideline-label">Rule 2:</span>
-                    <span class="guideline-text">Keep discussions relevant to the community's purpose. Avoid excessive off-topic posts, spam, or self-promotion without permission.</span>
-                </div>
+                            {% if event.imageUrl %}
+                            <img src="{{ event.imageUrl }}" alt="{{ event.eventName }}" class="event-image">
+                            {% endif %}
 
-                <div class="guideline-item">
-                    <span class="guideline-label">Rule 3:</span>
-                    <span class="guideline-text">Follow all applicable laws and platform guidelines. Do not share illegal content or engage in harmful activities.</span>
-                </div>
+                            <div class="event-meta">
+                                <span class="event-location">
+                                    <span class="material-icons">place</span>
+                                    {{ event.eventLocation }}
+                                </span>
+                                <span class="event-time">
+                                    <span class="material-icons">schedule</span>
+                                    {{ event.scheduledDate }}
+                                </span>
+                            </div>
 
-                <div class="guideline-item">
-                    <span class="guideline-label">Rule 4:</span>
-                    <span class="guideline-text">Protect privacy and personal information. Do not share your own or others' private details without explicit consent.</span>
-                </div>
+                            <div class="event-actions">
+                                <button class="event-action-btn {% if event.userIsInterested %}interested{% endif %}"
+                                        onclick="toggleInterest({{ event.eventId }}, this)">
+                                    <span class="material-icons">star</span>
+                                    <span class="interest-count">{{ event.interestedCount }}</span>
+                                    <span class="interest-text">Interested</span>
+                                </button>
 
-                <div class="guideline-item">
-                    <span class="guideline-label">Rule 5:</span>
-                    <span class="guideline-text">Use appropriate language and content. Avoid explicit, graphic, or otherwise inappropriate material unless clearly labeled.</span>
+                                <button class="event-action-btn" onclick="viewEventDetails({{ event.eventId }})">
+                                    <span class="material-icons">comment</span>
+                                    <span>31</span>
+                                </button>
+
+                                <button class="event-action-btn">
+                                    <span class="material-icons">share</span>
+                                    <span>Share</span>
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <div id="createEventModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create New Event</h2>
+                <span class="close-modal" onclick="closeCreateModal()">&times;</span>
+            </div>
+
+            <form id="createEventForm" onsubmit="handleCreateEvent(event)">
+                <div class="form-group">
+                    <label>Event Image</label>
+                    <div class="image-upload-zone" onclick="document.getElementById('eventImageInput').click()">
+                        <span class="material-icons">add_photo_alternate</span>
+                        <span>Add an image</span>
+                        <input type="file" id="eventImageInput" accept="image/*" style="display: none;">
+                    </div>
+                    <img id="imagePreview" class="image-preview" style="display: none;">
+                </div>
+
+                <div class="form-group">
+                    <label>Event Title *</label>
+                    <input type="text" name="eventName" class="form-input" placeholder="Give your event a name" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="eventDescription" class="form-textarea" rows="4" placeholder="Tell people what this event is about"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Date & Time *</label>
+                        <input type="datetime-local" name="scheduledDate" class="form-input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Location *</label>
+                        <input type="text" name="eventLocation" class="form-input" placeholder="Where will this happen?" required>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeCreateModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Event</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
-        document.querySelector('.image-upload').addEventListener('click', function() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.click();
+        const communityId = {{ community.community_id }};
+        const authToken = localStorage.getItem('authToken') || '';
+        let currentMonth = new Date();
+        let eventsData = {{ events|tojson }};
+
+        // Calendar functionality
+        function renderCalendar() {
+            const calendarDays = document.getElementById('calendar-days');
+            const year = currentMonth.getFullYear();
+            const month = currentMonth.getMonth();
+
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startDate = new Date(firstDay);
+            startDate.setDate(startDate.getDate() - (firstDay.getDay() || 7) + 1);
+
+            calendarDays.innerHTML = '';
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            for (let i = 0; i < 42; i++) {
+                const day = new Date(startDate);
+                day.setDate(day.getDate() + i);
+
+                const dayEl = document.createElement('div');
+                dayEl.className = 'calendar-day';
+
+                if (day.getMonth() !== month) {
+                    dayEl.classList.add('other-month');
+                }
+
+                if (day.getTime() === today.getTime()) {
+                    dayEl.classList.add('today');
+                }
+
+                const dayStr = day.toISOString().split('T')[0];
+                const hasEvents = eventsData.some(e => e.scheduledDate.startsWith(dayStr));
+                if (hasEvents) {
+                    dayEl.classList.add('has-events');
+                }
+
+                dayEl.textContent = day.getDate();
+                dayEl.onclick = () => filterEventsByDate(dayStr);
+
+                calendarDays.appendChild(dayEl);
+            }
+
+            document.querySelector('.calendar-month').textContent =
+                currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        }
+
+        function previousMonth() {
+            currentMonth.setMonth(currentMonth.getMonth() - 1);
+            renderCalendar();
+        }
+
+        function nextMonth() {
+            currentMonth.setMonth(currentMonth.getMonth() + 1);
+            renderCalendar();
+        }
+
+        function filterEventsByDate(dateStr) {
+            const allCards = document.querySelectorAll('.event-card');
+            let hasVisibleEvents = false;
+
+            allCards.forEach(card => {
+                const eventId = card.dataset.eventId;
+                const event = eventsData.find(e => e.eventId == eventId);
+
+                if (event && event.scheduledDate.startsWith(dateStr)) {
+                    card.style.display = 'block';
+                    hasVisibleEvents = true;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            document.querySelectorAll('.calendar-day').forEach(day => {
+                day.classList.remove('selected');
+                if (day.textContent == new Date(dateStr).getDate()) {
+                    day.classList.add('selected');
+                }
+            });
+        }
+
+        function showCreateModal() {
+            document.getElementById('createEventModal').style.display = 'flex';
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createEventModal').style.display = 'none';
+            document.getElementById('createEventForm').reset();
+            document.getElementById('imagePreview').style.display = 'none';
+        }
+
+        document.getElementById('eventImageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('imagePreview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
         });
 
-        document.querySelector('.post-btn').addEventListener('click', function() {
-            alert('Event posted!');
-        });
+        async function handleCreateEvent(e) {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+            const data = {
+                eventName: formData.get('eventName'),
+                eventDescription: formData.get('eventDescription'),
+                scheduledDate: formData.get('scheduledDate').replace('T', ' ') + ':00',
+                eventLocation: formData.get('eventLocation'),
+                imageUrl: document.getElementById('imagePreview').src || null
+            };
+
+            try {
+                const response = await fetch(`/api/community/${communityId}/events`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': authToken
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    const newEvent = await response.json();
+                    window.location.reload();
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Failed to create event');
+                }
+            } catch (err) {
+                console.error('Error creating event:', err);
+                alert('Failed to create event');
+            }
+        }
+
+        // Toggle interest
+        async function toggleInterest(eventId, button) {
+            try {
+                const response = await fetch(`/api/community/${communityId}/events/${eventId}/interest`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': authToken
+                    },
+                    body: JSON.stringify({ userId: 1 })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    button.classList.toggle('interested');
+                    button.querySelector('.interest-count').textContent = data.interestedCount;
+                }
+            } catch (err) {
+                console.error('Error toggling interest:', err);
+            }
+        }
+
+        renderCalendar();
     </script>
 </body>
 </html>

@@ -522,7 +522,3 @@ class CommunityMember(BaseClass):
             if permission not in roles.value:
                 return False, f"Missing permission: {permission.value}"
         return True, "All permissions granted"
-
-
-
-

@@ -1,32 +1,27 @@
-import asyncio
-import sys
-import threading
-
-from flask import Flask, render_template
-
-from config.config import CONFIG
-from global_src.db import DATABASE
 import os
+from flask import Flask, render_template
 from routing.api import api
+from global_src.db import DATABASE
+from config.config import CONFIG
 
-app = Flask(__name__)
+base_dir = os.path.dirname(os.path.abspath(__file__))
+client_folder = os.path.abspath(os.path.join(base_dir, "..", "client"))
+template_folder = os.path.join(client_folder, "templates")
+static_folder = os.path.join(client_folder, "static")
+app = Flask(__name__,
+            template_folder=template_folder,
+            static_folder=static_folder)
+
 app.json.sort_keys = False
-app.register_blueprint(api)
-
-
-async def main():
+app.register_blueprint(api, url_prefix='/api')
+@app.before_request
+async def startup():
     await DATABASE.initialize()
     await CONFIG.load_config()
-    asyncio.create_task(CONFIG.auto_reload())
-
-def start_main():
-    asyncio.run(main())
-
 @app.route('/')
 async def index():
     return render_template('index.html')
 
 if __name__ == '__main__':
-    thread = threading.Thread(target=start_main, daemon=True)
-    thread.start()
-    app.run(use_reloader=False)
+    print(f"Server running. Templates at: {template_folder}")
+    app.run(debug=True)

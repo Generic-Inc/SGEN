@@ -4,6 +4,18 @@ from modules.authentications import Permissions
 from modules.posts import Post, Comment, Like
 from . import community_blueprint
 from . import api
+
+@api.route("/my-communities", methods=["GET"])
+async def get_my_communities():
+    authorization = request.headers.get('Authorization')
+    if not authorization:
+        return {"error": "Unauthorized"}, 401
+    user = await User.get_user_by_token(authorization)
+    if not user:
+        return {"error": "Unauthorized"}, 401
+    communities = await user.get_communities()
+    return {"communities": [c.public_json for c in communities]}
+
 @api.route("/feed", methods=["GET"])
 async def get_home_feed():
     authorization = request.headers.get('Authorization')

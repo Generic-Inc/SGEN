@@ -63,6 +63,7 @@ body {
     display: flex;
     margin-top: 60px;
     height: calc(100vh - 60px);
+    align-items: flex-start;
 }
 
 .sidebar {
@@ -71,6 +72,7 @@ body {
     border-right: 1px solid #e0e0e0;
     overflow-y: auto;
     flex-shrink: 0;
+    margin-top: 0 !important;
 }
 
 .nav-item, .community-item {
@@ -86,7 +88,7 @@ body {
 
 .main-content {
     flex: 1;
-    padding: 30px 40px;
+    padding: 0px 40px;
     overflow-y: auto;
     display: flex;
     justify-content: center;

@@ -10,7 +10,9 @@ async def community_events_page(community_id: int):
     """Render the events page for a community"""
 
     # Check if user is logged in
-    auth_token = session.get('auth_token')
+    auth_token = session.get('sgen_token')
+    if not auth_token:
+        return redirect(url_for('pages.login_page'))
 
     # Get user from token
     user = await User.get_user_by_token(auth_token)

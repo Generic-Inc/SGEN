@@ -114,6 +114,7 @@ FROM Profiles
         """, (token_hash,))
         if not token_fetch:
             return None
+        await DATABASE.execute("UPDATE AuthTokens SET last_used=? WHERE token_hash=?", (datetime.now(), token_hash))
         user_id, = token_fetch
         return await cls.get_user(user_id)
 

@@ -39,7 +39,7 @@ class AuthenticationsUser(User):
                                           SELECT token_hash 
                                           FROM AuthTokens 
                                           WHERE user_id=? 
-                                          ORDER BY created ASC LIMIT 1)""", (self.user_id,))
+                                          ORDER BY last_used ASC LIMIT 1)""", (self.user_id,))
             return False
         return True
 
@@ -61,6 +61,7 @@ class AuthenticationsUser(User):
         await DATABASE.execute("""INSERT INTO AuthTokens (user_id, user_agent, token_hash)
                                  VALUES (?,?,?)""", (self.user_id, user_agent, hashed_token))
         return new_token
+
 
 
 

@@ -1,7 +1,5 @@
 {% extends "base.html" %}
-
 {% block title %}Home - SGEN{% endblock %}
-
 {% block content %}
     <div id="login-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f0f2f5; z-index: 1000; display: flex; align-items: center; justify-content: center;">
         <div style="background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); width: 350px; text-align: center;">
@@ -31,11 +29,9 @@
     </div>
 
     <div class="feed-container" style="width: 100%; max-width: 600px;">
-
-        <div class="post-card" style="padding: 16px; display: flex; gap: 12px; align-items: center;">
+        <div id="create-post-container" class="post-card" style="padding: 16px; display: none; gap: 12px; align-items: center;">
             <div class="user-avatar" style="background-image: url('https://placehold.co/50'); background-size: cover;"></div>
-
-            <input type="text" placeholder="What's happening?" style="
+            <input type="text" id="new-post-content" placeholder="What's happening?" style="
                 flex: 1;
                 border: none;
                 background: #f0f2f5;
@@ -43,11 +39,9 @@
                 padding: 12px 20px;
                 outline: none;
                 font-size: 15px;">
+            <i class="fa-regular fa-paper-plane" onclick="createPost()" style="color:#d93025; cursor:pointer; font-size: 20px; margin-left: 8px;"></i>
         </div>
-
-        <div id="feed-content">
-            </div>
-
+        <div id="feed-content"></div>
     </div>
 
     <div class="right-sidebar" style="margin-left: 20px;">

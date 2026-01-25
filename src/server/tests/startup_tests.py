@@ -2,7 +2,7 @@ import asyncio
 import json
 from pprint import pprint
 
-from config.config import CONFIG
+from ..configfiles.config import CONFIG
 from global_src.db import DATABASE
 
 

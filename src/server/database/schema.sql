@@ -66,13 +66,6 @@ BEGIN
     UPDATE Communities SET community_name = lower(NEW.community_name) WHERE community_id = NEW.community_id;
 END;
 
-INSERT INTO Profiles (username, display_name, _email, bio)
-VALUES("admin", "Admin", "ryankgithub@gmail.com", "Hi im Ryan")
-ON CONFLICT(username) DO NOTHING;
-INSERT INTO Communities (community_name, display_name, owner_id, description)
-VALUES("sgen", "SGEN Community", 1, "The official community for SGEN users.")
-ON CONFLICT(community_name) DO NOTHING;
-
 CREATE TABLE IF NOT EXISTS Memberships (
     member_id INT NOT NULL,
     community_id INT NOT NULL,
@@ -127,20 +120,6 @@ CREATE TABLE IF NOT EXISTS EventAttendance (
     FOREIGN KEY (user_id) REFERENCES Profiles(user_id),
     UNIQUE(event_id, user_id)
 );
-
-INSERT INTO Events (event_name, event_description, scheduled_date, event_location, community_id, creator_id, image_url)
-VALUES (
-    "SGEN Meetup 2025",
-    "Join us for our first community meetup!",
-    DATETIME('2025-02-15 18:00:00'),
-    "Marina Bay Sands Convention Center",
-    1,
-    1,
-    "https://placehold.co/800x400"
-) ON CONFLICT DO NOTHING;
-
-INSERT INTO EventAttendance (event_id, user_id)
-VALUES (1, 1);
 
 INSERT INTO Events (event_name, event_description, scheduled_date, event_location, community_id, creator_id, image_url)
 VALUES (

@@ -1,0 +1,52 @@
+{% macro topnav() %}
+<div class="header">
+    <div class="logo-section">
+        <div class="logo">
+            <img src="https://cdn-icons-png.flaticon.com/512/3468/3468377.png" alt="SGEN Logo" class="logo-img">
+        </div>
+        <div class="brand-name">SGEN</div>
+    </div>
+    <div class="header-actions">
+        <button class="create-btn">
+            <span>+</span>
+            <span>Create</span>
+        </button>
+        <div class="profile-icon"></div>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro sidenav() %}
+<div class="sidebar">
+    <div class="nav-item" onclick="loadHomeFeed()" style="cursor: pointer;">
+        <span class="material-icons">home</span>
+        <span>Home</span>
+    </div>
+
+    <div id="community-menu" style="display: none;">
+        <div class="nav-item">
+            <span class="material-icons">chat_bubble_outline</span>
+            <span id="nav-chat-label">Chat</span>
+        </div>
+        <div class="nav-item">
+            <span class="material-icons">event</span>
+            <span id="nav-events-label">Events</span>
+        </div>
+        <div class="nav-item">
+            <span class="material-icons">article</span>
+            <span id="nav-posts-label">Posts</span>
+        </div>
+    </div>
+
+    <div class="section-title">Your Communities ▼</div>
+
+    <div id="my-communities-list">
+        </div>
+
+    <div class="section-title">Recommended Communities ▼</div>
+    <div class="community-item">
+        <span class="material-icons">groups</span>
+        <span>SG Hawker Centers</span>
+    </div>
+</div>
+{% endmacro %}

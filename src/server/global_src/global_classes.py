@@ -459,6 +459,7 @@ FROM Communities
         ON CONFLICT 
         DO UPDATE SET active=1
         """, (self.community_id, user_id, role))
+        await DATABASE.commit()
         return await CommunityMember.get_member(user_id=user_id, community_id=self.community_id)
 
     async def delete_member(self, user_id: int):

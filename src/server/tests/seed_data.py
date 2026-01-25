@@ -4,7 +4,6 @@ from global_src.global_classes import User, Community
 from modules.authentications import SaltHash, AuthenticationsUser
 from modules.posts import Post, Comment
 
-
 async def main():
     await DATABASE.initialize()
     await CONFIG.load_config()

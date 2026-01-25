@@ -12,5 +12,6 @@ user_blueprint.register_blueprint(auth_blueprint)
 from . import community
 from . import user
 from . import main
+from . import events
 from . import authentication
 from . import posts

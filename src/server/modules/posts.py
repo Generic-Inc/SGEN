@@ -164,6 +164,16 @@ class Post(BaseClass):
                    # Name doesn't matter for creation response usually
                    author=author, created=p_created, modified=p_mod, active=p_active,
                    image_url=image_url, like_count=0)
+
+    async def update(self, new_content: str) -> "Post":
+        await DATABASE.execute(
+            "UPDATE Posts SET content = ?, modified = CURRENT_TIMESTAMP WHERE post_id = ?",
+            (new_content, self.post_id)
+        )
+        await DATABASE.commit()
+        self.content = new_content
+        return self
+
     async def delete(self) -> bool:
         await DATABASE.execute("UPDATE Posts SET active = 0 WHERE post_id = ?", (self.post_id,))
         await DATABASE.commit()
@@ -281,7 +291,10 @@ class Comment(BaseClass):
         return cls(c_id, c_content, c_post_id, author, c_created, c_mod, c_active, like_count=like_cnt)
 
     async def update(self, new_content: str) -> "Comment":
-        await DATABASE.execute("UPDATE Comments SET content = ? WHERE comment_id = ?", (new_content, self.comment_id))
+        await DATABASE.execute(
+            "UPDATE Comments SET content = ?, modified = CURRENT_TIMESTAMP WHERE comment_id = ?",
+            (new_content, self.comment_id)
+        )
         await DATABASE.commit()
         return await self.get_by_id(self.comment_id)
 

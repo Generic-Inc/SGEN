@@ -144,6 +144,13 @@ CREATE TABLE IF NOT EXISTS Posts (
     FOREIGN KEY (author_id) REFERENCES Profiles(user_id)
 );
 
+CREATE TRIGGER IF NOT EXISTS UpdatePostsModified
+AFTER UPDATE ON Posts
+FOR EACH ROW
+BEGIN
+    UPDATE Posts SET modified = (DATETIME('now', 'localtime')) WHERE post_id = OLD.post_id;
+END;
+
 CREATE TABLE IF NOT EXISTS Comments (
     comment_id INTEGER PRIMARY KEY AUTOINCREMENT,
     content TEXT NOT NULL,
@@ -155,6 +162,13 @@ CREATE TABLE IF NOT EXISTS Comments (
     FOREIGN KEY (post_id) REFERENCES Posts(post_id),
     FOREIGN KEY (author_id) REFERENCES Profiles(user_id)
 );
+
+CREATE TRIGGER IF NOT EXISTS UpdateCommentsModified
+AFTER UPDATE ON Comments
+FOR EACH ROW
+BEGIN
+    UPDATE Comments SET modified = (DATETIME('now', 'localtime')) WHERE comment_id = OLD.comment_id;
+END;
 
 CREATE TABLE IF NOT EXISTS PostLikes (
     post_id INTEGER NOT NULL,

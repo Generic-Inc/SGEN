@@ -82,12 +82,13 @@ async def single_post(community_id: int, post_id: int):
     if request.method == "GET":
         return post.public_json
 
+
     elif request.method == "PATCH":
         if post.author.user_id != user.user_id:
-            return {"error": "Forbidden"}, 403
+            return {"error": "Forbidden: You didn't write this!"}, 403
         data = request.get_json() or {}
         new_content = data.get("content")
-        if not new_content: return {"error": "Missing content"}, 400
+        if not new_content: return {"error": "Content cannot be empty"}, 400
         await post.update(new_content)
         return post.public_json
 
@@ -166,7 +167,7 @@ async def single_comment(community_id: int, post_id: int, comment_id: int):
             return {"error": "Forbidden"}, 403
         data = request.get_json() or {}
         new_content = data.get("content")
-        if not new_content: return {"error": "Missing content"}, 400
+        if not new_content: return {"error": "Content cannot be empty"}, 400
         await comment.update(new_content)
         return comment.public_json
 

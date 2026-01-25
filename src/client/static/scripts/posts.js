@@ -35,7 +35,11 @@ async function openCreateModal() {
 }
 
 function closeCreateModal() {
-    document.getElementById("create-modal").style.display = "none";
+    const modal = document.getElementById("create-modal");
+    modal.style.display = "none";
+    const btn = modal.querySelector("button");
+    btn.innerText = "Post";
+    btn.setAttribute("onclick", "submitNewPost()");
 }
 
 async function submitNewPost() {
@@ -91,6 +95,10 @@ function createPostHTML(post, showContext) {
     const heartClass = post.isLiked ? 'fa-solid' : 'fa-regular';
     const colorClass = post.isLiked ? 'liked' : '';
 
+    // Check if modified is significantly after created (buffer for DB slight delays)
+    const modObj = new Date(post.modified);
+    const isEdited = (modObj - dateObj) > 2000;
+
     let contextHTML = "";
     if (showContext && post.communityName) {
         contextHTML = `
@@ -107,16 +115,28 @@ function createPostHTML(post, showContext) {
     return `
     <div class="post-card" id="post-${post.postId}" style="transition: opacity 0.3s;">
         <div class="post-header" style="flex-direction: column; align-items: flex-start;">
-            <div style="display:flex; justify-content:space-between; width:100%;">
+            <div style="display:flex; justify-content:space-between; width:100%; align-items: flex-start;">
                 ${contextHTML}
-                <div style="cursor:pointer; color:#ccc;" onclick="deletePost(${post.communityId}, ${post.postId})">
-                    <i class="fa-solid fa-trash"></i>
+                
+                <div style="display: flex; gap: 12px; color: #ccc;">
+                    <div style="cursor:pointer;" title="Edit Post" 
+                         onclick="openEditPostModal(${post.postId}, ${post.communityId}, \`${post.content.replace(/`/g, '\\`').replace(/\n/g, '\\n')}\`)">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </div>
+                    
+                    <div style="cursor:pointer;" title="Delete Post" 
+                         onclick="deletePost(${post.communityId}, ${post.postId})">
+                        <i class="fa-solid fa-trash"></i>
+                    </div>
                 </div>
             </div>
             
             <div style="display: flex; align-items: center; gap: 12px; width:100%; margin-top:4px;">
                 <img src="${post.author.avatarUrl || 'https://placehold.co/50'}" class="user-avatar">
-                <div class="user-info"><h4>${post.author.displayName}</h4><span>${dateStr}</span></div>
+                <div class="user-info">
+                    <h4>${post.author.displayName}</h4>
+                    <span>${dateStr} ${isEdited ? '<span style="font-size:11px; opacity:0.6; font-style:italic;">(edited)</span>' : ''}</span>
+                </div>
             </div>
         </div>
         <div class="post-content">${contentDisplay}</div>
@@ -289,6 +309,65 @@ async function deleteComment(communityId, postId, commentId) {
             method: "DELETE"
         });
 
+        if (res.ok) {
+            toggleComments(communityId, postId, true);
+        }
+    } catch (e) { console.error(e); }
+}
+
+function openEditPostModal(postId, communityId, rawContent) {
+    const modal = document.getElementById("create-modal");
+    const titleInput = document.getElementById("post-title");
+    const descInput = document.getElementById("post-desc");
+    const submitBtn = modal.querySelector("button[onclick='submitNewPost()']");
+
+    let title = "";
+    let desc = rawContent;
+    if (rawContent.startsWith("**")) {
+        const parts = rawContent.split("\n\n");
+        title = parts[0].replace(/\*\*/g, "");
+        desc = parts.slice(1).join("\n\n");
+    }
+
+    titleInput.value = title;
+    descInput.value = desc;
+
+    submitBtn.innerText = "Save Changes";
+    submitBtn.setAttribute("onclick", `savePostEdit(${postId}, ${communityId})`);
+
+    modal.style.display = "flex";
+}
+
+async function savePostEdit(postId, communityId) {
+    const title = document.getElementById("post-title").value.trim();
+    const desc = document.getElementById("post-desc").value.trim();
+    let finalContent = title ? `**${title}**\n\n${desc}` : desc;
+
+    try {
+        const res = await authFetch(`/api/community/${communityId}/posts/${postId}`, {
+            method: "PATCH",
+            body: JSON.stringify({ content: finalContent })
+        });
+
+        if (res.ok) {
+            closeCreateModal();
+            const btn = document.querySelector("button[onclick^='savePostEdit']");
+            btn.innerText = "Post";
+            btn.setAttribute("onclick", "submitNewPost()");
+
+            window.refreshFeed(window.currentCommunityId);
+        }
+    } catch (e) { console.error(e); }
+}
+
+async function editComment(communityId, postId, commentId, currentContent) {
+    const newContent = prompt("Edit your comment:", currentContent);
+    if (newContent === null || newContent.trim() === "" || newContent === currentContent) return;
+    try {
+        const res = await authFetch(`/api/community/${communityId}/posts/${postId}/comments/${commentId}`, {
+            method: "PATCH",
+            body: JSON.stringify({ content: newContent.trim() })
+        });
         if (res.ok) {
             toggleComments(communityId, postId, true);
         }

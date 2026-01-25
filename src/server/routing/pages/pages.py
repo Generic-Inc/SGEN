@@ -13,4 +13,6 @@ def signup_page():
 
 @pages_blueprint.route('/')
 def home_page():
+    if not request.cookies.get('token'):
+        return redirect(url_for('pages.login_page'))
     return render_template('index.html')

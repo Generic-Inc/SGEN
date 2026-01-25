@@ -24,19 +24,30 @@
     </div>
 
     <div class="right-sidebar" style="margin-left: 20px;">
-        <div class="guidelines-card">
-            <div class="guidelines-title">SG Explorers</div>
+
+        <div id="info-card" class="guidelines-card" style="display: none;"> <div id="info-title" class="guidelines-title">Loading...</div>
+
             <p class="guidelines-text">
-                The official community for SGEN users.
+                <span id="info-desc">Community details loading...</span>
                 <br><br>
-                <strong>1,201 Members</strong><br>
-                <span style="color: green;">●</span> 147 Online
+                <strong id="info-members">0 Members</strong><br>
+                <span style="color: green;">●</span> <span id="info-online">0 Online</span>
             </p>
+
             <hr style="border: 0; border-top: 1px solid #eee; margin: 12px 0;">
+
             <div class="guidelines-title">About</div>
             <p class="guidelines-text">
-                MBSDay is a day where community members gather and explore Marina Bay Sands together!
+                Welcome to the community! Be respectful and have fun.
             </p>
         </div>
+
+        <div id="home-card" class="guidelines-card">
+            <div class="guidelines-title">Welcome to SGEN!</div>
+            <p class="guidelines-text">
+                Explore Singapore's vibrant communities. Join a group from the left sidebar to get started!
+            </p>
+        </div>
+
     </div>
 {% endblock %}

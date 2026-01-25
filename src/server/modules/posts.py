@@ -23,7 +23,6 @@ class Post(BaseClass):
         self.modified = modified
         self.active = active
         self.like_count = like_count
-        # Default to False; updated dynamically if viewer liked it
         self.is_liked_by_viewer = False
 
     @property
@@ -37,7 +36,7 @@ class Post(BaseClass):
             "created": self.created,
             "modified": self.modified,
             "likeCount": self.like_count,
-            "isLiked": self.is_liked_by_viewer  # <--- Sends Red Heart status to JS
+            "isLiked": self.is_liked_by_viewer
         }
 
     @classmethod
@@ -48,23 +47,18 @@ class Post(BaseClass):
         2. If Empty -> Fetch GLOBAL posts (Scenario A).
         3. If Joined -> Fetch SUBSCRIBED posts (Scenario B).
         """
-        # 1. Get joined community IDs
         membership_query = "SELECT community_id FROM Memberships WHERE member_id = ? AND active = 1"
         rows = await DATABASE.fetch_all(membership_query, (viewer_id,))
         community_ids = [r[0] for r in rows] if rows else []
 
-        # 2. Decide the WHERE clause
         if not community_ids:
-            # === SCENARIO A: DISCOVERY MODE ===
             where_clause = "p.active = 1"
             params = (viewer_id,)
         else:
-            # === SCENARIO B: SUBSCRIPTION MODE ===
             placeholders = ",".join(["?"] * len(community_ids))
             where_clause = f"p.community_id IN ({placeholders}) AND p.active = 1"
             params = (viewer_id, *community_ids)
 
-        # 3. Run the Query (Includes is_liked check)
         query = f"""
                 SELECT p.post_id, \
                        p.content, \
@@ -152,7 +146,6 @@ class Post(BaseClass):
 
     @classmethod
     def _parse_rows(cls, rows):
-        """Helper to parse raw SQL rows into Post objects safely"""
         posts = []
         for row in rows:
             (p_id, p_content, p_img, p_comm_id, p_created, p_mod, p_active,
@@ -246,7 +239,17 @@ class Comment(BaseClass):
         for row in rows:
             (c_id, c_content, c_post_id, c_created, c_mod, c_active,
              u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio, u_created, like_cnt) = row
-            author = User(u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio, u_created)
+
+            author = User(
+                user_id=u_id,
+                username=u_username,
+                display_name=u_display,
+                email=u_email,
+                language=u_lang,
+                avatar_url=u_avatar,
+                bio=u_bio,
+                created=u_created
+            )
             comments.append(cls(c_id, c_content, c_post_id, author, c_created, c_mod, c_active, like_count=like_cnt))
         return comments
 
@@ -288,13 +291,22 @@ class Comment(BaseClass):
         if not row: return None
         (c_id, c_content, c_post_id, c_created, c_mod, c_active,
          u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio, u_created, like_cnt) = row
-        author = User(u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio, u_created)
+
+        author = User(
+            user_id=u_id,
+            username=u_username,
+            display_name=u_display,
+            email=u_email,
+            language=u_lang,
+            avatar_url=u_avatar,
+            bio=u_bio,
+            created=u_created
+        )
         return cls(c_id, c_content, c_post_id, author, c_created, c_mod, c_active, like_count=like_cnt)
 
     async def update(self, new_content: str) -> "Comment":
         await DATABASE.execute("UPDATE Comments SET content = ? WHERE comment_id = ?", (new_content, self.comment_id))
         return await self.get_by_id(self.comment_id)
-
 
 class Like:
     @staticmethod

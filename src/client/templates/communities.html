@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% from 'components/post.html' import postsfeed %}
+
+{% block title %}Communities - SGEN{% endblock %}
+
+{% block content %}
+{{ postsfeed(community_posts) }}
+
+{% endblock %}

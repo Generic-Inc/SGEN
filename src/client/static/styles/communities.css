@@ -1,0 +1,64 @@
+
+
+.community-container {
+    width: 100%;
+}
+
+.feed-container {
+    padding-left: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    max-width: 50%;
+}
+
+.post-card {
+    border: 1px solid #ccc;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    background-color: #fff;
+}
+
+.post-header {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+    align-items: center;
+}
+
+.post-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.post-avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+}
+
+.post-info > h4 {
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.post-info > span {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.post-content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.post-content > p {
+    margin-bottom: 0.5rem;
+}
+
+.post-content > img {
+    width: 95%;
+    margin: 1rem auto;
+    border-radius: 1rem;
+}

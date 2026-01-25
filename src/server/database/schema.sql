@@ -113,6 +113,7 @@ CREATE TABLE IF NOT EXISTS AuthTokens (
 
     created DATETIME DEFAULT (DATETIME('now', 'localtime')),
     last_used DATETIME DEFAULT (DATETIME('now', 'localtime')),
+
     FOREIGN KEY (user_id) REFERENCES Profiles(user_id)
 );
 

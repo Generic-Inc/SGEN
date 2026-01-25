@@ -36,12 +36,10 @@ class Post(BaseClass):
 
     @classmethod
     async def get_user_feed(cls, viewer_id: int) -> list['Post']:
-        # 1. Check Memberships
         membership_query = "SELECT community_id FROM Memberships WHERE member_id = ? AND active = 1"
         rows = await DATABASE.fetch_all(membership_query, (viewer_id,))
         community_ids = [r[0] for r in rows] if rows else []
 
-        # 2. Build Where Clause
         if not community_ids:
             where_clause = "p.active = 1"
             params = (viewer_id,)
@@ -51,29 +49,29 @@ class Post(BaseClass):
             params = (viewer_id, *community_ids)
 
         query = f"""
-                SELECT p.post_id, p.content, p.image_url, p.community_id, c.display_name,
-                       p.created, p.modified, p.active,
-                       u.user_id, u.username, u.display_name, u._email, u.language, u.avatar_url, u.bio, u.created,
-                       (SELECT COUNT(*) FROM PostLikes pl WHERE pl.post_id = p.post_id) as like_count,
-                       (SELECT COUNT(*) FROM PostLikes pl WHERE pl.post_id = p.post_id AND pl.user_id = ?) as is_liked
-                FROM Posts p
-                JOIN Profiles u ON p.author_id = u.user_id
-                JOIN Communities c ON p.community_id = c.community_id 
-                WHERE {where_clause}
-                ORDER BY p.created DESC
-                LIMIT 50
-                """
+            SELECT p.post_id, p.content, p.image_url, p.community_id, c.display_name,
+                   p.created, p.modified, p.active,
+                   u.user_id, u.username, u.display_name, u._email, u.language, u.avatar_url, u.bio, u.created,
+                   (SELECT COUNT(*) FROM PostLikes pl WHERE pl.post_id = p.post_id) as like_count,
+                   (SELECT COUNT(*) FROM PostLikes pl WHERE pl.post_id = p.post_id AND pl.user_id = ?) as is_liked
+            FROM Posts p
+            JOIN Profiles u ON p.author_id = u.user_id
+            JOIN Communities c ON p.community_id = c.community_id 
+            WHERE {where_clause}
+            ORDER BY p.created DESC
+            LIMIT 50
+        """
         rows = await DATABASE.fetch_all(query, params)
         return cls._parse_rows(rows)
 
     @classmethod
-    async def get_by_community(cls, community_id: int, viewer_id: int = None) -> list['Post']:
+    async def get_by_community(cls, community_id: int, viewer_id: int = None, community_name: str = "Unknown") -> list[
+        'Post']:
         query = """
                 SELECT p.post_id, \
                        p.content, \
                        p.image_url, \
-                       p.community_id, \
-                       c.display_name,
+                       p.community_id,
                        p.created, \
                        p.modified, \
                        p.active,
@@ -89,13 +87,13 @@ class Post(BaseClass):
                        (SELECT COUNT(*) FROM PostLikes pl WHERE pl.post_id = p.post_id AND pl.user_id = ?) as is_liked
                 FROM Posts p
                          JOIN Profiles u ON p.author_id = u.user_id
-                         JOIN Communities c ON p.community_id = c.community_id
                 WHERE p.community_id = ? \
                   AND p.active = 1
-                ORDER BY p.created DESC
+                ORDER BY p.created DESC \
                 """
         rows = await DATABASE.fetch_all(query, (viewer_id, community_id))
-        return cls._parse_rows(rows)
+
+        return cls._parse_rows(rows, default_community_name=community_name)
 
     @classmethod
     async def get_by_id(cls, post_id: int, viewer_id: int = None) -> Optional['Post']:
@@ -121,18 +119,23 @@ class Post(BaseClass):
                 FROM Posts p
                          JOIN Profiles u ON p.author_id = u.user_id
                          JOIN Communities c ON p.community_id = c.community_id
-                WHERE p.post_id = ?
+                WHERE p.post_id = ? \
                 """
         row = await DATABASE.fetch_one(query, (viewer_id, post_id))
         if not row: return None
         return cls._parse_rows([row])[0]
 
     @classmethod
-    def _parse_rows(cls, rows):
+    def _parse_rows(cls, rows, default_community_name=None):
         posts = []
         for row in rows:
-            (p_id, p_content, p_img, p_comm_id, p_comm_name, p_created, p_mod, p_active,
-             u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio, u_created, like_cnt, is_liked) = row
+            if len(row) == 18:
+                (p_id, p_content, p_img, p_comm_id, p_comm_name, p_created, p_mod, p_active,
+                 u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio, u_created, like_cnt, is_liked) = row
+            else:
+                (p_id, p_content, p_img, p_comm_id, p_created, p_mod, p_active,
+                 u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio, u_created, like_cnt, is_liked) = row
+                p_comm_name = default_community_name
 
             author_obj = User(user_id=u_id, username=u_username, display_name=u_display, email=u_email,
                               language=u_lang, avatar_url=u_avatar, bio=u_bio, created=u_created)
@@ -149,20 +152,18 @@ class Post(BaseClass):
         'Post']:
         query = """
                 INSERT INTO Posts (content, community_id, author_id, image_url)
-                VALUES (?, ?, ?, ?) RETURNING post_id;
+                VALUES (?, ?, ?, ?) RETURNING post_id, created, modified, active; \
                 """
         row = await DATABASE.fetch_one(query, (content, community_id, author_id, image_url))
         if not row: return None
+        (p_id, p_created, p_mod, p_active) = row
 
         await DATABASE.commit()
-
-        return await cls.get_by_id(row[0], viewer_id=author_id)
-
-    async def update(self, new_content: str) -> "Post":
-        await DATABASE.execute("UPDATE Posts SET content = ? WHERE post_id = ?", (new_content, self.post_id))
-        await DATABASE.commit()  # <--- CRITICAL FIX
-        return await self.get_by_id(self.post_id)
-
+        author = await User.get_user(author_id)
+        return cls(post_id=p_id, content=content, community_id=community_id, community_name="Unknown",
+                   # Name doesn't matter for creation response usually
+                   author=author, created=p_created, modified=p_mod, active=p_active,
+                   image_url=image_url, like_count=0)
 
 class Comment(BaseClass):
     def __init__(self, comment_id: int, content: str, post_id: int, author: User, created: str, modified: str,

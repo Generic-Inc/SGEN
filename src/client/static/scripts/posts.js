@@ -11,14 +11,11 @@ async function openCreateModal() {
     modal.style.display = "flex";
 
     if (window.currentCommunityId) {
-        console.log("Modal Mode: Community " + window.currentCommunityId);
         selectWrapper.style.display = "none";
         hiddenId.value = window.currentCommunityId;
-
         const titleEl = document.getElementById("info-title");
         guideName.innerText = titleEl ? titleEl.innerText : "Community";
     } else {
-        console.log("Modal Mode: Home Feed");
         selectWrapper.style.display = "block";
         hiddenId.value = "";
         guideName.innerText = "General";
@@ -46,37 +43,26 @@ async function submitNewPost() {
     const selectId = document.getElementById("modal-community-select").value;
     const targetId = hiddenId || selectId;
 
-    if (!targetId) {
-        alert("Please select a community.");
-        return;
-    }
+    if (!targetId) return alert("Please select a community.");
 
     const title = document.getElementById("post-title").value.trim();
     const desc = document.getElementById("post-desc").value.trim();
 
-    if (!desc) {
-        alert("Please write a description.");
-        return;
-    }
+    if (!desc) return alert("Please write a description.");
 
     let finalContent = desc;
-    if (title) {
-        finalContent = `**${title}**\n\n${desc}`;
-    }
+    if (title) finalContent = `**${title}**\n\n${desc}`;
 
     try {
         const res = await authFetch(`/api/community/${targetId}/posts`, {
             method: "POST",
-            body: JSON.stringify({
-                content: finalContent,
-                imageUrl: null
-            })
+            body: JSON.stringify({ content: finalContent, imageUrl: null })
         });
 
         if (res.ok) {
             closeCreateModal();
             if (window.currentCommunityId == targetId) {
-                loadCommunityFeed(targetId);
+                if(window.refreshFeed) window.refreshFeed(targetId);
             } else {
                 alert("Post created successfully!");
             }
@@ -111,7 +97,7 @@ function createPostHTML(post, showContext) {
     if (showContext && post.communityName) {
         contextHTML = `
             <div style="font-size: 13px; color: #65676B; margin-bottom: 8px; padding-bottom:8px; border-bottom:1px solid #f0f2f5;">
-                Posted in <a href="#" onclick="loadCommunityFeed(${post.communityId}); return false;" style="font-weight:600; color:#1c1e21; text-decoration:none;">${post.communityName}</a>
+                Posted in <a href="#" onclick="openCommunity(${post.communityId}); return false;" style="font-weight:600; color:#1c1e21; text-decoration:none;">${post.communityName}</a>
             </div>
         `;
     }
@@ -209,11 +195,11 @@ async function toggleComments(communityId, postId, forceRefresh = false) {
                     
                     <input type="text" 
                            placeholder="Write a comment..." 
-                           onkeydown="handleCommentKey(event, ${postId}, this)"
+                           onkeydown="handleCommentKey(event, ${communityId}, ${postId}, this)"
                            style="flex:1; border:none; background:transparent; outline:none;">
                     
                     <i class="fa-regular fa-paper-plane" 
-                       onclick="submitComment(${postId}, this.previousElementSibling)"
+                       onclick="submitComment(${communityId}, ${postId}, this.previousElementSibling)"
                        style="color:#65676B; cursor:pointer;"></i>
                  </div>
             </div>`;
@@ -221,31 +207,30 @@ async function toggleComments(communityId, postId, forceRefresh = false) {
     } catch(e) { section.innerHTML = "Error loading comments."; }
 }
 
-async function submitComment(postId, inputElement) {
+async function submitComment(communityId, postId, inputElement) {
     const content = inputElement.value.trim();
     if (!content) return;
-
-    if (!window.currentCommunityId) {
-        alert("Please enter the community to comment.");
+    if (!communityId) {
+        alert("Error: Community ID missing.");
         return;
     }
 
     try {
-        const res = await authFetch(`/api/community/${window.currentCommunityId}/posts/${postId}/comments`, {
+        const res = await authFetch(`/api/community/${communityId}/posts/${postId}/comments`, {
             method: "POST",
             body: JSON.stringify({ content: content })
         });
 
         if (res.ok) {
             inputElement.value = "";
-            toggleComments(window.currentCommunityId, postId, true);
+            toggleComments(communityId, postId, true);
         }
     } catch (e) { console.error(e); }
 }
 
-function handleCommentKey(event, postId, inputElement) {
+function handleCommentKey(event, communityId, postId, inputElement) {
     if (event.key === "Enter") {
-        submitComment(postId, inputElement);
+        submitComment(communityId, postId, inputElement);
     }
 }
 

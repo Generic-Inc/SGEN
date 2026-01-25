@@ -42,7 +42,7 @@ async def get_user(user_id: int):
 
 
 
-@user_blueprint.route("/<int:user_id>/communities")
+@user_blueprint.route("<int:user_id>/communities")
 async def get_user_communities(user_id: int):
     """Get a list of communities that a user is a member of by their user ID"""
     authorization = request.cookies.get('token')
@@ -56,5 +56,18 @@ async def get_user_communities(user_id: int):
         return {"error": "User not found"}, 404
 
     communities = await user_get.get_communities()
+    return {"communities": [i.public_json for i in communities]}
+
+@user_blueprint.route("/communities")
+async def get_user_communities():
+    """Get a list of communities that a user is a member of by their user ID"""
+    authorization = request.cookies.get('token')
+    if not authorization:
+        return {"error": "Unauthorized"}, 401
+    user = await User.get_user_by_token(authorization)
+    if not user:
+        return {"error": "Unauthorized"}, 401
+
+    communities = await user.get_communities()
     return {"communities": [i.public_json for i in communities]}
 

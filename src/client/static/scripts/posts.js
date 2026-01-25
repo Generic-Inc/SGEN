@@ -111,13 +111,20 @@ function createPostHTML(post, showContext) {
         <div class="post-header" style="flex-direction: column; align-items: flex-start;">
             ${contextHTML}
             <div style="display: flex; align-items: center; gap: 12px; width:100%; margin-top:4px;">
-                <img src="${post.author.avatarUrl || 'https://placehold.co/50'}" class="user-avatar">
-                <div class="user-info"><h4>${post.author.displayName}</h4><span>${dateStr}</span></div>
+                <a href="/user/${post.author.userId}">
+                    <img src="${post.author.avatarUrl || 'https://placehold.co/50'}" class="user-avatar" style="cursor: pointer;">
+                </a>
+                <div class="user-info">
+                    <a href="/user/${post.author.userId}" style="text-decoration: none; color: inherit;">
+                        <h4 style="margin: 0; cursor: pointer;">${post.author.displayName}</h4>
+                    </a>
+                    <span>${dateStr}</span>
+                </div>
             </div>
         </div>
-        <div class="post-content">${contentDisplay}</div>
-        ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" style="width:100%; display:block; margin-top:10px;">` : ''}
-        <div class="post-actions">
+        <div class="post-content" style="margin-top: 12px;">${contentDisplay}</div>
+        ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" style="width:100%; display:block; margin-top:10px; border-radius: 8px;">` : ''}
+        <div class="post-actions" style="margin-top: 15px; display: flex; gap: 10px;">
             <button class="action-btn ${colorClass}" onclick="toggleLike(${post.communityId}, ${post.postId}, this)">
                 <i class="${heartClass} fa-heart"></i> <span class="like-count">${post.likeCount}</span> Likes
             </button>
@@ -126,7 +133,7 @@ function createPostHTML(post, showContext) {
             </button>
             <button class="action-btn"><i class="fa-solid fa-share"></i> Share</button>
         </div>
-        <div id="comments-${post.postId}" style="display:none; border-top:1px solid #f0f2f5; background:#fafafa; padding:15px;"></div>
+        <div id="comments-${post.postId}" style="display:none; border-top:1px solid #f0f2f5; background:#fafafa; padding:15px; border-radius: 0 0 8px 8px;"></div>
     </div>`;
 }
 

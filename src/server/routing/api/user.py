@@ -59,7 +59,7 @@ async def get_user_communities(user_id: int):
     return {"communities": [i.public_json for i in communities]}
 
 @user_blueprint.route("/communities")
-async def get_user_communities():
+async def get_communities():
     """Get a list of communities that a user is a member of by their user ID"""
     authorization = request.cookies.get('token')
     if not authorization:

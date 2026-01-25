@@ -44,12 +44,6 @@
     <div class="section-title">Your Communities ▼</div>
 
     <div id="my-communities-list">
-        {% for community in communities %}
-        <div class="community-item" onclick="window.location.href='/user/community/{{ community.community_id }}'">
-            <span class="material-icons">groups</span>
-            <span>{{ community.display_name }}</span>
-        </div>
-        {% endfor %}
     </div>
 
     <div class="section-title">Recommended Communities ▼</div>
@@ -62,6 +56,7 @@
         <span>SG Stories</span>
     </div>
 </div>
+<script src="{{ url_for('static', filename='scripts/generator.js') }}" defer></script>
 {% endmacro %}
 
 {% macro calendar(current_date, events_by_date={}) %}

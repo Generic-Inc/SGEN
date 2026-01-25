@@ -4,6 +4,7 @@ from enum import Enum
 class Permissions(Enum):
     JOIN_COMMUNITY = "join_community"
     CREATE_MESSAGES = "send_messages"
+    CREATE_POST_COMMENTS = "create_post_comments"
     CREATE_POSTS = "create_posts"
     JOIN_EVENTS = "join_events"
     MANAGE_MESSAGES = "manage_messages"
@@ -20,7 +21,8 @@ class PresetRoles(Enum):
     MEMBER = MUTED + [
         Permissions.CREATE_MESSAGES,
         Permissions.CREATE_POSTS,
-        Permissions.JOIN_EVENTS
+        Permissions.JOIN_EVENTS,
+        Permissions.CREATE_POST_COMMENTS,
     ]
     MODERATOR = MEMBER + [
         Permissions.MANAGE_MESSAGES,

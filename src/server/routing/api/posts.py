@@ -1,5 +1,6 @@
 from flask import request
-from global_src.global_classes import Community, User
+from global_src.global_classes import Community, User, CommunityMember
+from modules.authentications import Permissions
 from modules.posts import Post, Comment, Like
 from . import community_blueprint
 from . import api
@@ -32,6 +33,13 @@ async def community_posts(community_id: int):
         return {"posts": [p.public_json for p in posts]}
 
     elif request.method == "POST":
+        community_member = await CommunityMember.get_member(user.user_id, community_id)
+        if not community_member:
+            return {"error": "You must first join this community before posting"}, 403
+        if not community_member.requires_permissions(
+            Permissions.CREATE_POSTS
+        ):
+            return {"error": "Forbidden"}, 403
         data = request.get_json() or {}
         if not data.get("content"):
             return {"error": "Missing content"}, 400
@@ -106,6 +114,13 @@ async def post_comments(community_id: int, post_id: int):
         return {"comments": [c.public_json for c in comments]}
 
     elif request.method == "POST":
+        community_user = await CommunityMember.get_member(user.user_id, community_id)
+        if not community_user:
+            return {"error": "You must first join this community before commenting"}, 403
+        if not community_user.requires_permissions(
+            Permissions.CREATE_POST_COMMENTS
+        ):
+            return {"error": "Forbidden"}, 403
         data = request.get_json() or {}
         if not data.get("content"): return {"error": "Missing info"}, 400
         new_comment = await Comment.create(content=data.get("content"), post_id=post_id, author_id=user.user_id)

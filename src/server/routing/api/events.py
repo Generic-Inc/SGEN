@@ -12,8 +12,7 @@ async def community_events(community_id: int):
     if request.method == "GET":
         user_id = request.args.get("userId", type=int)
         events = await Event.get_by_community(community_id, user_id)
-        #return {"events": [e.public_json for e in events]}
-        return render_template("src/client/templates/events.html", events=events, community_id=community_id, user_id=user_id)
+        return {"events": [e.public_json for e in events]}
 
     elif request.method == "POST":
         data = request.get_json() or {}

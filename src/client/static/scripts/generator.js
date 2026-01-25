@@ -6,6 +6,9 @@ async function generateMyCommunities() {
         communityElement.classList.add("community-item");
         communityElement.innerHTML = `<span class="material-icons">groups</span>
 <span>${community.displayName}</span>`
+        communityElement.onclick = function() {
+            window.location.href = `/community/${community.communityId}`;
+        };
         container.appendChild(communityElement);
     }
 }

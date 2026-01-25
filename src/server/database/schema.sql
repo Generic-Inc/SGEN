@@ -43,19 +43,6 @@ CREATE TABLE IF NOT EXISTS Communities (
     FOREIGN KEY (owner_id) REFERENCES Profiles(user_id)
 );
 
-CREATE TABLE IF NOT EXISTS Events (
-    events_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    community_id INTEGER NOT NULL,
-    creator INTEGER NOT NULL,
-    event_name VARCHAR NOT NULL,
-    scheduled_date DATETIME NOT NULL DEFAULT (DATETIME('now', 'localtime')),
-    event_description VARCHAR NULL,
-    attendance TINYINT NOT NULL DEFAULT 0,
-    FOREIGN KEY(community_id) REFERENCES Communities(community_id),
-    FOREIGN KEY(creator) REFERENCES Profiles(user_id),
-    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
-    modified DATETIME DEFAULT (DATETIME('now', 'localtime'))
-)
 CREATE UNIQUE INDEX IF NOT EXISTS idx_communities_name ON Communities(community_name);
 
 CREATE TRIGGER IF NOT EXISTS UpdateCommunitiesModified
@@ -101,6 +88,90 @@ BEGIN
     UPDATE Memberships SET modified = (DATETIME('now', 'localtime')) WHERE member_id = OLD.member_id AND community_id = OLD.community_id;
 END;
 
+CREATE TABLE IF NOT EXISTS UserAuthentication (
+    user_id INT PRIMARY KEY,
+    password_hash VARCHAR(256) NOT NULL,
+    salt VARCHAR(64) NOT NULL,
+
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    modified DATETIME DEFAULT (DATETIME('now', 'localtime')),
+
+    FOREIGN KEY (user_id) REFERENCES Profiles(user_id)
+);
+
+CREATE TRIGGER IF NOT EXISTS UpdateUserAuthenticationModified
+AFTER UPDATE ON UserAuthentication
+FOR EACH ROW
+BEGIN
+    UPDATE UserAuthentication SET modified = (DATETIME('now', 'localtime')) WHERE user_id = OLD.user_id;
+END;
+
+CREATE TABLE IF NOT EXISTS AuthTokens (
+    token_hash VARCHAR(256) PRIMARY KEY,
+    user_id INT NOT NULL,
+    user_agent VARCHAR(512),
+
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    last_used DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    FOREIGN KEY (user_id) REFERENCES Profiles(user_id)
+);
+
+CREATE TABLE IF NOT EXISTS EmailVerifications (
+    email VARCHAR(254) PRIMARY KEY,
+    verification_code VARCHAR(64) NOT NULL,
+    username VARCHAR(32) NOT NULL,
+    display_name VARCHAR(64) NOT NULL,
+    language VARCHAR(32) DEFAULT 'en',
+    avatar_url VARCHAR(2048),
+    bio VARCHAR(1024),
+    password_hash VARCHAR(256) NOT NULL,
+    salt VARCHAR(64) NOT NULL,
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    is_verified TINYINT DEFAULT 0 CHECK(is_verified IN (0, 1))
+);
+
+CREATE TABLE IF NOT EXISTS Posts (
+    post_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    content TEXT NOT NULL,
+    image_url VARCHAR(2048),
+    community_id INT NOT NULL,
+    author_id INT NOT NULL,
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    modified DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    active TINYINT DEFAULT 1 CHECK(active IN (0, 1)),
+    FOREIGN KEY (community_id) REFERENCES Communities(community_id),
+    FOREIGN KEY (author_id) REFERENCES Profiles(user_id)
+);
+
+CREATE TABLE IF NOT EXISTS Comments (
+    comment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    content TEXT NOT NULL,
+    post_id INTEGER NOT NULL,
+    author_id INT NOT NULL,
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    modified DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    active TINYINT DEFAULT 1 CHECK(active IN (0, 1)),
+    FOREIGN KEY (post_id) REFERENCES Posts(post_id),
+    FOREIGN KEY (author_id) REFERENCES Profiles(user_id)
+);
+
+CREATE TABLE IF NOT EXISTS PostLikes (
+    post_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (post_id, user_id),
+    FOREIGN KEY(post_id) REFERENCES Posts(post_id) ON DELETE CASCADE,
+    FOREIGN KEY(user_id) REFERENCES Profiles(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS CommentLikes (
+    comment_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (comment_id, user_id),
+    FOREIGN KEY(comment_id) REFERENCES Comments(comment_id) ON DELETE CASCADE,
+    FOREIGN KEY(user_id) REFERENCES Profiles(user_id) ON DELETE CASCADE
+);
 CREATE TABLE IF NOT EXISTS Events (
     event_id INTEGER PRIMARY KEY AUTOINCREMENT,
     event_name VARCHAR(255) NOT NULL,
@@ -134,17 +205,3 @@ CREATE TABLE IF NOT EXISTS EventAttendance (
     UNIQUE(event_id, user_id)
 );
 
-INSERT INTO Events (event_name, event_description, scheduled_date, event_location, community_id, creator_id, image_url)
-VALUES (
-    "SGEN Meetup 2025",
-    "Join us for our first community meetup!",
-    DATETIME('2025-02-15 18:00:00'),
-    "Marina Bay Sands Convention Center",
-    1,
-    1,
-    "https://placehold.co/800x400"
-) ON CONFLICT DO NOTHING;
-
-INSERT INTO EventAttendance (event_id, user_id)
-VALUES (1, 1)
-ON CONFLICT(event_id, user_id) DO NOTHING;

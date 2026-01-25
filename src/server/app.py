@@ -1,20 +1,27 @@
-from flask import Flask
-import sys
-from pathlib import Path
-
+import os
+from flask import Flask, render_template
 from routing.api import api
+from global_src.db import DATABASE
+from config.config import CONFIG
 
-app = Flask(__name__)
+base_dir = os.path.dirname(os.path.abspath(__file__))
+client_folder = os.path.abspath(os.path.join(base_dir, "..", "client"))
+template_folder = os.path.join(client_folder, "templates")
+static_folder = os.path.join(client_folder, "static")
+app = Flask(__name__,
+            template_folder=template_folder,
+            static_folder=static_folder)
+
 app.json.sort_keys = False
-
-from routing.api.main import api
-app.register_blueprint(api)
-
+app.register_blueprint(api, url_prefix='/api')
+@app.before_request
+async def startup():
+    await DATABASE.initialize()
+    await CONFIG.load_config()
 @app.route('/')
-def test():
-    return "yep, the root route works!"
-
+async def index():
+    return render_template('index.html')
 
 if __name__ == '__main__':
-    import subprocess
-    subprocess.run(["flask", "run"])
+    print(f"Server running. Templates at: {template_folder}")
+    app.run(debug=True)

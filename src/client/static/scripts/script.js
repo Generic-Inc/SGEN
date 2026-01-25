@@ -1,39 +1,45 @@
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("SGEN Client Loaded! 🚀");
+    console.log("SGEN Client Loaded");
     loadHomeFeed();
 });
-
 async function loadHomeFeed() {
-    const feedContainer = document.getElementById("feed-content");
+    const commMenu = document.getElementById("community-menu");
+    if(commMenu) commMenu.style.display = "none";
     const homeCard = document.getElementById("home-card");
     const infoCard = document.getElementById("info-card");
     if(homeCard) homeCard.style.display = "block";
     if(infoCard) infoCard.style.display = "none";
+
     document.querySelectorAll('.community-item').forEach(el => el.style.backgroundColor = "transparent");
 
+    const feedContainer = document.getElementById("feed-content");
     feedContainer.innerHTML = `<div style="text-align:center; padding:40px; color:#888;"><i class="fas fa-spinner fa-spin fa-2x"></i><br><br>Loading Your Feed...</div>`;
 
     try {
         const response = await fetch(`/api/feed`);
         const data = await response.json();
-        renderFeed(data.posts, feedContainer);
+        renderFeed(data.posts, feedContainer, true);
     } catch (error) {
         feedContainer.innerHTML = `<div style="text-align:center; padding:20px; color:red;">Failed to load feed.</div>`;
     }
 }
 
 async function loadCommunityFeed(communityId, element) {
-    const feedContainer = document.getElementById("feed-content");
-    if(element) {
-        document.querySelectorAll('.community-item').forEach(el => el.style.backgroundColor = "transparent");
-        element.style.backgroundColor = "#e8f0fe";
-    }
+    const commMenu = document.getElementById("community-menu");
+    if(commMenu) commMenu.style.display = "block";
     const homeCard = document.getElementById("home-card");
     const infoCard = document.getElementById("info-card");
     if(homeCard) homeCard.style.display = "none";
     if(infoCard) infoCard.style.display = "block";
 
+    if(element) {
+        document.querySelectorAll('.community-item').forEach(el => el.style.backgroundColor = "transparent");
+        element.style.backgroundColor = "#e8f0fe";
+    }
+
+    const feedContainer = document.getElementById("feed-content");
     feedContainer.innerHTML = `<div style="text-align:center; padding:40px; color:#888;"><i class="fas fa-spinner fa-spin fa-2x"></i><br><br>Loading Community...</div>`;
+
     try {
         const res = await fetch(`/api/community/${communityId}`);
         if(res.ok) {
@@ -41,43 +47,66 @@ async function loadCommunityFeed(communityId, element) {
             if(document.getElementById("info-title")) document.getElementById("info-title").innerText = data.displayName;
             if(document.getElementById("info-desc")) document.getElementById("info-desc").innerText = data.description || "";
             if(document.getElementById("info-members")) document.getElementById("info-members").innerText = `${data.memberCount} Members`;
+
+            if(document.getElementById("nav-chat-label")) document.getElementById("nav-chat-label").innerText = `${data.displayName} Chat`;
+            if(document.getElementById("nav-events-label")) document.getElementById("nav-events-label").innerText = `${data.displayName} Events`;
         }
     } catch (err) {}
 
     try {
         const response = await fetch(`/api/community/${communityId}/posts`);
         const data = await response.json();
-        renderFeed(data.posts, feedContainer);
+        renderFeed(data.posts, feedContainer, false);
     } catch (error) {
         feedContainer.innerHTML = `<div style="text-align:center; padding:20px; color:red;">Error loading community.</div>`;
     }
 }
 
-function renderFeed(posts, container) {
+function renderFeed(posts, container, showContext) {
     container.innerHTML = "";
+
     if (!posts || posts.length === 0) {
         container.innerHTML = `<div style="text-align:center; padding:40px;"><h3>No posts found.</h3></div>`;
         return;
     }
+
     posts.forEach(post => {
-        container.insertAdjacentHTML('beforeend', createPostHTML(post));
+        container.insertAdjacentHTML('beforeend', createPostHTML(post, showContext));
     });
 }
 
-function createPostHTML(post) {
+function createPostHTML(post, showContext) {
     const dateObj = new Date(post.created);
     const dateStr = dateObj.toLocaleDateString() + " " + dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const heartClass = post.isLiked ? 'fa-solid' : 'fa-regular';
     const colorClass = post.isLiked ? 'liked' : '';
 
+    let contextHTML = "";
+    if (showContext && post.communityName) {
+        contextHTML = `
+            <div style="font-size: 13px; color: #65676B; margin-bottom: 8px; padding-bottom:8px; border-bottom:1px solid #f0f2f5;">
+                Posted in <a href="#" onclick="loadCommunityFeed(${post.communityId}); return false;" style="font-weight:600; color:#1c1e21; text-decoration:none;">${post.communityName}</a>
+            </div>
+        `;
+    }
+
     return `
     <div class="post-card" id="post-${post.postId}">
-        <div class="post-header">
-            <img src="${post.author.avatarUrl || 'https://placehold.co/50'}" class="user-avatar">
-            <div class="user-info"><h4>${post.author.displayName}</h4><span>${dateStr}</span></div>
+        <div class="post-header" style="flex-direction: column; align-items: flex-start;">
+            ${contextHTML}
+            <div style="display: flex; align-items: center; gap: 12px; width:100%; margin-top:4px;">
+                <img src="${post.author.avatarUrl || 'https://placehold.co/50'}" class="user-avatar">
+                <div class="user-info">
+                    <h4>${post.author.displayName}</h4>
+                    <span>${dateStr}</span>
+                </div>
+            </div>
         </div>
+        
         <div class="post-content">${post.content}</div>
+        
         ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" style="width:100%; display:block; margin-top:10px;">` : ''}
+        
         <div class="post-actions">
             <button class="action-btn ${colorClass}" onclick="toggleLike(${post.communityId}, ${post.postId}, this)">
                 <i class="${heartClass} fa-heart"></i> <span class="like-count">${post.likeCount}</span> Likes
@@ -113,8 +142,6 @@ async function toggleLike(communityId, postId, btn) {
 
 async function toggleComments(communityId, postId) {
     const section = document.getElementById(`comments-${postId}`);
-
-    // Toggle Logic
     if (section.style.display === "block") {
         section.style.display = "none";
         return;
@@ -125,7 +152,6 @@ async function toggleComments(communityId, postId) {
     try {
         const res = await fetch(`/api/community/${communityId}/posts/${postId}/comments`);
         const data = await res.json();
-
         section.innerHTML = "";
 
         if (data.comments.length === 0) {
@@ -140,7 +166,6 @@ async function toggleComments(communityId, postId) {
                 section.innerHTML += `
                 <div style="display:flex; gap:10px; margin-bottom:15px; align-items: flex-start;">
                     <img src="${c.author.avatarUrl || 'https://placehold.co/30'}" style="width:32px; height:32px; border-radius:50%;">
-                    
                     <div style="flex:1;">
                         <div style="background:#f0f2f5; padding:8px 12px; border-radius:15px; display:inline-block;">
                             <strong>${c.author.displayName}</strong>
@@ -150,7 +175,6 @@ async function toggleComments(communityId, postId) {
                             ${new Date(c.created).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                         </div>
                     </div>
-
                     <div style="text-align:center; cursor:pointer; min-width:30px;" 
                          onclick="toggleCommentLike(${communityId}, ${postId}, ${c.commentId}, this)">
                         <i class="${heartType} fa-heart" style="color: ${heartColor};"></i>
@@ -159,7 +183,6 @@ async function toggleComments(communityId, postId) {
                 </div>`;
             });
         }
-
         section.innerHTML += `
             <div style="display:flex; gap:10px; margin-top:10px; align-items:center;">
                  <div style="width:32px; height:32px; border-radius:50%; background:#ddd;"></div>
@@ -168,7 +191,6 @@ async function toggleComments(communityId, postId) {
                     <i class="fa-regular fa-paper-plane" style="color:#65676B; cursor:pointer;"></i>
                  </div>
             </div>`;
-
     } catch(e) {
         section.innerHTML = "Error loading comments.";
     }
@@ -182,24 +204,20 @@ async function toggleCommentLike(communityId, postId, commentId, btnElement) {
     if (icon.classList.contains("fa-solid")) {
         icon.classList.remove("fa-solid");
         icon.classList.add("fa-regular");
-        icon.style.color = "#65676B"; // Gray
+        icon.style.color = "#65676B";
         count--;
     } else {
         icon.classList.remove("fa-regular");
         icon.classList.add("fa-solid");
-        icon.style.color = "#FF4500"; // Red
+        icon.style.color = "#FF4500";
         count++;
     }
-
     countDiv.innerText = count > 0 ? count : "";
-
     try {
         await fetch(`/api/community/${communityId}/posts/${postId}/comments/${commentId}/likes`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ userId: 1 })
         });
-    } catch(err) {
-        console.error("Comment like failed", err);
-    }
+    } catch(err) { console.error("Comment like failed", err); }
 }

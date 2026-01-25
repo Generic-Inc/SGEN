@@ -4,22 +4,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}SGEN{% endblock %}</title>
-
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
+    <script src="{{ url_for('static', filename='scripts/script.js') }}"></script>
 </head>
 <body>
 
-    {% from 'components/components.html' import topnav, sidenav %}
+    <header class="header">
+        <div class="logo-section">
+            <div class="logo">S</div>
+            <span class="brand-name">SGEN</span>
+        </div>
 
-    {{ topnav() }}
+        <div class="header-actions">
+            <button class="create-btn">
+                <i class="fa-solid fa-plus"></i> Create
+            </button>
+            <div class="profile-icon"></div>
+        </div>
+    </header>
 
     <div class="container">
 
-        {{ sidenav() }}
+        <nav class="sidebar">
+            <div class="section-title">Menu</div>
+            <a href="/" class="nav-item">
+                <i class="fa-solid fa-house"></i> Home
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fa-solid fa-comments"></i> SG Explorers Chat
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fa-solid fa-calendar"></i> Events
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fa-solid fa-newspaper"></i> Posts
+            </a>
+
+            <div class="section-title">Your Communities</div>
+            <a href="#" class="community-item">
+                <i class="fa-solid fa-users"></i> SG Pokemon
+            </a>
+            <a href="#" class="community-item">
+                <i class="fa-solid fa-users"></i> SG Foodies
+            </a>
+        </nav>
 
         <main class="main-content">
             {% block content %}{% endblock %}
@@ -27,6 +57,6 @@
 
     </div>
 
-    <script src="{{ url_for('static', filename='scripts/script.js') }}"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

@@ -27,25 +27,6 @@ body {
     display: flex; align-items: center; justify-content: center;
     font-weight: bold;
 }
-
-.logo img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    display: block;
-}
-
-.material-icons {
-    font-size: 20px;
-    vertical-align: middle;
-}
-
-.nav-item, .community-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
 .brand-name { font-size: 18px; font-weight: 600; color: #d84315; }
 
 .header-actions { display: flex; gap: 16px; align-items: center; }
@@ -148,22 +129,3 @@ body {
 }
 .guidelines-title { font-weight: 600; margin-bottom: 10px; font-size: 16px; }
 .guidelines-text { font-size: 14px; color: #666; line-height: 1.6; }
-
-.action-btn.liked {
-    color: #FF4500;
-}
-
-.action-btn.liked i {
-    font-weight: 900;
-    transform: scale(1.1);
-    transition: transform 0.1s;
-}
-
-.post-image {
-    width: 100%;
-    height: auto;
-    display: block;
-    border-radius: 4px;
-    margin-top: 10px;
-    border: 1px solid #eee;
-}

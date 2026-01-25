@@ -1,77 +1,17 @@
+{% from 'components.html' import topnav, sidenav %}
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Events</title>
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-        <link rel="stylesheet" href="\static\styles\styles.css">
-    </head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Events</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="src\client\static\styles\styles.css">
+</head>
 <body>
-    <div class="header">
-        <div class="logo-section">
-            <div class="logo">
-                <img src="https://cdn-icons-png.flaticon.com/512/3468/3468377.png" alt="SGEN Logo" class="logo-img">
-            </div>
-            <div class="brand-name">SGEN</div> 
-        </div>
-        <div class="header-actions">
-            <button class="create-btn">
-                <span>+</span>
-                <span>Create</span>
-            </button>
-            <div class="profile-icon"></div>
-        </div>
-    </div>
-
+    {{ topnav() }}
     <div class="container">
-        <div class="sidebar">
-            <div class="nav-item">
-                <span class="material-icons">home</span>
-                <span>Home</span>
-            </div>
-            <div class="nav-item">
-                <span class="material-icons">chat_bubble_outline</span>
-                <span>SG Explorers Chat</span>
-            </div>
-            <div class="nav-item">
-                <span class="material-icons">event</span>
-                <span>SG Explorers Events</span>
-            </div>
-            <div class="nav-item">
-                <span class="material-icons">article</span>
-                <span>SG Explorers Posts</span>
-            </div>
-
-            <div class="section-title">Your Communities v</div>
-            <div class="community-item">
-                <span class="material-icons">groups</span>
-                <span>SG Pokemon</span>
-            </div>
-            <div class="community-item">
-                <span class="material-icons">groups</span>
-                <span>SG 67ers</span>
-            </div>
-            <div class="community-item">
-                <span class="material-icons">groups</span>
-                <span>SG Foodies</span>
-            </div>
-
-            <div class="section-title">Recommended Communities v</div>
-            <div class="community-item">
-                <span class="material-icons">groups</span>
-                <span>SG Hawker Centers</span>
-            </div>
-            <div class="community-item">
-                <span class="material-icons">groups</span>
-                <span>SG Stories</span>
-            </div>
-            <div class="community-item">
-                <span class="material-icons">groups</span>
-                <span>Real Community</span>
-            </div>
-        </div>
-
+        {{ sidenav() }}
         <div class="main-content">
             <div class="form-section">
                 <h1 class="page-title">Add event</h1>

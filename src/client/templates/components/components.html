@@ -23,31 +23,48 @@
         <span>Home</span>
     </div>
 
-    <div class="nav-item">
-        <span class="material-icons">chat_bubble_outline</span>
-        <span>SG Explorers Chat</span>
-    </div>
-    <div class="nav-item">
-        <span class="material-icons">event</span>
-        <span>SG Explorers Events</span>
+    <div id="community-menu" style="display: none;">
+        <div class="nav-item">
+            <span class="material-icons">chat_bubble_outline</span>
+            <span id="nav-chat-label">Chat</span>
+        </div>
+        <div class="nav-item">
+            <span class="material-icons">event</span>
+            <span id="nav-events-label">Events</span>
+        </div>
+        <div class="nav-item">
+            <span class="material-icons">article</span>
+            <span id="nav-posts-label">Posts</span>
+        </div>
     </div>
 
     <div class="section-title">Your Communities ▼</div>
-
-    <div class="community-item" onclick="loadCommunityFeed(1, this)">
+    <div class="community-item" onclick="loadCommunityFeed(2, this)">
         <span class="material-icons">groups</span>
         <span>SG Explorers</span>
     </div>
-
-    <div class="community-item" onclick="loadCommunityFeed(2, this)">
+    <div class="community-item">
+        <span class="material-icons">groups</span>
+        <span>SG 67ers</span>
+    </div>
+    <div class="community-item">
         <span class="material-icons">groups</span>
         <span>SG Foodies</span>
     </div>
+
 
     <div class="section-title">Recommended Communities ▼</div>
     <div class="community-item">
         <span class="material-icons">groups</span>
         <span>SG Hawker Centers</span>
+    </div>
+    <div class="community-item">
+        <span class="material-icons">groups</span>
+        <span>SG Stories</span>
+    </div>
+    <div class="community-item">
+        <span class="material-icons">groups</span>
+        <span>Real Community</span>
     </div>
 </div>
 {% endmacro %}

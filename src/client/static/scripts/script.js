@@ -5,15 +5,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 window.currentCommunityId = null;
 function initApp() {
-        loadHome();
-        loadMyCommunities();
+    loadHome();
+    loadMyCommunities();
 }
 
 async function authFetch(url, options = {}) {
-    if (!options.headers) options.headers = {};
-    if (USER_TOKEN) {
-        options.headers['Authorization'] = USER_TOKEN;
-    }
     options.headers['Content-Type'] = 'application/json';
 
     const response = await fetch(url, options);

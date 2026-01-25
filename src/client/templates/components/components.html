@@ -16,7 +16,7 @@
 </div>
 {% endmacro %}
 
-{% macro sidenav(communities=[], current_community=None) %}
+{% macro sidenav(current_community=None) %}
 <div class="sidebar">
     <div class="nav-item" onclick="loadHome()" style="cursor: pointer;"></div>
     <div class="nav-item" onclick="window.location.href='/'">
@@ -45,7 +45,7 @@
 
     <div id="my-communities-list">
         {% for community in communities %}
-        <div class="community-item" onclick="window.location.href='/community/{{ community.community_id }}/events'">
+        <div class="community-item" onclick="window.location.href='/user/community/{{ community.community_id }}'">
             <span class="material-icons">groups</span>
             <span>{{ community.display_name }}</span>
         </div>

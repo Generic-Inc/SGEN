@@ -3,21 +3,18 @@
 {% block title %}Home - SGEN{% endblock %}
 
 {% block content %}
-    <div class="feed-container" style="width: 100%; max-width: 600px;">
-
-        <div class="post-card" style="padding: 16px; display: flex; gap: 12px; align-items: center;">
-            <div class="user-avatar" style="background-image: url('https://placehold.co/50'); background-size: cover;"></div>
-            <input type="text" onclick="openCreateModal()" readonly placeholder="What's happening?" style="
-                flex: 1; border: none; background: #f0f2f5;
-                border-radius: 20px; padding: 12px 20px;
-                outline: none; font-size: 15px; cursor: pointer;">
+<div class="main-content">
+    <div class="feed-container">
+        <div class="post-card create-trigger-padding">
+            <div class="user-avatar" id="current-user-avatar"></div>
+            <input type="text" class="modal-input no-margin" onclick="openCreateModal('post')" readonly placeholder="What's happening?">
         </div>
 
         <div id="feed-content">
             </div>
     </div>
 
-    <div class="right-sidebar" style="margin-left: 20px;">
+    <div class="right-sidebar">
         <div id="info-card" class="guidelines-card" style="display: none;">
             <div id="info-title" class="guidelines-title">Loading...</div>
             <p class="guidelines-text">
@@ -26,63 +23,57 @@
                 <strong id="info-members">0 Members</strong>
             </p>
         </div>
-        <div id="home-card" class="guidelines-card">
+        <div class="guidelines-card">
             <div class="guidelines-title">Welcome to SGEN!</div>
             <p class="guidelines-text">Explore Singapore's vibrant communities.</p>
+            <button class="create-btn" onclick="openCreateModal('event')" style="margin-top: 15px; width: 100%;">
+                <i class="material-icons">event</i> Create Event
+            </button>
         </div>
     </div>
+</div>
 
-    <div id="create-modal" class="modal-overlay">
-        <div class="modal-container">
-
-            <div class="modal-form-section">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h2 class="modal-header">Create Post</h2>
-                    <button onclick="closeCreateModal()" style="background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
-                </div>
-
-                <div id="community-select-wrapper" style="margin-bottom: 15px; display:none;">
-                    <label style="font-size:12px; font-weight:bold; color:#666;">POST TO:</label>
-                    <select id="modal-community-select" class="modal-input" style="padding:10px; margin-top:5px;"></select>
-                </div>
-                <input type="hidden" id="modal-community-id-hidden">
-
-                <div class="image-upload-box" onclick="alert('Image upload coming soon! For now, paste a URL in the text.')">
-                    <div class="upload-icon-circle">+</div>
-                    <div>Add an image</div>
-                </div>
-
-                <input type="text" id="post-title" class="modal-input" placeholder="Add a Title to your post">
-                <textarea id="post-desc" class="modal-textarea" placeholder="Add a description to your post..."></textarea>
-
-                <div class="modal-footer">
-                    <div class="dropdown-btn">Add Event ▼</div> <button class="post-submit-btn" onclick="submitNewPost()">Post</button>
-                </div>
+<div id="create-modal" class="modal-overlay">
+    <div class="modal-container">
+        <div class="modal-form-section">
+            <div class="modal-header-row">
+                <h2 class="modal-header" id="modal-type-title">Create Post</h2>
+                <span class="close-modal" onclick="closeCreateModal()">&times;</span>
             </div>
 
-            <div class="modal-guidelines-section">
-                <div class="guidelines-box">
-                    <div class="guidelines-header"><span id="guide-comm-name">Community</span> Guidelines</div>
-
-                    <div class="guideline-item">
-                        <span class="guideline-title">Rule 1:</span>
-                        Be respectful to all members. Harassment is not tolerated.
-                    </div>
-                    <div class="guideline-item">
-                        <span class="guideline-title">Rule 2:</span>
-                        Keep discussions relevant to the community's purpose.
-                    </div>
-                    <div class="guideline-item">
-                        <span class="guideline-title">Rule 3:</span>
-                        No spam or excessive self-promotion.
-                    </div>
-                    <div class="guideline-item">
-                        <span class="guideline-title">Rule 4:</span>
-                        Protect privacy and personal information.
-                    </div>
-                </div>
+            <div id="community-select-wrapper" class="form-group" style="display:none;">
+                <label class="section-title">Post To:</label>
+                <select id="modal-community-select" class="modal-input"></select>
             </div>
 
+            <input type="hidden" id="modal-target-type" value="post">
+            <input type="hidden" id="modal-community-id-hidden">
+
+            <input type="text" id="item-title" class="modal-input" placeholder="Add a Title">
+
+            <textarea id="item-desc" class="modal-textarea" placeholder="Add a description..."></textarea>
+
+            <div id="event-fields" style="display: none;" class="form-row">
+                <input type="date" id="event-date" class="modal-input">
+                <input type="time" id="event-time" class="modal-input">
+            </div>
+
+            <div class="modal-footer">
+                <div class="image-upload-box-mini" onclick="document.getElementById('file-input').click()">
+                    <i class="material-icons">image</i>
+                    <input type="file" id="file-input" hidden>
+                </div>
+                <button class="post-submit-btn" onclick="handleFormSubmit()">Submit</button>
+            </div>
+        </div>
+
+        <div class="modal-guidelines-section">
+            <div class="guidelines-box">
+                <div class="guidelines-header"><span id="guide-comm-name">Community</span> Rules</div>
+                <div class="guideline-item"><span class="guideline-title">Respect:</span> Be kind to others.</div>
+                <div class="guideline-item"><span class="guideline-title">Relevance:</span> Keep it local to SG.</div>
+            </div>
         </div>
     </div>
+</div>
 {% endblock %}

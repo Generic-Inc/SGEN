@@ -38,6 +38,12 @@ async function handleLogin() {
     const errorDiv = document.getElementById("login-error");
     const btn = document.querySelector("#login-overlay button");
 
+    const loginData = { password: passwordInput };
+    if (usernameInput.includes("@")) {
+        loginData.email = usernameInput;
+    } else {
+        loginData.username = usernameInput;
+    }
     errorDiv.innerText = "";
     btn.disabled = true;
     btn.innerText = "Logging in...";
@@ -46,7 +52,7 @@ async function handleLogin() {
         const response = await fetch("/api/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: usernameInput, password: passwordInput })
+            body: JSON.stringify(loginData)
         });
 
         const data = await response.json();
@@ -54,7 +60,7 @@ async function handleLogin() {
         if (response.ok && data.token) {
             USER_TOKEN = data.token;
             localStorage.setItem("sgen_token", USER_TOKEN);
-            location.reload();
+            location.href = "/";
         } else {
             errorDiv.innerText = data.error || "Login failed";
             btn.disabled = false;

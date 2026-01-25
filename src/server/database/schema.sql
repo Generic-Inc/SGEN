@@ -153,5 +153,6 @@ VALUES (
     "https://placehold.co/800x400"
 ) ON CONFLICT DO NOTHING;
 
-INSERT INTO EventAttendance (event_id, user_id, status)
-VALUES (1, 1, 'interested');
+INSERT INTO EventAttendance (event_id, user_id)
+VALUES (1, 1)
+ON CONFLICT(event_id, user_id) DO NOTHING;

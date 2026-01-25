@@ -3,16 +3,10 @@ document.addEventListener("DOMContentLoaded", () => {
     initApp();
 });
 
-let USER_TOKEN = localStorage.getItem("sgen_token");
 window.currentCommunityId = null;
 function initApp() {
-    if (window.location.pathname === '/login' || window.location.pathname === '/signup') return;
-    if (!USER_TOKEN) {
-        window.location.href = "/login";
-    } else {
         loadHome();
         loadMyCommunities();
-    }
 }
 
 async function authFetch(url, options = {}) {

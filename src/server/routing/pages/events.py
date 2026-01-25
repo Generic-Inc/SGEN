@@ -11,13 +11,11 @@ async def community_events_page(community_id: int):
 
     # Check if user is logged in
     auth_token = session.get('auth_token')
-    if not auth_token:
-        return redirect(url_for('pages.login'))
 
     # Get user from token
     user = await User.get_user_by_token(auth_token)
     if not user:
-        return redirect(url_for('pages.login'))
+        return redirect(url_for('pages.login_page'))
 
     # Get community
     community = await Community.get_community(community_id)

@@ -207,6 +207,32 @@ body {
     border-radius: 8px; border: none;
     font-weight: 500; cursor: pointer; color: #1c1e21;
 }
+
+.user-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid #e0e0e0;
+}
+.post-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-info h4 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.user-info span {
+    font-size: 13px;
+    color: #65676B;
+}
+
 .post-submit-btn {
     background: #0066FF;
     color: white;

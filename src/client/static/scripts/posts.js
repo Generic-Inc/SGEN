@@ -112,7 +112,9 @@ function createPostHTML(post, showContext) {
             ${contextHTML}
             <div style="display: flex; align-items: center; gap: 12px; width:100%; margin-top:4px;">
                 <a href="/user/${post.author.userId}">
-                    <img src="${post.author.avatarUrl || 'https://placehold.co/50'}" class="user-avatar" style="cursor: pointer;">
+                    <img src="${post.author.avatarUrl || 'https://placehold.co/50'}" class="user-avatar" 
+                    style="cursor: pointer; width: 40px; height: 40px; border-radius:
+                     50%; object-fit: cover; flex-shrink: 0;">
                 </a>
                 <div class="user-info">
                     <a href="/user/${post.author.userId}" style="text-decoration: none; color: inherit;">

@@ -1,59 +1,52 @@
 {% extends "base.html" %}
 {% from "components/post.html" import postsfeed %}
-{% block content %}
-<script src="/static/scripts/posts.js"></script>
 
+{% block content %}
 <div class="main-content">
-    {{ postsfeed(posts) }}
+    <div id="feed-content" style="flex: 1;">
+        {{ postsfeed(posts) }}
+    </div>
+
     <div class="right-sidebar">
-        <div class="guidelines-card">
-            <div class="guidelines-title">Welcome to SGEN!</div>
-            <p class="guidelines-text">Explore Singapore's vibrant communities.</p>
-            <button class="create-btn" onclick="openCreateModal()">Create Post</button>
+        <div class="post-card" style="padding: 24px;"> <h3 style="margin-top: 0;">Welcome to SGEN!</h3>
+            <p style="color: #65676B; font-size: 14px; line-height: 1.4; margin: 12px 0;">
+                Explore Singapore's vibrant communities.
+            </p>
+            <button class="post-submit-btn" style="width: 100%;" onclick="openCreateModal()">
+                Create Post
+            </button>
         </div>
     </div>
 </div>
 
-<div id="createEventModal" class="modal-overlay" style="display: none;">
-    <div class="modal-content">
+<div id="create-modal" class="modal" style="display: none;"> <div class="modal-content">
         <div class="modal-header">
-            <h2 id="modal-title-text">Create New Post</h2>
+            <h2>Create New Post</h2>
             <span class="close-modal" onclick="closeCreateModal()">&times;</span>
         </div>
 
-        <form id="createEventForm" onsubmit="handleCreateEvent(event)">
-            <div id="community-select-wrapper" class="form-group" style="display:none;">
+        <div id="createEventForm" style="padding: 20px;">
+            <div id="community-select-wrapper" class="form-group">
                 <label>Post To *</label>
                 <select id="modal-community-select" class="form-input"></select>
+                <input type="hidden" id="modal-community-id-hidden">
             </div>
 
             <div class="form-group">
-                <label>Post Image</label>
-                <div class="image-upload-zone" onclick="document.getElementById('eventImageInput').click()">
-                    <span class="material-icons">add_photo_alternate</span>
-                    <span>Add an image</span>
-                    <input type="file" id="eventImageInput" accept="image/*" style="display: none;" onchange="previewImage(this)">
-                </div>
-                <img id="imagePreview" class="image-preview" style="display: none;">
-            </div>
-
-            <div class="form-group">
-                <label>Title *</label>
-                <input type="text" id="eventName" name="eventName" class="form-input" placeholder="Give your post a title" required>
+                <label>Title</label>
+                <input type="text" id="post-title" class="form-input" placeholder="Give your post a title">
             </div>
 
             <div class="form-group">
                 <label>Description *</label>
-                <textarea id="eventDescription" name="eventDescription" class="form-textarea" rows="4" placeholder="What's on your mind?" required></textarea>
+                <textarea id="post-desc" class="form-textarea" rows="4" placeholder="What's on your mind?"></textarea>
             </div>
-
-            <input type="hidden" id="modal-target-type" value="post">
 
             <div class="modal-actions">
                 <button type="button" class="btn-secondary" onclick="closeCreateModal()">Cancel</button>
-                <button type="submit" class="btn-primary">Create Post</button>
+                <button type="button" class="btn-primary" onclick="submitNewPost()">Post</button>
             </div>
-        </form>
+        </div>
     </div>
 </div>
 {% endblock %}

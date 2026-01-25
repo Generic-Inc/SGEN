@@ -66,13 +66,6 @@ BEGIN
     UPDATE Communities SET community_name = lower(NEW.community_name) WHERE community_id = NEW.community_id;
 END;
 
-INSERT INTO Profiles (username, display_name, _email, bio)
-VALUES("admin", "Admin", "ryankgithub@gmail.com", "Hi im Ryan")
-ON CONFLICT DO NOTHING;
-INSERT INTO Communities (community_name, display_name, owner_id, description)
-VALUES("sgen", "SGEN Community", 1, "The official community for SGEN users.")
-ON CONFLICT(community_name) DO NOTHING;
-
 CREATE TABLE IF NOT EXISTS Memberships (
     member_id INT NOT NULL,
     community_id INT NOT NULL,

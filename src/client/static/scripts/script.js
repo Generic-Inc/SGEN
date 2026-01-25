@@ -24,7 +24,6 @@ async function authFetch(url, options = {}) {
 
     const response = await fetch(url, options);
 
-    // If Token is invalid (401), Logout
     if (response.status === 401) {
         console.warn("Session expired. Logging out.");
         localStorage.removeItem("sgen_token");
@@ -128,9 +127,6 @@ async function loadCommunityFeed(communityId, element) {
         element.style.backgroundColor = "#e8f0fe";
     }
 
-    const feedContainer = document.getElementById("feed-content");
-    feedContainer.innerHTML = `<div style="text-align:center; padding:40px; color:#888;"><i class="fas fa-spinner fa-spin fa-2x"></i><br><br>Loading Community...</div>`;
-
     try {
         const res = await authFetch(`/api/community/${communityId}`);
         if(res.ok) {
@@ -138,11 +134,13 @@ async function loadCommunityFeed(communityId, element) {
             if(document.getElementById("info-title")) document.getElementById("info-title").innerText = data.displayName;
             if(document.getElementById("info-desc")) document.getElementById("info-desc").innerText = data.description || "";
             if(document.getElementById("info-members")) document.getElementById("info-members").innerText = `${data.memberCount} Members`;
-            // Update Sidebar Labels
             if(document.getElementById("nav-chat-label")) document.getElementById("nav-chat-label").innerText = `${data.displayName} Chat`;
             if(document.getElementById("nav-events-label")) document.getElementById("nav-events-label").innerText = `${data.displayName} Events`;
         }
     } catch (err) {}
+
+    const feedContainer = document.getElementById("feed-content");
+    feedContainer.innerHTML = `<div style="text-align:center; padding:40px; color:#888;"><i class="fas fa-spinner fa-spin fa-2x"></i><br><br>Loading Community...</div>`;
 
     try {
         const response = await authFetch(`/api/community/${communityId}/posts`);
@@ -151,82 +149,4 @@ async function loadCommunityFeed(communityId, element) {
     } catch (error) {
         feedContainer.innerHTML = `<div style="text-align:center; padding:20px; color:red;">Error loading community.</div>`;
     }
-}
-
-function renderFeed(posts, container, showContext) {
-    container.innerHTML = "";
-    if (!posts || posts.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding:40px;"><h3>No posts found.</h3></div>`;
-        return;
-    }
-    posts.forEach(post => {
-        container.insertAdjacentHTML('beforeend', createPostHTML(post, showContext));
-    });
-}
-
-function createPostHTML(post, showContext) {
-    const dateObj = new Date(post.created);
-    const dateStr = dateObj.toLocaleDateString() + " " + dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const heartClass = post.isLiked ? 'fa-solid' : 'fa-regular';
-    const colorClass = post.isLiked ? 'liked' : '';
-
-    let contextHTML = "";
-    if (showContext && post.communityName) {
-        contextHTML = `
-            <div style="font-size: 13px; color: #65676B; margin-bottom: 8px; padding-bottom:8px; border-bottom:1px solid #f0f2f5;">
-                Posted in <a href="#" onclick="loadCommunityFeed(${post.communityId}); return false;" style="font-weight:600; color:#1c1e21; text-decoration:none;">${post.communityName}</a>
-            </div>
-        `;
-    }
-
-    return `
-    <div class="post-card" id="post-${post.postId}">
-        <div class="post-header" style="flex-direction: column; align-items: flex-start;">
-            ${contextHTML}
-            <div style="display: flex; align-items: center; gap: 12px; width:100%; margin-top:4px;">
-                <img src="${post.author.avatarUrl || 'https://placehold.co/50'}" class="user-avatar">
-                <div class="user-info"><h4>${post.author.displayName}</h4><span>${dateStr}</span></div>
-            </div>
-        </div>
-        <div class="post-content">${post.content}</div>
-        ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" style="width:100%; display:block; margin-top:10px;">` : ''}
-        <div class="post-actions">
-            <button class="action-btn ${colorClass}" onclick="toggleLike(${post.communityId}, ${post.postId}, this)">
-                <i class="${heartClass} fa-heart"></i> <span class="like-count">${post.likeCount}</span> Likes
-            </button>
-            <button class="action-btn" onclick="toggleComments(${post.communityId}, ${post.postId})">
-                <i class="fa-regular fa-comment"></i> Comment
-            </button>
-            <button class="action-btn"><i class="fa-solid fa-share"></i> Share</button>
-        </div>
-        <div id="comments-${post.postId}" style="display:none; border-top:1px solid #f0f2f5; background:#fafafa; padding:15px;"></div>
-    </div>`;
-}
-
-async function toggleLike(communityId, postId, btn) {
-    const icon = btn.querySelector("i");
-    const countSpan = btn.querySelector(".like-count");
-    let count = parseInt(countSpan.innerText);
-    if (btn.classList.contains("liked")) {
-        btn.classList.remove("liked"); icon.classList.replace("fa-solid", "fa-regular"); countSpan.innerText = count - 1;
-    } else {
-        btn.classList.add("liked"); icon.classList.replace("fa-regular", "fa-solid"); countSpan.innerText = count + 1;
-    }
-    await authFetch(`/api/community/${communityId}/posts/${postId}/likes`, { method: "POST" });
-}
-
-async function toggleComments(communityId, postId) {
-    const section = document.getElementById(`comments-${postId}`);
-    if (section.style.display === "block") { section.style.display = "none"; return; }
-    section.style.display = "block";
-    section.innerHTML = `Loading...`;
-    try {
-        const res = await authFetch(`/api/community/${communityId}/posts/${postId}/comments`);
-        const data = await res.json();
-        section.innerHTML = "";
-        if(!data.comments || data.comments.length === 0) { section.innerHTML = "No comments."; return; }
-        data.comments.forEach(c => {
-             section.innerHTML += `<div><b>${c.author.displayName}</b>: ${c.content}</div>`;
-        });
-    } catch(e) { section.innerHTML = "Error."; }
 }

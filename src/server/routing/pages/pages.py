@@ -13,7 +13,4 @@ def signup_page():
 
 @pages_blueprint.route('/')
 def home_page():
-    authorization = request.headers.get('Authorization')
-    if not authorization:
-        return redirect(url_for('pages.signup_page'))
     return render_template('index.html')

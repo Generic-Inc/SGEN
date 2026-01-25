@@ -4,6 +4,12 @@
 
 {% block content %}
 <script src="../static/scripts/script.js"></script>
+<script>
+    const token = localStorage.getItem('sgen_token');
+    if (token) {
+        window.location.href = '/';
+    }
+</script>
 <div id="login-overlay" style="">
         <div style="background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); width: 350px; text-align: center;">
 

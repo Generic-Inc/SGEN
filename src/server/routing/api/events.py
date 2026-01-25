@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, render_template
 from global_src.global_classes import Community, User
 from modules.events import Event, EventAttendance
 from . import community_blueprint
@@ -12,7 +12,8 @@ async def community_events(community_id: int):
     if request.method == "GET":
         user_id = request.args.get("userId", type=int)
         events = await Event.get_by_community(community_id, user_id)
-        return {"events": [e.public_json for e in events]}
+        #return {"events": [e.public_json for e in events]}
+        return render_template("src/client/templates/events.html", events=events, community_id=community_id, user_id=user_id)
 
     elif request.method == "POST":
         data = request.get_json() or {}

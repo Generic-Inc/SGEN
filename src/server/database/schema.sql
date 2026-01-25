@@ -1,3 +1,5 @@
+-- 1. TABLE DEFINITIONS
+
 CREATE TABLE IF NOT EXISTS Profiles (
     user_id INTEGER PRIMARY KEY AUTOINCREMENT,
     username VARCHAR(32) NOT NULL,
@@ -20,6 +22,7 @@ BEGIN
     UPDATE Profiles SET modified = (DATETIME('now', 'localtime')) WHERE user_id = OLD.user_id;
 END;
 
+-- === FIXED TABLE: Added member_count ===
 CREATE TABLE IF NOT EXISTS Communities (
     community_id INTEGER PRIMARY KEY AUTOINCREMENT,
     community_name VARCHAR(128) NOT NULL,
@@ -27,6 +30,9 @@ CREATE TABLE IF NOT EXISTS Communities (
     owner_id INT NOT NULL,
     description VARCHAR(2048),
     icon_url VARCHAR(2048),
+
+    member_count INTEGER DEFAULT 0, -- <--- THIS WAS MISSING!
+
     posts_guidelines VARCHAR(4096),
     messages_guidelines VARCHAR(4096),
     offline_text VARCHAR(16),
@@ -100,36 +106,35 @@ CREATE TABLE IF NOT EXISTS CommentLikes (
     FOREIGN KEY(user_id) REFERENCES Profiles(user_id) ON DELETE CASCADE
 );
 
--- User 1: You (The Viewer/Admin)
+-- 2. SEED DATA
+
+-- A. USERS
 INSERT INTO Profiles (user_id, username, display_name, _email, bio, avatar_url)
 VALUES(1, "admin", "Admin", "ryankgithub@gmail.com", "Hi im Ryan", "https://ui-avatars.com/api/?name=Ryan&background=random")
 ON CONFLICT(user_id) DO NOTHING;
 
--- User 2: Jerma (The Poster)
 INSERT INTO Profiles (username, display_name, _email, bio, avatar_url)
 VALUES("jerma985", "Jerma", "jerma@twitch.tv", "Streamer and MBS enthusiast", "https://i.pinimg.com/736x/8e/fb/9e/8efb9e28905b7640f0653c84852066b1.jpg")
 ON CONFLICT(username) DO NOTHING;
 
--- User 3: Charlie (The Patriot)
 INSERT INTO Profiles (username, display_name, _email, bio, avatar_url)
 VALUES("charlie_usa", "CharlieLovesMerica", "charlie@usa.com", "Freedom fan", "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR0lEfq7CmvZz07FhE-P2SeOvpOqOdbz4r40Q&s")
 ON CONFLICT(username) DO NOTHING;
 
--- User 4: Joe Biden (Commenter)
 INSERT INTO Profiles (username, display_name, _email, bio, avatar_url)
 VALUES("joebiden", "Joe Biden", "joe@whitehouse.gov", "I love ice cream", "https://upload.wikimedia.org/wikipedia/commons/6/68/Joe_Biden_presidential_portrait.jpg")
 ON CONFLICT(username) DO NOTHING;
 
--- User 5: John Singapore
 INSERT INTO Profiles (username, display_name, _email, bio, avatar_url)
 VALUES("john_sg", "John Singapore", "john@sg.com", "I love Singapore", "https://ui-avatars.com/api/?name=John+SG&background=0D8ABC&color=fff")
 ON CONFLICT(username) DO NOTHING;
 
--- User 6: Zhong Xi Na
 INSERT INTO Profiles (username, display_name, _email, bio, avatar_url)
 VALUES("xina", "Zhong Xi Na", "john@cena.com", "You cant see me", "https://pbs.twimg.com/media/FaW3oWlWQAc6hOy.jpg")
 ON CONFLICT(username) DO NOTHING;
 
+
+-- B. COMMUNITIES
 INSERT INTO Communities (community_id, community_name, display_name, owner_id, description, member_count)
 VALUES(1, "sgen", "SGEN Community", 1, "The official community for SGEN users.", 1205)
 ON CONFLICT(community_id) DO NOTHING;
@@ -142,18 +147,20 @@ INSERT INTO Communities (community_id, community_name, display_name, owner_id, d
 VALUES(3, "sg_foodies", "SG Foodies", 5, "The best place to discuss Chicken Rice and Laksa.", 850)
 ON CONFLICT(community_id) DO NOTHING;
 
-INSERT INTO Memberships (member_id, community_id) VALUES (2, 2) ON CONFLICT DO NOTHING; -- Jerma
-INSERT INTO Memberships (member_id, community_id) VALUES (3, 2) ON CONFLICT DO NOTHING; -- Charlie
-INSERT INTO Memberships (member_id, community_id) VALUES (4, 2) ON CONFLICT DO NOTHING; -- Joe
-INSERT INTO Memberships (member_id, community_id) VALUES (5, 2) ON CONFLICT DO NOTHING; -- John
 
+-- C. MEMBERSHIPS
+INSERT INTO Memberships (member_id, community_id) VALUES (2, 2) ON CONFLICT DO NOTHING;
+INSERT INTO Memberships (member_id, community_id) VALUES (3, 2) ON CONFLICT DO NOTHING;
+INSERT INTO Memberships (member_id, community_id) VALUES (4, 2) ON CONFLICT DO NOTHING;
+INSERT INTO Memberships (member_id, community_id) VALUES (5, 2) ON CONFLICT DO NOTHING;
+
+
+-- D. POSTS
 INSERT INTO Posts (post_id, content, community_id, author_id, image_url, created)
 VALUES (
     1,
     "RALLY AT MBS!!! #MBSday #MBSevent 'China, china china china, china 👄' - Trump",
-    2, -- SG Explorers
-    3, -- Charlie
-    "https://media.npr.org/assets/img/2023/06/09/gettyimages-1258552809_wide-5bf0549c402127db83526543b59df37b4255561a.jpg",
+    2, 3, "https://media.npr.org/assets/img/2023/06/09/gettyimages-1258552809_wide-5bf0549c402127db83526543b59df37b4255561a.jpg",
     DATETIME('now', '-2 hours')
 ) ON CONFLICT(post_id) DO NOTHING;
 
@@ -161,9 +168,7 @@ INSERT INTO Posts (post_id, content, community_id, author_id, image_url, created
 VALUES (
     2,
     "Amazing event at Marina Bay Sands #MBSday #MBSevent Today was a great day, I met and bonded alot with...",
-    2, -- SG Explorers
-    2, -- Jerma
-    "https://images.unsplash.com/photo-1565967511849-76a60a516170?q=80&w=1000&auto=format&fit=crop",
+    2, 2, "https://images.unsplash.com/photo-1565967511849-76a60a516170?q=80&w=1000&auto=format&fit=crop",
     DATETIME('now', '-1 hours')
 ) ON CONFLICT(post_id) DO NOTHING;
 
@@ -171,12 +176,12 @@ INSERT INTO Posts (post_id, content, community_id, author_id, image_url, created
 VALUES (
     3,
     "Welcome to the platform! We are just getting started.",
-    1, -- SGEN
-    1, -- Admin
-    NULL,
+    1, 1, NULL,
     DATETIME('now', '-1 day')
 ) ON CONFLICT(post_id) DO NOTHING;
 
+
+-- E. COMMENTS
 INSERT INTO Comments (content, post_id, author_id)
 VALUES ("Was a great event, but NO ICE CREAM SHOP! I want my chocolate chocolate chip!", 2, 4);
 
@@ -187,7 +192,7 @@ INSERT INTO Comments (content, post_id, author_id)
 VALUES ("GREAT PICTURE!!! JUST LIKE MY HOMETOWN IN CHINA (view original)", 2, 6);
 
 
+-- F. LIKES
 INSERT INTO PostLikes (post_id, user_id) VALUES (2, 1) ON CONFLICT DO NOTHING;
-
-INSERT INTO CommentLikes (comment_id, user_id) VALUES (1, 4) ON CONFLICT DO NOTHING; -- Joe liked his own comment
+INSERT INTO CommentLikes (comment_id, user_id) VALUES (1, 4) ON CONFLICT DO NOTHING;
 INSERT INTO CommentLikes (comment_id, user_id) VALUES (2, 5) ON CONFLICT DO NOTHING;

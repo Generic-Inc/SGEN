@@ -76,25 +76,22 @@ async def post_likes(community_id: int, post_id: int):
 
 @community_blueprint.route("/<int:community_id>/posts/<int:post_id>/comments", methods=["GET", "POST"])
 async def post_comments(community_id: int, post_id: int):
+    # [AUTH PLACEHOLDER]
+    viewer_id = 1
+
     if not await Post.get_by_id(post_id):
         return {"error": "Post not found"}, 404
 
     if request.method == "GET":
-        comments = await Comment.get_by_post(post_id)
+        comments = await Comment.get_by_post(post_id, viewer_id=viewer_id)
         return {"comments": [c.public_json for c in comments]}
 
     elif request.method == "POST":
         data = request.get_json() or {}
-        if not data.get("content") or not data.get("authorId"):
-            return {"error": "Missing content or authorId"}, 400
-
-        new_comment = await Comment.create(
-            content=data.get("content"),
-            post_id=post_id,
-            author_id=data.get("authorId")
-        )
+        if not data.get("content") or not data.get("authorId"): return {"error": "Missing info"}, 400
+        new_comment = await Comment.create(content=data.get("content"), post_id=post_id, author_id=data.get("authorId"))
         if new_comment: return new_comment.public_json, 201
-        return {"error": "Failed to create comment"}, 500
+        return {"error": "Failed"}, 500
 
 
 @community_blueprint.route("/<int:community_id>/posts/<int:post_id>/comments/<int:comment_id>",

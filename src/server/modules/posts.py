@@ -197,6 +197,8 @@ class Comment(BaseClass):
         self.modified = modified
         self.active = active
         self.like_count = like_count
+        # Default to False
+        self.is_liked_by_viewer = False
 
     @property
     def public_json(self) -> dict[str, Any]:
@@ -207,11 +209,12 @@ class Comment(BaseClass):
             "author": self.author.public_json,
             "created": self.created,
             "modified": self.modified,
-            "likeCount": self.like_count
+            "likeCount": self.like_count,
+            "isLiked": self.is_liked_by_viewer
         }
 
     @classmethod
-    async def get_by_post(cls, post_id: int) -> list['Comment']:
+    async def get_by_post(cls, post_id: int, viewer_id: int = None) -> list['Comment']:
         query = """
                 SELECT c.comment_id, \
                        c.content, \
@@ -227,30 +230,34 @@ class Comment(BaseClass):
                        u.avatar_url, \
                        u.bio, \
                        u.created,
-                       (SELECT COUNT(*) FROM CommentLikes cl WHERE cl.comment_id = c.comment_id) as like_count
+                       (SELECT COUNT(*) FROM CommentLikes cl WHERE cl.comment_id = c.comment_id)                    as like_count,
+                       (SELECT COUNT(*) \
+                        FROM CommentLikes cl \
+                        WHERE cl.comment_id = c.comment_id \
+                          AND cl.user_id = ?)                                                                       as is_liked
                 FROM Comments c \
                          JOIN Profiles u ON c.author_id = u.user_id
                 WHERE c.post_id = ? \
                   AND c.active = 1 \
                 ORDER BY c.created ASC
                 """
-        rows = await DATABASE.fetch_all(query, (post_id,))
+        rows = await DATABASE.fetch_all(query, (viewer_id, post_id))
+
         comments = []
         for row in rows:
             (c_id, c_content, c_post_id, c_created, c_mod, c_active,
-             u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio, u_created, like_cnt) = row
+             u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio, u_created, like_cnt, is_liked) = row
 
             author = User(
-                user_id=u_id,
-                username=u_username,
-                display_name=u_display,
-                email=u_email,
-                language=u_lang,
-                avatar_url=u_avatar,
-                bio=u_bio,
-                created=u_created
+                user_id=u_id, username=u_username, display_name=u_display,
+                email=u_email, language=u_lang, avatar_url=u_avatar,
+                bio=u_bio, created=u_created
             )
-            comments.append(cls(c_id, c_content, c_post_id, author, c_created, c_mod, c_active, like_count=like_cnt))
+
+            comment = cls(c_id, c_content, c_post_id, author, c_created, c_mod, c_active, like_count=like_cnt)
+            comment.is_liked_by_viewer = (is_liked > 0)
+            comments.append(comment)
+
         return comments
 
     @classmethod
@@ -293,14 +300,9 @@ class Comment(BaseClass):
          u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio, u_created, like_cnt) = row
 
         author = User(
-            user_id=u_id,
-            username=u_username,
-            display_name=u_display,
-            email=u_email,
-            language=u_lang,
-            avatar_url=u_avatar,
-            bio=u_bio,
-            created=u_created
+            user_id=u_id, username=u_username, display_name=u_display,
+            email=u_email, language=u_lang, avatar_url=u_avatar,
+            bio=u_bio, created=u_created
         )
         return cls(c_id, c_content, c_post_id, author, c_created, c_mod, c_active, like_count=like_cnt)
 

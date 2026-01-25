@@ -66,7 +66,8 @@ async def community_posts(community_id: int):
         )
         return new_post.public_json, 201
 
-@community_blueprint.route("/<int:community_id>/posts/<int:post_id>", methods=["GET", "PATCH"])
+@community_blueprint.route("/<int:community_id>/posts/<int:post_id>",
+                           methods=["GET", "PATCH", "DELETE"])
 async def single_post(community_id: int, post_id: int):
     authorization = request.headers.get('Authorization')
     if not authorization:
@@ -86,12 +87,16 @@ async def single_post(community_id: int, post_id: int):
             return {"error": "Forbidden"}, 403
         data = request.get_json() or {}
         new_content = data.get("content")
-
-        if not new_content:
-            return {"error": "Missing content"}, 400
-
+        if not new_content: return {"error": "Missing content"}, 400
         await post.update(new_content)
         return post.public_json
+
+    elif request.method == "DELETE":
+        if post.author.user_id != user.user_id:
+            # can add admin check here: if not user.is_admin
+            return {"error": "Forbidden: You cannot delete this post."}, 403
+        await post.delete()
+        return {"success": "Post deleted"}
 
 @community_blueprint.route("/<int:community_id>/posts/<int:post_id>/likes", methods=["POST"])
 async def post_likes(community_id: int, post_id: int):
@@ -140,9 +145,8 @@ async def post_comments(community_id: int, post_id: int):
         if new_comment: return new_comment.public_json, 201
         return {"error": "Failed"}, 500
 
-
 @community_blueprint.route("/<int:community_id>/posts/<int:post_id>/comments/<int:comment_id>",
-                           methods=["GET", "PATCH"])
+                           methods=["GET", "PATCH", "DELETE"])
 async def single_comment(community_id: int, post_id: int, comment_id: int):
     authorization = request.headers.get('Authorization')
     if not authorization:
@@ -163,9 +167,19 @@ async def single_comment(community_id: int, post_id: int, comment_id: int):
         data = request.get_json() or {}
         new_content = data.get("content")
         if not new_content: return {"error": "Missing content"}, 400
-
         await comment.update(new_content)
         return comment.public_json
+
+    elif request.method == "DELETE":
+        post = await Post.get_by_id(post_id)
+        is_comment_author = (comment.author.user_id == user.user_id)
+        is_post_author = False
+        if post and post.author:
+            is_post_author = (post.author.user_id == user.user_id)
+        if not (is_comment_author or is_post_author):
+            return {"error": "Forbidden: You don't have permission to delete this comment."}, 403
+        await comment.delete()
+        return {"success": "Comment deleted"}
 
 
 @community_blueprint.route("/<int:community_id>/posts/<int:post_id>/comments/<int:comment_id>/likes", methods=["POST"])

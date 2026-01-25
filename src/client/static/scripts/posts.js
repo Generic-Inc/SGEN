@@ -61,10 +61,8 @@ async function submitNewPost() {
 
         if (res.ok) {
             closeCreateModal();
-            if (window.currentCommunityId == targetId) {
-                if(window.refreshFeed) window.refreshFeed(targetId);
-            } else {
-                alert("Post created successfully!");
+            if (window.refreshFeed) {
+                window.refreshFeed(window.currentCommunityId);
             }
         } else {
             const err = await res.json();
@@ -107,9 +105,15 @@ function createPostHTML(post, showContext) {
     contentDisplay = contentDisplay.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
     return `
-    <div class="post-card" id="post-${post.postId}">
+    <div class="post-card" id="post-${post.postId}" style="transition: opacity 0.3s;">
         <div class="post-header" style="flex-direction: column; align-items: flex-start;">
-            ${contextHTML}
+            <div style="display:flex; justify-content:space-between; width:100%;">
+                ${contextHTML}
+                <div style="cursor:pointer; color:#ccc;" onclick="deletePost(${post.communityId}, ${post.postId})">
+                    <i class="fa-solid fa-trash"></i>
+                </div>
+            </div>
+            
             <div style="display: flex; align-items: center; gap: 12px; width:100%; margin-top:4px;">
                 <img src="${post.author.avatarUrl || 'https://placehold.co/50'}" class="user-avatar">
                 <div class="user-info"><h4>${post.author.displayName}</h4><span>${dateStr}</span></div>
@@ -171,10 +175,14 @@ async function toggleComments(communityId, postId, forceRefresh = false) {
                 <div style="display:flex; gap:10px; margin-bottom:15px; align-items: flex-start;">
                     <img src="${c.author.avatarUrl || 'https://placehold.co/30'}" style="width:32px; height:32px; border-radius:50%;">
                     <div style="flex:1;">
-                        <div style="background:#f0f2f5; padding:8px 12px; border-radius:15px; display:inline-block;">
+                    <div style="background:#f0f2f5; padding:8px 12px; border-radius:15px; display:inline-block; position:relative;">
                             <strong>${c.author.displayName}</strong>
                             <div style="margin-top:2px;">${c.content}</div>
-                        </div>
+                                <div style="position:absolute; top:5px; right:-25px; cursor:pointer; color:#ccc; font-size:12px;" 
+                                    onclick="deleteComment(${communityId}, ${postId}, ${c.commentId})">
+                                    <i class="fa-solid fa-trash"></i>
+                                </div>
+                            </div>
                         <div style="font-size:12px; color:#65676B; margin-left:12px; margin-top:2px;">
                             ${new Date(c.created).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                         </div>
@@ -249,4 +257,40 @@ async function toggleCommentLike(communityId, postId, commentId, btnElement) {
     try {
         await authFetch(`/api/community/${communityId}/posts/${postId}/comments/${commentId}/likes`, { method: "POST" });
     } catch(err) { console.error("Comment like failed", err); }
+}
+
+async function deletePost(communityId, postId) {
+    if (!confirm("Are you sure you want to delete this post?")) return;
+
+    try {
+        const res = await authFetch(`/api/community/${communityId}/posts/${postId}`, {
+            method: "DELETE"
+        });
+        if (res.ok) {
+            const el = document.getElementById(`post-${postId}`);
+            if (el) {
+                el.style.opacity = "0";
+                setTimeout(() => el.remove(), 300);
+            }
+        } else {
+            alert("Failed to delete post.");
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Connection error.");
+    }
+}
+
+async function deleteComment(communityId, postId, commentId) {
+    if (!confirm("Delete this comment?")) return;
+
+    try {
+        const res = await authFetch(`/api/community/${communityId}/posts/${postId}/comments/${commentId}`, {
+            method: "DELETE"
+        });
+
+        if (res.ok) {
+            toggleComments(communityId, postId, true);
+        }
+    } catch (e) { console.error(e); }
 }

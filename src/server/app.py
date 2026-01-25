@@ -3,19 +3,20 @@ import os
 import threading
 
 from flask import Flask, render_template
+
+from global_src.constants import TEMPLATES_PATH, STATIC_PATH
 from routing.api import api
 from global_src.db import DATABASE
 from config.config import CONFIG
-base_dir = os.path.dirname(os.path.abspath(__file__))
-client_folder = os.path.abspath(os.path.join(base_dir, "..", "client"))
-template_folder = os.path.join(client_folder, "templates")
-static_folder = os.path.join(client_folder, "static")
+from routing.pages import pages_blueprint
+
 app = Flask(__name__,
-            template_folder=template_folder,
-            static_folder=static_folder)
+            template_folder=TEMPLATES_PATH,
+            static_folder=STATIC_PATH)
 
 app.json.sort_keys = False
 app.register_blueprint(api, url_prefix='/api')
+app.register_blueprint(pages_blueprint)
 
 @app.before_request
 async def startup():
@@ -24,12 +25,9 @@ async def startup():
 
 def main():
     asyncio.run(startup())
-@app.route('/')
-async def index():
-    return render_template('index.html')
 
 if __name__ == '__main__':
     thread = threading.Thread(target=main, daemon=True)
     thread.start()
     app.run(use_reloader=False, debug=True)
-    print(f"Server running. Templates at: {template_folder}")
+    print(f"Server running. Templates at: {TEMPLATES_PATH}")

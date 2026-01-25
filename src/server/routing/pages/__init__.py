@@ -1,9 +1,5 @@
 from flask import Blueprint
 
-pages_blueprint = Blueprint('pages', __name__,
-                           template_folder='../../../client/templates',
-                           static_folder='../../../client/static')
+pages_blueprint = Blueprint('pages', __name__)
 
-from . import events
-
-__all__ = ['pages_blueprint']
+from . import pages

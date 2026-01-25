@@ -4,60 +4,50 @@
 
 {% block content %}
     <div class="feed-container" style="width: 100%; max-width: 600px;">
-        
+
         <div class="post-card" style="padding: 16px; display: flex; gap: 12px; align-items: center;">
             <div class="user-avatar" style="background-image: url('https://placehold.co/50'); background-size: cover;"></div>
-            
+
             <input type="text" placeholder="What's happening?" style="
-                flex: 1; 
-                border: none; 
-                background: #f0f2f5; 
-                border-radius: 20px; 
-                padding: 12px 20px; 
+                flex: 1;
+                border: none;
+                background: #f0f2f5;
+                border-radius: 20px;
+                padding: 12px 20px;
                 outline: none;
                 font-size: 15px;">
         </div>
 
         <div id="feed-content">
-            <div class="post-card">
-                <div class="post-header">
-                    <img src="https://placehold.co/40" class="user-avatar" alt="User">
-                    <div class="user-info">
-                        <h4>Visual Test</h4>
-                        <span>Just now • SGEN Community</span>
-                    </div>
-                </div>
-                <div class="post-content">
-                    If you can see this card, your HTML and CSS are connected perfectly! 🎨
-                </div>
-                <div style="width: 100%; height: 250px; background: #eee; display: flex; align-items: center; justify-content: center; color: #888;">
-                    (Post Image)
-                </div>
-                
-                <div class="post-actions">
-                    <button class="action-btn"><i class="fa-regular fa-heart"></i> Like</button>
-                    <button class="action-btn"><i class="fa-regular fa-comment"></i> Comment</button>
-                    <button class="action-btn"><i class="fa-solid fa-share"></i> Share</button>
-                </div>
             </div>
-        </div>
 
     </div>
 
     <div class="right-sidebar" style="margin-left: 20px;">
-        <div class="guidelines-card">
-            <div class="guidelines-title">SG Explorers</div>
+
+        <div id="info-card" class="guidelines-card" style="display: none;">
+            <div id="info-title" class="guidelines-title">Loading...</div>
             <p class="guidelines-text">
-                The official community for SGEN users.
+                <span id="info-desc">Community details loading...</span>
                 <br><br>
-                <strong>1,201 Members</strong><br>
-                <span style="color: green;">●</span> 147 Online
+                <strong id="info-members">0 Members</strong><br>
+                <span style="color: green;">●</span> <span id="info-online">0 Online</span>
             </p>
+
             <hr style="border: 0; border-top: 1px solid #eee; margin: 12px 0;">
+
             <div class="guidelines-title">About</div>
             <p class="guidelines-text">
-                MBSDay is a day where community members gather and explore Marina Bay Sands together!
+                Welcome to the community! Be respectful and have fun.
             </p>
         </div>
+
+        <div id="home-card" class="guidelines-card">
+            <div class="guidelines-title">Welcome to SGEN!</div>
+            <p class="guidelines-text">
+                Explore Singapore's vibrant communities. Join a group from the left sidebar to get started!
+            </p>
+        </div>
+
     </div>
 {% endblock %}

@@ -1,5 +1,6 @@
 from flask import request
-from global_src.global_classes import Community, User
+from global_src.global_classes import Community, User, CommunityMember
+from modules.authentications import Permissions
 from modules.events import Event, EventAttendance
 from . import community_blueprint
 
@@ -57,6 +58,8 @@ async def single_event(community_id: int, event_id: int):
         return {"error": "Community not found"}, 404
 
     event = await Event.get_by_id(event_id, user.user_id)
+
+    community_member = await CommunityMember.get_member(user.user_id, community_id)
     
     if not event:
         return {"error": "Event not found"}, 404
@@ -66,6 +69,13 @@ async def single_event(community_id: int, event_id: int):
 
     elif request.method == "PATCH":
         data = request.get_json() or {}
+
+        if not community_member: # Potentially need to be member to view
+            return {"error": "You must first join this community to view event details"}, 403
+        if community_member.requires_permissions(
+            Permissions.MANAGE_EVENTS
+        ):
+            return {"error": "Forbidden"}, 403
         
         await event.update(
             event_name=data.get("eventName"),
@@ -77,6 +87,11 @@ async def single_event(community_id: int, event_id: int):
         return event.public_json
 
     elif request.method == "DELETE":
+        if community_member.requires_permissions(
+            Permissions.MANAGE_EVENTS
+        ):
+            return {"error": "Forbidden"}, 403
+
         await event.update(active=0)
         return {"message": "Event deleted successfully"}, 200
 
@@ -93,6 +108,9 @@ async def event_attendance(community_id: int, event_id: int):
     community_get = await Community.get_community(community_id)
     if not community_get:
         return {"error": "Community not found"}, 404
+    community_member = await CommunityMember.get_member(user.user_id, community_id)
+    if not community_member:
+        return {"error": "You must first join this community to manage event attendance"}, 403
 
     event = await Event.get_by_id(event_id)
     if not event:
@@ -127,9 +145,12 @@ async def event_attendance(community_id: int, event_id: int):
 
     elif request.method == "DELETE":
         data = request.get_json() or {}
-
-
-        removed = await EventAttendance.remove_attendance(event_id, user.user_id)
+        user_id = data.get("userId", user.user_id)
+        if not community_member.requires_permissions(
+            Permissions.MANAGE_EVENTS
+        ) and user_id != user.user_id:
+            return {"error": "Forbidden"}, 403
+        removed = await EventAttendance.remove_attendance(event_id, user_id)
         
         if removed:
             counts = await EventAttendance.get_attendance_counts(event_id)

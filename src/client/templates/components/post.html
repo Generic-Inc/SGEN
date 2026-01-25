@@ -3,13 +3,6 @@
 
     <div class="com-feed-container">
         {% for post in posts %}
-        <script>
-          document.addEventListener('click', (e) => {
-            const heart = document.getElementById("likeButton-{{post.post_id}}");
-
-            heart.classList.toggle('liked');
-          });
-        </script>
         <div class="post-card">
             <div class="post-header">
                 <img src="{{ post.author.avatar_url }}" alt="{{ post.author.display_name }}" class="post-avatar">
@@ -24,14 +17,20 @@
             </div>
             <div class="post-footer">
                 <div class="footer-section">
-                    <div class="heart-btn" onclick="this.classList.toggle('liked')">
+                    <div class="heart-btn" onclick="likePost(this, {{post.post_id}}, {{post.community_id}})">
                   <svg viewBox="0 0 24 24">
                     <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                   </svg>
                 </div>
-                <span>{{post.like_count}} Likes</span>
+                <span id="{{post.post_id}}-likes">{{post.like_count}} Likes</span>
                 </div>
-
+                <script>
+                    heart = document.getElementById("{{post.post_id}}-likes")
+                    console.log({{post.is_liked}})
+                    if ("{{post.is_liked_by_viewer}}" == "True") {
+                        heart.previousElementSibling.classList.add("liked");
+                    }
+                </script>
                 <div class="footer-section">
                     <div class="comment-btn" onclick="this.classList.toggle('active')">
                       <svg viewBox="0 0 24 24">

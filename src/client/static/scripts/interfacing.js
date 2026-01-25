@@ -9,3 +9,24 @@ async function fetchCommunities() {
     }
     return [];
 }
+
+function likePost(element, postId, communityId) {
+        element.classList.toggle("liked");
+        fetch(`${window.location.origin}/api/community/${communityId}/posts/${postId}/likes`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            const likeCountElement = document.getElementById(`${postId}-likes`);
+            if (likeCountElement) {
+                likeCountElement.innerText = `${data.likeCount} Likes`;
+            }
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+            element.classList.toggle('liked');
+        });
+    }

@@ -7,3 +7,4 @@ pages_blueprint.register_blueprint(pages_community_blueprint, url_prefix='/commu
 from . import pages
 from . import events
 from . import communities
+from . import posts

@@ -7,7 +7,7 @@
         <div class="brand-name">SGEN</div>
     </div>
     <div class="header-actions">
-        <button class="create-btn" onclick="showCreateModal()">
+        <button class="create-btn" onclick="showCreateModal()"></button>
         <button class="create-btn" onclick="openCreateModal()">
             <span>+</span>
             <span>Create</span>
@@ -19,7 +19,7 @@
 
 {% macro sidenav(communities=[], current_community=None) %}
 <div class="sidebar">
-    <div class="nav-item" onclick="loadHome()" style="cursor: pointer;">
+    <div class="nav-item" onclick="loadHome()" style="cursor: pointer;"></div>
     <div class="nav-item" onclick="window.location.href='/'">
         <span class="material-icons">home</span>
         <span>Home</span>
@@ -91,4 +91,5 @@
         <!-- Days will be populated by JavaScript -->
     </div>
 </div>
+
 {% endmacro %}

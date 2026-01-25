@@ -1,12 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("SGEN Client Loaded! 🚀");
+    console.log("SGEN Client Loaded");
     initApp();
 });
 
 let USER_TOKEN = localStorage.getItem("sgen_token");
+
 window.currentCommunityId = null;
+
 function initApp() {
-    if (window.location.pathname === '/login' || window.location.pathname === '/signup') return;
+    if (window.location.pathname === '/login') return;
     if (!USER_TOKEN) {
         window.location.href = "/login";
     } else {
@@ -36,33 +38,22 @@ async function handleLogin() {
     const usernameInput = document.getElementById("login-username");
     const passwordInput = document.getElementById("login-password");
     const errorDiv = document.getElementById("login-error");
-    const btn = document.querySelector("#login-overlay button") || document.querySelector("button");
-
-    if (!usernameInput || !passwordInput) return;
 
     if (!usernameInput.value || !passwordInput.value) {
         errorDiv.innerText = "Please enter both username and password.";
         return;
     }
 
-    const loginData = { password: passwordInput.value };
-    if (usernameInput.value.includes("@")) {
-        loginData.email = usernameInput.value;
-    } else {
-        loginData.username = usernameInput.value;
-    }
-
-    errorDiv.innerText = "";
-    if(btn) {
-        btn.disabled = true;
-        btn.innerText = "Logging in...";
-    }
+    errorDiv.innerText = "Logging in...";
 
     try {
         const response = await fetch("/api/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(loginData)
+            body: JSON.stringify({
+                username: usernameInput.value,
+                password: passwordInput.value
+            })
         });
 
         const data = await response.json();
@@ -72,134 +63,22 @@ async function handleLogin() {
             window.location.href = "/";
         } else {
             errorDiv.innerText = data.error || "Login failed";
-            if(btn) {
-                btn.disabled = false;
-                btn.innerText = "Log In";
-            }
         }
     } catch (err) {
         console.error(err);
         errorDiv.innerText = "Connection error.";
-        if(btn) {
-            btn.disabled = false;
-            btn.innerText = "Log In";
-        }
-    }
-}
-
-async function handleSignup() {
-    const usernameInput = document.getElementById("signup-username").value;
-    const emailInput = document.getElementById("signup-email").value;
-    const passwordInput = document.getElementById("signup-password").value;
-    const confirmPasswordInput = document.getElementById("signup-confirm-password").value;
-    const errorDiv = document.getElementById("signup-error");
-    const btn = document.querySelector("button");
-
-    if (passwordInput !== confirmPasswordInput) {
-        errorDiv.innerText = "Passwords do not match";
-        return;
-    }
-
-    const signupData = {
-        username: usernameInput,
-        displayName: usernameInput,
-        email: emailInput,
-        password: passwordInput
-    };
-
-    if(btn) {
-        btn.disabled = true;
-        btn.innerText = "Signing up...";
-    }
-
-    try {
-        const response = await fetch("/api/auth/signup", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(signupData)
-        });
-        const data = await response.json();
-
-        if (response.ok) {
-            const overlayContent = document.querySelector(".login-card") || document.querySelector("#login-overlay > div");
-            if(overlayContent) {
-                overlayContent.innerHTML = `
-                <div style="margin-bottom: 20px;">
-                    <div style="font-size: 40px;">🦁</div>
-                    <div style="font-size: 24px; font-weight: bold; color: #d93025; margin-top: 10px;">Verify Your Email</div>
-                    <p style="font-size: 14px; color: #666; margin-top: 10px;">An OTP has been sent to <strong>${emailInput}</strong>.</p>
-                </div>
-                <input type="text" id="otp-code" placeholder="Enter OTP *" class="login-input" style="margin-bottom: 20px; width: 100%; padding: 12px; box-sizing: border-box;">
-                <button onclick="handleOtpVerification('${emailInput}')"
-                        style="width: 100%; padding: 12px; background: #d93025; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
-                    Verify
-                </button>
-                <div id="otp-error" style="color: red; margin-top: 15px; font-size: 14px;"></div>
-                `;
-            }
-        } else {
-            errorDiv.innerText = data.error || "Signup failed";
-            if(btn) {
-                btn.disabled = false;
-                btn.innerText = "Sign Up";
-            }
-        }
-    } catch (err) {
-        console.error(err);
-        errorDiv.innerText = "Connection error";
-        if(btn) {
-            btn.disabled = false;
-            btn.innerText = "Sign Up";
-        }
-    }
-}
-
-async function handleOtpVerification(email) {
-    const otpInput = document.getElementById("otp-code").value;
-    const errorDiv = document.getElementById("otp-error");
-    const btn = document.querySelector("button");
-
-    btn.disabled = true;
-    btn.innerText = "Verifying...";
-    errorDiv.innerText = "";
-
-    try {
-        const response = await fetch("/api/auth/verify-email", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({email: email, verificationCode: otpInput})
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.token) {
-            USER_TOKEN = data.token;
-            localStorage.setItem("sgen_token", USER_TOKEN);
-            window.location.href = "/";
-        } else {
-            errorDiv.innerText = data.error || "Invalid OTP";
-            btn.disabled = false;
-            btn.innerText = "Verify";
-        }
-    } catch (err) {
-        console.error(err);
-        errorDiv.innerText = "Connection error";
-        btn.disabled = false;
-        btn.innerText = "Verify";
     }
 }
 
 async function loadHome() {
     window.currentCommunityId = null;
     toggleView("home");
-
     if(window.refreshFeed) window.refreshFeed();
 }
 
 async function openCommunity(communityId, element) {
     document.querySelectorAll('.community-item').forEach(el => el.style.backgroundColor = "transparent");
     if(element) element.style.backgroundColor = "#e8f0fe";
-
     if (window.currentCommunityId === communityId) {
         if(window.refreshFeed) window.refreshFeed(communityId);
         return;

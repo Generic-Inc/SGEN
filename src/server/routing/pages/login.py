@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for
+from flask import render_template
 
 from routing.pages import pages_blueprint
 
@@ -10,7 +10,3 @@ def login_page():
 @pages_blueprint.route('/signup')
 def signup_page():
     return render_template('signup.html')
-
-@pages_blueprint.route('/')
-def home_page():
-    return render_template('index.html')

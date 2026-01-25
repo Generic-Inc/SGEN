@@ -196,3 +196,12 @@ body {
     -webkit-filter: blur(4px);
     z-index: -1;
 }
+
+.login-bar {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}

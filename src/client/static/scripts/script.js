@@ -72,7 +72,100 @@ async function handleLogin() {
         btn.disabled = false;
         btn.innerText = "Log In";
     }
+
 }
+
+async function handleSignup() {
+    const usernameInput = document.getElementById("signup-username").value;
+    const emailInput = document.getElementById("signup-email").value;
+    const passwordInput = document.getElementById("signup-password").value;
+    const confirmPasswordInput = document.getElementById("signup-confirm-password").value;
+    const errorDiv = document.getElementById("signup-error");
+    const btn = document.querySelector("#login-overlay button");
+    if (passwordInput !== confirmPasswordInput) {
+        errorDiv.innerText = "Passwords do not match";
+        return;
+    }
+    const signupData = {
+        username: usernameInput,
+        displayName: usernameInput,
+        email: emailInput,
+        password: passwordInput
+    };
+    btn.disabled = true;
+    btn.innerText = "Signing up...";
+
+    try {
+        const response = await fetch("/api/auth/signup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(signupData)
+        });
+        const data = await response.json();
+        if (response.ok) {
+            const overlayContent = document.querySelector("#login-overlay > div");
+            overlayContent.innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <img src="https://i.ibb.co/G4f7zGH5/SGEN-Logo.png" style="height: 100px">
+                    <div style="font-size: 24px; font-weight: bold; color: #d93025; margin-top: 10px;">Verify Your Email</div>
+                    <p style="font-size: 14px; color: #666; margin-top: 10px;">An OTP has been sent to <strong>${emailInput}</strong>.</p>
+                </div>
+                <input type="text" id="otp-code" placeholder="Enter OTP *" class="login-bar" style="margin-bottom: 20px">
+                <button onclick="handleOtpVerification('${emailInput}')"
+                        style="width: 100%; padding: 12px; background: #d93025; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
+                    Verify
+                </button>
+                <div id="otp-error" style="color: red; margin-top: 15px; font-size: 14px;"></div>
+            `;
+        } else {
+            errorDiv.innerText = data.error || "Signup failed";
+            btn.disabled = false;
+            btn.innerText = "Sign Up";
+        }
+
+    } catch (err) {
+        console.error(err);
+        errorDiv.innerText = "Connection error";
+        btn.disabled = false;
+        btn.innerText = "Sign Up";
+    }
+}
+
+async function handleOtpVerification(email) {
+    const otpInput = document.getElementById("otp-code").value;
+    const errorDiv = document.getElementById("otp-error");
+    const btn = document.querySelector("#login-overlay button");
+
+    btn.disabled = true;
+    btn.innerText = "Verifying...";
+    errorDiv.innerText = "";
+
+    try {
+        const response = await fetch("/api/auth/verify-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email, verificationCode: otpInput })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.token) {
+            USER_TOKEN = data.token;
+            localStorage.setItem("sgen_token", USER_TOKEN);
+            window.location.href = "/";
+        } else {
+            errorDiv.innerText = data.error || "Invalid OTP";
+            btn.disabled = false;
+            btn.innerText = "Verify";
+        }
+    } catch (err) {
+        console.error(err);
+        errorDiv.innerText = "Connection error";
+        btn.disabled = false;
+        btn.innerText = "Verify";
+    }
+}
+
 
 async function loadHomeFeed() {
     const commMenu = document.getElementById("community-menu");

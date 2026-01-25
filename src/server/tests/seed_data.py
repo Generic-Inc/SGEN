@@ -3,6 +3,8 @@ from global_src.db import DATABASE
 from global_src.global_classes import User, Community
 from modules.authentications import SaltHash, AuthenticationsUser
 from modules.posts import Post, Comment
+from modules.events import Event, EventAttendance
+from datetime import datetime, timedelta
 
 async def main():
     await DATABASE.initialize()
@@ -71,6 +73,50 @@ async def main():
         post_id=post_1.post_id,
         author_id=user_2.user_id
     )
+
+    events_to_create = [
+        {
+            'event_name': 'Marina Bay Sands Day',
+            'event_description': 'Explore the iconic Marina Bay Sands and enjoy breathtaking views!',
+            'scheduled_date': (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d 18:00:00'),
+            'event_location': 'Marina Bay Sands Convention Center',
+            'image_url': 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd',
+        },
+        {
+            'event_name': 'Rizzler day',
+            'event_description': 'A meeting of great rizzlers young and old',
+            'scheduled_date': (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d 19:00:00'),
+            'event_location': 'Orchard Road',
+            'image_url': None,
+        },
+        {
+            'event_name': 'Hidden Hawker Tour',
+            'event_description': 'Discover hidden hawker gems in the East!',
+            'scheduled_date': (datetime.now() + timedelta(days=21)).strftime('%Y-%m-%d 12:00:00'),
+            'event_location': 'Bedok Food Centre',
+            'image_url': 'https://images.unsplash.com/photo-1551218808-94e220e084d2',
+        },
+    ]
+
+    for event_data in events_to_create:
+        try:
+            event = await Event.create(
+                event_name=event_data['event_name'],
+                event_description=event_data['event_description'],
+                scheduled_date=event_data['scheduled_date'],
+                event_location=event_data['event_location'],
+                community_id=test_community.community_id,
+                creator_id=user_1.user_id,
+                image_url=event_data['image_url']
+            )
+
+            # Add some interested users
+            await EventAttendance.toggle_interest(event.event_id, user_1.user_id)
+            await EventAttendance.toggle_interest(event.event_id, user_2.user_id)
+
+            print(f"Created event: {event_data['event_name']}")
+        except Exception as e:
+            print(f"Error creating event {event_data['event_name']}: {e}")
 
 if __name__ == "__main__":
     import asyncio

@@ -37,25 +37,27 @@ async def community_posts(community_id: int):
     if not user:
         return {"error": "Unauthorized"}, 401
 
-    if not await Community.get_community(community_id):
+    community = await Community.get_community(community_id)
+    if not community:
         return {"error": "Community not found"}, 404
-
     if request.method == "GET":
-        posts = await Post.get_by_community(community_id, viewer_id=user.user_id)
+        posts = await Post.get_by_community(
+            community_id,
+            viewer_id=user.user_id,
+            community_name=community.display_name
+        )
         return {"posts": [p.public_json for p in posts]}
 
     elif request.method == "POST":
         community_member = await CommunityMember.get_member(user.user_id, community_id)
         if not community_member:
             return {"error": "You must first join this community before posting"}, 403
-        if not community_member.requires_permissions(
-            Permissions.CREATE_POSTS
-        ):
+        if not community_member.requires_permissions(Permissions.CREATE_POSTS):
             return {"error": "Forbidden"}, 403
+
         data = request.get_json() or {}
         if not data.get("content"):
             return {"error": "Missing content"}, 400
-
         new_post = await Post.create(
             content=data.get("content"),
             community_id=community_id,
@@ -90,7 +92,6 @@ async def single_post(community_id: int, post_id: int):
 
         await post.update(new_content)
         return post.public_json
-
 
 @community_blueprint.route("/<int:community_id>/posts/<int:post_id>/likes", methods=["POST"])
 async def post_likes(community_id: int, post_id: int):

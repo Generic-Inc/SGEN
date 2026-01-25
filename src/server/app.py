@@ -3,7 +3,6 @@ import os
 import threading
 
 from flask import Flask, render_template
-
 from global_src.constants import TEMPLATES_PATH, STATIC_PATH
 from routing.api import api
 from global_src.db import DATABASE

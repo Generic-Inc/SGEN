@@ -8,6 +8,7 @@
     </div>
     <div class="header-actions">
         <button class="create-btn" onclick="showCreateModal()">
+        <button class="create-btn" onclick="openCreateModal()">
             <span>+</span>
             <span>Create</span>
         </button>
@@ -18,6 +19,7 @@
 
 {% macro sidenav(communities=[], current_community=None) %}
 <div class="sidebar">
+    <div class="nav-item" onclick="loadHome()" style="cursor: pointer;">
     <div class="nav-item" onclick="window.location.href='/'">
         <span class="material-icons">home</span>
         <span>Home</span>

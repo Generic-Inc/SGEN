@@ -18,10 +18,11 @@
 
 {% macro sidenav() %}
 <div class="sidebar">
-    <div class="nav-item">
+    <div class="nav-item" onclick="loadHomeFeed()" style="cursor: pointer;">
         <span class="material-icons">home</span>
         <span>Home</span>
     </div>
+
     <div class="nav-item">
         <span class="material-icons">chat_bubble_outline</span>
         <span>SG Explorers Chat</span>
@@ -30,36 +31,23 @@
         <span class="material-icons">event</span>
         <span>SG Explorers Events</span>
     </div>
-    <div class="nav-item">
-        <span class="material-icons">article</span>
-        <span>SG Explorers Posts</span>
-    </div>
 
     <div class="section-title">Your Communities ▼</div>
-    <div class="community-item">
+
+    <div class="community-item" onclick="loadCommunityFeed(1, this)">
         <span class="material-icons">groups</span>
-        <span>SG Pokemon</span>
+        <span>SG Explorers</span>
     </div>
-    <div class="community-item">
+
+    <div class="community-item" onclick="loadCommunityFeed(2, this)">
         <span class="material-icons">groups</span>
-        <span>SG 67ers</span>
-    </div>
-    <div class="community-item">
-        <span class="material-icons">groups</span>
+        <span>SG Foodies</span>
     </div>
 
     <div class="section-title">Recommended Communities ▼</div>
     <div class="community-item">
         <span class="material-icons">groups</span>
         <span>SG Hawker Centers</span>
-    </div>
-    <div class="community-item">
-        <span class="material-icons">groups</span>
-        <span>SG Stories</span>
-    </div>
-    <div class="community-item">
-        <span class="material-icons">groups</span>
-        <span>Real Community</span>
     </div>
 </div>
 {% endmacro %}

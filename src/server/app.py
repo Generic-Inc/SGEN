@@ -8,6 +8,7 @@ from global_src.constants import TEMPLATES_PATH, STATIC_PATH
 from routing.api import api
 from global_src.db import DATABASE
 from config.config import CONFIG
+from routing.pages import pages_blueprint
 
 app = Flask(__name__,
             template_folder=TEMPLATES_PATH,
@@ -15,6 +16,7 @@ app = Flask(__name__,
 
 app.json.sort_keys = False
 app.register_blueprint(api, url_prefix='/api')
+app.register_blueprint(pages_blueprint)
 
 @app.before_request
 async def startup():

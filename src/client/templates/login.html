@@ -1,0 +1,39 @@
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SGEN{% endblock %}</title>
+
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../static/styles/style.css">
+    <link rel="stylesheet" href="../static/styles/root.css">
+</head>
+
+{% block content %}
+<div id="login-overlay" style="">
+        <div style="background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); width: 350px; text-align: center;">
+
+            <div style="margin-bottom: 20px;">
+                <img src="https://i.ibb.co/G4f7zGH5/SGEN-Logo.png" style="height: 100px">
+                <div style="font-size: 24px; font-weight: bold; color: #d93025; margin-top: 10px;">SGEN Login</div>
+            </div>
+
+            <input type="text" id="login-username" placeholder="Username"
+                   style="width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+
+            <input type="password" id="login-password" placeholder="Password"
+                   style="width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+
+            <button onclick="handleLogin()"
+                    style="width: 100%; padding: 12px; background: #d93025; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
+                Log In
+            </button>
+
+            <div id="login-error" style="color: red; margin-top: 15px; font-size: 14px;"></div>
+
+            <div style="margin-top: 20px; font-size: 12px; color: #666;">
+                Don't have an account? <a href="#" style="color:#d93025;">Sign Up</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -167,3 +167,32 @@ body {
     margin-top: 10px;
     border: 1px solid #eee;
 }
+
+#login-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.5); /* Added for content readability */
+}
+
+#login-overlay::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("https://img.static-kl.com/transform/e09aba7f-d6d2-44ea-826e-076b1f616512/");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    filter: blur(4px);
+    -webkit-filter: blur(4px);
+    z-index: -1;
+}

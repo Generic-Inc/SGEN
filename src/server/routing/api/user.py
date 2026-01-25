@@ -6,7 +6,7 @@ from . import user_blueprint
 @user_blueprint.route("/<int:user_id>", methods=["GET", "PATCH", "DELETE"])
 async def get_user(user_id: int):
     """Get a user's public information by their user ID"""
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)
@@ -45,7 +45,7 @@ async def get_user(user_id: int):
 @user_blueprint.route("/<int:user_id>/communities")
 async def get_user_communities(user_id: int):
     """Get a list of communities that a user is a member of by their user ID"""
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)

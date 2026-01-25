@@ -3,12 +3,6 @@
 {% block title %}Home - SGEN{% endblock %}
 
 {% block content %}
-<script>
-    const token = localStorage.getItem('sgen_token');
-    if (!token) {
-        window.location.href = '/signup';
-    }
-</script>
     <div class="feed-container" style="width: 100%; max-width: 600px;">
 
         <div class="post-card" style="padding: 16px; display: flex; gap: 12px; align-items: center;">

@@ -8,7 +8,7 @@ from . import community_blueprint
 async def community_events(community_id: int):
     """Get all events for a community or create a new event"""
 
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)
@@ -47,7 +47,7 @@ async def community_events(community_id: int):
 @community_blueprint.route("/<int:community_id>/events/<int:event_id>", methods=["GET", "PATCH", "DELETE"])
 async def single_event(community_id: int, event_id: int):
     """Get, update, or delete a single event"""
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)
@@ -98,7 +98,7 @@ async def single_event(community_id: int, event_id: int):
 @community_blueprint.route("/<int:community_id>/events/<int:event_id>/attendance", methods=["GET", "PUT", "DELETE"])
 async def event_attendance(community_id: int, event_id: int):
     """Manage event attendance"""
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)
@@ -161,7 +161,7 @@ async def event_attendance(community_id: int, event_id: int):
 @community_blueprint.route("/<int:community_id>/events/<int:event_id>/attendees", methods=["GET"])
 async def event_attendees(community_id: int, event_id: int):
     """Get list of attendees for an event"""
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)

@@ -7,7 +7,7 @@ from . import api
 
 @api.route("/my-communities", methods=["GET"])
 async def get_my_communities():
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)
@@ -18,7 +18,7 @@ async def get_my_communities():
 
 @api.route("/feed", methods=["GET"])
 async def get_home_feed():
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)
@@ -30,7 +30,7 @@ async def get_home_feed():
 
 @community_blueprint.route("/<int:community_id>/posts", methods=["GET", "POST"])
 async def community_posts(community_id: int):
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)
@@ -66,7 +66,7 @@ async def community_posts(community_id: int):
 
 @community_blueprint.route("/<int:community_id>/posts/<int:post_id>", methods=["GET", "PATCH"])
 async def single_post(community_id: int, post_id: int):
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)
@@ -94,7 +94,7 @@ async def single_post(community_id: int, post_id: int):
 
 @community_blueprint.route("/<int:community_id>/posts/<int:post_id>/likes", methods=["POST"])
 async def post_likes(community_id: int, post_id: int):
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)
@@ -111,7 +111,7 @@ async def post_likes(community_id: int, post_id: int):
 
 @community_blueprint.route("/<int:community_id>/posts/<int:post_id>/comments", methods=["GET", "POST"])
 async def post_comments(community_id: int, post_id: int):
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)
@@ -143,7 +143,7 @@ async def post_comments(community_id: int, post_id: int):
 @community_blueprint.route("/<int:community_id>/posts/<int:post_id>/comments/<int:comment_id>",
                            methods=["GET", "PATCH"])
 async def single_comment(community_id: int, post_id: int, comment_id: int):
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)
@@ -169,7 +169,7 @@ async def single_comment(community_id: int, post_id: int, comment_id: int):
 
 @community_blueprint.route("/<int:community_id>/posts/<int:post_id>/comments/<int:comment_id>/likes", methods=["POST"])
 async def comment_likes(community_id: int, post_id: int, comment_id: int):
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)

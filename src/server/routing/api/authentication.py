@@ -5,7 +5,7 @@ from global_src.db import DATABASE
 from global_src.global_classes import User
 from modules.authentications.utils import insert_email
 from . import auth_blueprint
-from flask import request
+from flask import request, make_response, redirect, url_for
 
 from modules.authentications.data_classes import AuthenticationsUser
 
@@ -33,7 +33,9 @@ async def login():
     login = await user.login(password, user_agent=agent)
     if not login:
         return {"error": "Invalid username/email or password"}, 401
-    return {"token": login}
+    response = make_response({"success": "Logged in successfully",})
+    response.set_cookie(key="token", value=login, httponly=True, max_age=30*24*60*60)
+    return response
 
 @auth_blueprint.route("/signup", methods=["POST"])
 async def signup():
@@ -124,9 +126,11 @@ async def verify_email():
         user = await AuthenticationsUser.get_user_by_username(username=username)
         agent = request.headers.get("User-Agent") or "Unknown"
         token = await user.login("", user_agent=agent, bypass=True)
-        return {"success": "Email verified and user registered successfully",
+        response = make_response({"success": "Email verified and user registered successfully",
                 "user": user.public_json,
-                "token": token}, 201
+                "token": token})
+        response.set_cookie(key="token", value=token, httponly=True, max_age=30*24*60*60)
+        return response, 201
     except Exception as e:
         traceback.print_exc()
         print(f"Error during email verification: {e}")
@@ -135,15 +139,6 @@ async def verify_email():
 @auth_blueprint.route("/logout", methods=["POST"])
 async def logout():
     """Logout a user by invalidating their token"""
-    authorization = request.headers.get('Authorization')
-    if not authorization:
-        return {"error": "Unauthorized"}, 401
-    user = await AuthenticationsUser.get_user_by_token(authorization)
-    if not user:
-        return {"error": "Unauthorized"}, 401
-
-    check = await user.logout(authorization)
-    if check:
-        return {"success": "Logged out successfully"}
-    else:
-        return {"error": "Failed to logout"}, 500
+    resp = make_response(redirect(url_for('pages.login_page')))
+    resp.set_cookie('token', '', expires=0)
+    return resp

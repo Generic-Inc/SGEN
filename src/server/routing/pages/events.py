@@ -1,4 +1,4 @@
-from flask import render_template, session, redirect, url_for
+from flask import render_template, session, redirect, url_for, request
 from . import pages_blueprint
 from global_src.global_classes import Community, User, CommunityMember
 from modules.events import Event
@@ -9,13 +9,14 @@ from datetime import datetime, timedelta
 async def community_events_page(community_id: int):
     """Render the events page for a community"""
 
-    # Check if user is logged in
-    auth_token = session.get('sgen_token')
-    if not auth_token:
+    authorization = request.cookies.get('token')
+    if not authorization:
+        return {"error": "Unauthorized"}, 401
+    if not authorization:
         return redirect(url_for('pages.login_page'))
 
     # Get user from token
-    user = await User.get_user_by_token(auth_token)
+    user = await User.get_user_by_token(authorization)
     if not user:
         return redirect(url_for('pages.login_page'))
 

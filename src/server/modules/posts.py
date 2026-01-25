@@ -264,7 +264,7 @@ class Comment(BaseClass):
     async def create(cls, content: str, post_id: int, author_id: int) -> Optional['Comment']:
         query = """
                 INSERT INTO Comments (content, post_id, author_id)
-                VALUES (?, ?, ?, ?) RETURNING comment_id, content, post_id, author_id, created, modified, active;
+                VALUES (?, ?, ?) RETURNING comment_id, content, post_id, author_id, created, modified, active;
                 """
         row = await DATABASE.fetch_one(query, (content, post_id, author_id))
         if not row: return None

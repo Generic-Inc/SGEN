@@ -121,13 +121,25 @@ CREATE TABLE IF NOT EXISTS EventAttendance (
     attendance_id INTEGER PRIMARY KEY AUTOINCREMENT,
     event_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
-    status VARCHAR(20) DEFAULT 'interested' CHECK(status IN ('going', 'interested', 'not_going')),
     created DATETIME DEFAULT (DATETIME('now', 'localtime')),
     FOREIGN KEY (event_id) REFERENCES Events(event_id),
     FOREIGN KEY (user_id) REFERENCES Profiles(user_id),
     UNIQUE(event_id, user_id)
 );
 
+INSERT INTO Events (event_name, event_description, scheduled_date, event_location, community_id, creator_id, image_url)
+VALUES (
+    "SGEN Meetup 2025",
+    "Join us for our first community meetup!",
+    DATETIME('2025-02-15 18:00:00'),
+    "Marina Bay Sands Convention Center",
+    1,
+    1,
+    "https://placehold.co/800x400"
+) ON CONFLICT DO NOTHING;
+
+INSERT INTO EventAttendance (event_id, user_id)
+VALUES (1, 1);
 
 INSERT INTO Events (event_name, event_description, scheduled_date, event_location, community_id, creator_id, image_url)
 VALUES (

@@ -131,3 +131,19 @@ async def verify_email():
         traceback.print_exc()
         print(f"Error during email verification: {e}")
         return {"error": "Failed to register user"}, 500
+
+@auth_blueprint.route("/logout", methods=["POST"])
+async def logout():
+    """Logout a user by invalidating their token"""
+    authorization = request.headers.get('Authorization')
+    if not authorization:
+        return {"error": "Unauthorized"}, 401
+    user = await AuthenticationsUser.get_user_by_token(authorization)
+    if not user:
+        return {"error": "Unauthorized"}, 401
+
+    check = await user.logout(authorization)
+    if check:
+        return {"success": "Logged out successfully"}
+    else:
+        return {"error": "Failed to logout"}, 500

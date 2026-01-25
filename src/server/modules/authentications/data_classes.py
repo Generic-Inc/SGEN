@@ -39,7 +39,7 @@ class AuthenticationsUser(User):
                                           SELECT token_hash 
                                           FROM AuthTokens 
                                           WHERE user_id=? 
-                                          ORDER BY created ASC LIMIT 1)""", (self.user_id,))
+                                          ORDER BY last_used ASC LIMIT 1)""", (self.user_id,))
             return False
         return True
 
@@ -61,6 +61,17 @@ class AuthenticationsUser(User):
         await DATABASE.execute("""INSERT INTO AuthTokens (user_id, user_agent, token_hash)
                                  VALUES (?,?,?)""", (self.user_id, user_agent, hashed_token))
         return new_token
+
+    async def logout(self, token: str) -> bool:
+        hashed_token = sha256(token.encode('utf-8')).hexdigest()
+        try:
+            result = await DATABASE.execute("""DELETE FROM AuthTokens WHERE user_id = ? AND token_hash = ?""",
+                                            (self.user_id, hashed_token))
+            return True
+        except Exception as e:
+            print(f"Error during logout: {e}")
+        return False
+
 
 
 

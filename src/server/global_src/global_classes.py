@@ -1,5 +1,6 @@
 from __future__ import annotations
 import asyncio
+import random
 from datetime import datetime
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Union, Literal
@@ -8,6 +9,7 @@ from typing import TYPE_CHECKING
 
 from slugify import slugify
 
+from config.config import CONFIG
 from .db import DATABASE
 if TYPE_CHECKING:
     from modules.authentications import Permissions
@@ -68,6 +70,8 @@ class User(BaseClass):
         check = await DATABASE.execute("""SELECT * FROM Profiles WHERE username=? OR _email=?""", (username, email))
         if check:
             return False
+        avatar_url = random.choice(CONFIG.default_user["avatar_url"]) if not avatar_url else avatar_url
+        bio = random.choice(CONFIG.default_user["bio"]) if not bio else bio
         await DATABASE.execute("""
         INSERT INTO Profiles (username, display_name, _email, language, avatar_url, bio)
                                VALUES(?,?,?,?,?,?)""",
@@ -114,6 +118,7 @@ FROM Profiles
         """, (token_hash,))
         if not token_fetch:
             return None
+        await DATABASE.execute("UPDATE AuthTokens SET last_used=? WHERE token_hash=?", (datetime.now(), token_hash))
         user_id, = token_fetch
         return await cls.get_user(user_id)
 
@@ -370,6 +375,11 @@ FROM Communities
         check = await DATABASE.fetch_one("""SELECT * FROM Communities WHERE community_name=?""", (community_name,))
         if check:
             return False
+
+        description = random.choice(CONFIG.default_community["description"]) if not description else description
+        icon_url = random.choice(CONFIG.default_community["icon_url"]) if not icon_url else icon_url
+        offline_text = CONFIG.default_community["offline_text"] if not offline_text else offline_text
+        online_text = CONFIG.default_community["online_text"] if not online_text else online_text
 
         await DATABASE.execute("""
         INSERT INTO Communities (community_name, display_name, owner_id, description, icon_url, posts_guidelines, messages_guidelines, offline_text, online_text)

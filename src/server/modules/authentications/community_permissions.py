@@ -10,6 +10,7 @@ class Permissions(Enum):
     MANAGE_MESSAGES = "manage_messages"
     MANAGE_POSTS = "manage_posts"
     MANAGE_MEMBERS = "manage_members"
+    MANAGE_EVENTS = "manage_events"
     MANAGE_COMMUNITY = "manage_community"
     MANAGE_ROLES = "manage_roles"
     DELETE_COMMUNITY = "delete_community"
@@ -30,6 +31,7 @@ class PresetRoles(Enum):
         Permissions.MANAGE_MEMBERS
     ]
     ADMIN = MODERATOR + [
+        Permissions.MANAGE_EVENTS,
         Permissions.MANAGE_COMMUNITY,
         Permissions.MANAGE_ROLES,
     ]

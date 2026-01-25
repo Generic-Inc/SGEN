@@ -1,9 +1,30 @@
-{% extends "base.html" %}
 {% from 'components/post.html' import postsfeed %}
-
+{% from 'components/components.html' import topnav, sidenav %}
 {% block title %}Communities - SGEN{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ community.display_name }} - Home</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="../../static/styles/style.css">
+    <link rel="stylesheet" href="../../static/styles/communities.css">
+    <link rel="stylesheet" href="../../static/styles/root.css">
+</head>
+<body>
 
-{% block content %}
-{{ postsfeed(community_posts) }}
+{{ topnav() }}
 
-{% endblock %}
+
+<div class="container">
+
+        {{ sidenav(community) }}
+
+        <main class="main-content">
+            {{ postsfeed(community_posts) }}
+        </main>
+
+    </div>
+</body>
+</html>

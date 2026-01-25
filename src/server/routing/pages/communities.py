@@ -14,4 +14,6 @@ async def community_page(community_id: int):
         return redirect(url_for('pages.login_page'))
     posts = await Post.get_user_feed(user.user_id)
 
-    return render_template('communities.html', community_posts=posts)
+    community = await Community.get_community(community_id)
+
+    return render_template('communities.html', community_posts=posts, community=community)

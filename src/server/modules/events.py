@@ -16,7 +16,8 @@ class Event(BaseClass):
                  modified: str,
                  active: int,
                  image_url: Optional[str] = None,
-                 user_attendance_status: Optional[str] = None):
+                 user_is_interested: bool = False,
+                 interested_count: int = 0):
         self.event_id = event_id
         self.event_name = event_name
         self.event_description = event_description
@@ -28,7 +29,8 @@ class Event(BaseClass):
         self.modified = modified
         self.active = active
         self.image_url = image_url
-        self.user_attendance_status = user_attendance_status
+        self.user_is_interested = user_is_interested
+        self.interested_count = interested_count
 
     @property
     def public_json(self) -> dict[str, Any]:
@@ -43,35 +45,37 @@ class Event(BaseClass):
             "creator": self.creator.public_json,
             "created": self.created,
             "modified": self.modified,
-            "userAttendanceStatus": self.user_attendance_status
+            "userIsInterested": self.user_is_interested,
+            "interestedCount": self.interested_count
         }
 
     @classmethod
     async def get_by_community(cls, community_id: int, user_id: Optional[int] = None) -> list['Event']:
-        """Get all events for a community, optionally including user attendance status"""
+        """Get all events for a community, optionally including user's interest status"""
         query = """
-                SELECT e.event_id, \
-                       e.event_name, \
-                       e.event_description, \
-                       e.scheduled_date, \
-                       e.event_location, \
-                       e.image_url, \
-                       e.community_id, \
-                       e.created, \
-                       e.modified, \
-                       e.active, \
-                       u.user_id, \
-                       u.username, \
-                       u.display_name, \
-                       u._email, \
-                       u.language, \
-                       u.avatar_url, \
-                       u.bio, \
-                       ea.status
+                SELECT e.event_id,
+                       e.event_name,
+                       e.event_description,
+                       e.scheduled_date,
+                       e.event_location,
+                       e.image_url,
+                       e.community_id,
+                       e.created,
+                       e.modified,
+                       e.active,
+                       u.user_id,
+                       u.username,
+                       u.display_name,
+                       u._email,
+                       u.language,
+                       u.avatar_url,
+                       u.bio,
+                       CASE WHEN ea.attendance_id IS NOT NULL THEN 1 ELSE 0 END as is_interested,
+                       (SELECT COUNT(*) FROM EventAttendance WHERE event_id = e.event_id) as interested_count
                 FROM Events e
-                         JOIN Profiles u ON e.creator_id = u.user_id
-                         LEFT JOIN EventAttendance ea ON e.event_id = ea.event_id AND ea.user_id = ?
-                WHERE e.community_id = ? \
+                JOIN Profiles u ON e.creator_id = u.user_id
+                LEFT JOIN EventAttendance ea ON e.event_id = ea.event_id AND ea.user_id = ?
+                WHERE e.community_id = ?
                   AND e.active = 1
                 ORDER BY e.scheduled_date ASC
                 """
@@ -80,12 +84,12 @@ class Event(BaseClass):
         events = []
         for row in rows:
             (e_id, e_name, e_desc, e_date, e_loc, e_img, e_comm_id, e_created, e_mod, e_active,
-             u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio, attendance_status) = row
+             u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio, is_interested, interested_count) = row
 
             creator_obj = User(u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio)
 
             events.append(cls(e_id, e_name, e_desc, e_date, e_loc, e_comm_id, creator_obj,
-                            e_created, e_mod, e_active, e_img, attendance_status))
+                            e_created, e_mod, e_active, e_img, bool(is_interested), interested_count))
 
         return events
 
@@ -114,33 +118,34 @@ class Event(BaseClass):
         creator_obj = await User.get_user(creator_id)
 
         return cls(row[0], row[1], row[2], row[3], row[4], row[6], creator_obj, 
-                  row[7], row[8], row[9], row[5])
+                  row[7], row[8], row[9], row[5], False, 0)
 
     @classmethod
     async def get_by_id(cls, event_id: int, user_id: Optional[int] = None) -> Optional['Event']:
-        """Get a single event by ID, optionally including user's attendance status"""
+        """Get a single event by ID, optionally including user's interest status"""
         query = """
-                SELECT e.event_id, \
-                       e.event_name, \
-                       e.event_description, \
-                       e.scheduled_date, \
-                       e.event_location, \
-                       e.image_url, \
-                       e.community_id, \
-                       e.created, \
-                       e.modified, \
-                       e.active, \
-                       u.user_id, \
-                       u.username, \
-                       u.display_name, \
-                       u._email, \
-                       u.language, \
-                       u.avatar_url, \
-                       u.bio, \
-                       ea.status
+                SELECT e.event_id,
+                       e.event_name,
+                       e.event_description,
+                       e.scheduled_date,
+                       e.event_location,
+                       e.image_url,
+                       e.community_id,
+                       e.created,
+                       e.modified,
+                       e.active,
+                       u.user_id,
+                       u.username,
+                       u.display_name,
+                       u._email,
+                       u.language,
+                       u.avatar_url,
+                       u.bio,
+                       CASE WHEN ea.attendance_id IS NOT NULL THEN 1 ELSE 0 END as is_interested,
+                       (SELECT COUNT(*) FROM EventAttendance WHERE event_id = e.event_id) as interested_count
                 FROM Events e
-                         JOIN Profiles u ON e.creator_id = u.user_id
-                         LEFT JOIN EventAttendance ea ON e.event_id = ea.event_id AND ea.user_id = ?
+                JOIN Profiles u ON e.creator_id = u.user_id
+                LEFT JOIN EventAttendance ea ON e.event_id = ea.event_id AND ea.user_id = ?
                 WHERE e.event_id = ?
                 """
         row = await DATABASE.fetch_one(query, (user_id, event_id))
@@ -148,12 +153,12 @@ class Event(BaseClass):
             return None
 
         (e_id, e_name, e_desc, e_date, e_loc, e_img, e_comm_id, e_created, e_mod, e_active,
-         u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio, attendance_status) = row
+         u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio, is_interested, interested_count) = row
 
         creator_obj = User(u_id, u_username, u_display, u_email, u_lang, u_avatar, u_bio)
 
         return cls(e_id, e_name, e_desc, e_date, e_loc, e_comm_id, creator_obj,
-                  e_created, e_mod, e_active, e_img, attendance_status)
+                  e_created, e_mod, e_active, e_img, bool(is_interested), interested_count)
 
     async def update(self, 
                     event_name: Optional[str] = None,
@@ -198,69 +203,53 @@ class Event(BaseClass):
 
 class EventAttendance:
     @staticmethod
-    async def set_attendance(event_id: int, user_id: int, status: str) -> bool:
-        """Set or update user attendance status (going, interested, not_going)"""
+    async def toggle_interest(event_id: int, user_id: int) -> bool:
+        """
+        Toggle user's interest in an event (like/unlike)
+        Returns True if now interested, False if no longer interested
+        """
         check_query = "SELECT attendance_id FROM EventAttendance WHERE event_id = ? AND user_id = ?"
         existing = await DATABASE.fetch_one(check_query, (event_id, user_id))
 
         if existing:
+            # User is already interested - remove interest
             await DATABASE.execute(
-                "UPDATE EventAttendance SET status = ? WHERE attendance_id = ?",
-                (status, existing[0])
+                "DELETE FROM EventAttendance WHERE attendance_id = ?",
+                (existing[0],)
             )
+            return False
         else:
+            # User is not interested - add interest
             await DATABASE.execute(
-                "INSERT INTO EventAttendance (event_id, user_id, status) VALUES (?, ?, ?)",
-                (event_id, user_id, status)
+                "INSERT INTO EventAttendance (event_id, user_id) VALUES (?, ?)",
+                (event_id, user_id)
             )
-        return True
+            return True
 
     @staticmethod
-    async def remove_attendance(event_id: int, user_id: int) -> bool:
-        """Remove user's attendance record"""
-        result = await DATABASE.execute(
-            "DELETE FROM EventAttendance WHERE event_id = ? AND user_id = ?",
-            (event_id, user_id)
-        )
-        return result > 0
-
-    @staticmethod
-    async def get_attendees(event_id: int, status: Optional[str] = None) -> list[User]:
-        """Get all attendees for an event"""
-        if status:
-            query = """
-                    SELECT u.user_id, u.username, u.display_name, u._email, 
-                           u.language, u.avatar_url, u.bio
-                    FROM EventAttendance ea
-                    JOIN Profiles u ON ea.user_id = u.user_id
-                    WHERE ea.event_id = ? AND ea.status = ?
-                    """
-            rows = await DATABASE.fetch_all(query, (event_id, status))
-        else:
-            query = """
-                    SELECT u.user_id, u.username, u.display_name, u._email, 
-                           u.language, u.avatar_url, u.bio
-                    FROM EventAttendance ea
-                    JOIN Profiles u ON ea.user_id = u.user_id
-                    WHERE ea.event_id = ?
-                    """
-            rows = await DATABASE.fetch_all(query, (event_id,))
-
+    async def get_interested_users(event_id: int) -> list[User]:
+        """Get all users interested in an event"""
+        query = """
+                SELECT u.user_id, u.username, u.display_name, u._email, 
+                       u.language, u.avatar_url, u.bio
+                FROM EventAttendance ea
+                JOIN Profiles u ON ea.user_id = u.user_id
+                WHERE ea.event_id = ?
+                ORDER BY ea.created DESC
+                """
+        rows = await DATABASE.fetch_all(query, (event_id,))
         return [User(row[0], row[1], row[2], row[3], row[4], row[5], row[6]) for row in rows]
 
     @staticmethod
-    async def get_attendance_counts(event_id: int) -> dict[str, int]:
-        """Get count of attendees by status"""
-        query = """
-                SELECT status, COUNT(*) 
-                FROM EventAttendance 
-                WHERE event_id = ? 
-                GROUP BY status
-                """
-        rows = await DATABASE.fetch_all(query, (event_id,))
-        
-        counts = {"going": 0, "interested": 0, "not_going": 0}
-        for row in rows:
-            counts[row[0]] = row[1]
-        
-        return counts
+    async def get_interested_count(event_id: int) -> int:
+        """Get count of interested users"""
+        query = "SELECT COUNT(*) FROM EventAttendance WHERE event_id = ?"
+        result = await DATABASE.fetch_one(query, (event_id,))
+        return result[0] if result else 0
+
+    @staticmethod
+    async def is_user_interested(event_id: int, user_id: int) -> bool:
+        """Check if a user is interested in an event"""
+        query = "SELECT attendance_id FROM EventAttendance WHERE event_id = ? AND user_id = ?"
+        result = await DATABASE.fetch_one(query, (event_id, user_id))
+        return result is not None

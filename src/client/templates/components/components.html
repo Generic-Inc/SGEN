@@ -7,7 +7,7 @@
         <div class="brand-name">SGEN</div>
     </div>
     <div class="header-actions">
-        <button class="create-btn">
+        <button class="create-btn" onclick="openCreateModal()">
             <span>+</span>
             <span>Create</span>
         </button>
@@ -18,7 +18,7 @@
 
 {% macro sidenav() %}
 <div class="sidebar">
-    <div class="nav-item" onclick="loadHomeFeed()" style="cursor: pointer;">
+    <div class="nav-item" onclick="loadHome()" style="cursor: pointer;">
         <span class="material-icons">home</span>
         <span>Home</span>
     </div>

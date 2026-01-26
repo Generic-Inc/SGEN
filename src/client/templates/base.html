@@ -14,25 +14,28 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/root.css') }}">
 
 </head>
-<body>
+<body data-user-id="{{ user.user_id if user else '' }}">
 
     {% from 'components/components.html' import topnav, sidenav %}
 
     {{ topnav() }}
 
     <div class="container">
-
         {{ sidenav() }}
-
         <main class="main-content">
             {% block content %}{% endblock %}
         </main>
-
     </div>
 
     <script src="{{ url_for('static', filename='scripts/interfacing.js') }}"></script>
     <script src="{{ url_for('static', filename='scripts/generator.js') }}"></script>
     <script src="{{ url_for('static', filename='scripts/posts.js') }}"></script>
     <script src="{{ url_for('static', filename='scripts/script.js') }}"></script>
+
+    <script>
+        // Read the ID from the body tag. No curly braces here = No IDE errors!
+        const rawId = document.body.getAttribute('data-user-id');
+        window.currentUserId = rawId ? parseInt(rawId) : null;
+    </script>
 </body>
 </html>

@@ -1,43 +1,56 @@
-{% macro postsfeed(posts) %}
+{% macro postsfeed(posts, viewer) %}
 <div class="community-container">
     <div class="com-feed-container">
         {% for post in posts %}
         <div class="post-card" id="post-{{ post.post_id }}">
-            <div class="post-header">
+            <div class="post-header" style="position: relative;">
                 <a href="/user/{{ post.author.user_id }}">
                     <img src="{{ post.author.avatar_url or 'https://placehold.co/40' }}" class="user-avatar"
                          style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
                 </a>
-                <div class="post-info">
+                <div class="post-info" style="flex: 1;">
                     <a href="/user/{{ post.author.user_id }}" style="text-decoration:none; color:inherit;">
                         <h4 class="post-author">{{ post.author.display_name }}</h4>
                     </a>
-                    <span>{{ post.created }}</span>
+                    <span style="font-size: 0.85rem; color: #666;">
+                        {{ post.created }}
+                        {% if post.modified != post.created %}
+                            <span style="font-style: italic; margin-left: 5px;">(Edited)</span>
+                        {% endif %}
+                    </span>
                 </div>
+
+                {% if viewer and viewer.user_id == post.author.user_id %}
+                <div class="post-options" style="position: relative;">
+                    <button onclick="togglePostMenu({{ post.post_id }})" style="background:none; border:none; cursor:pointer; color:#65676B; padding: 5px;">
+                        <span class="material-icons">more_horiz</span>
+                    </button>
+                    <div id="post-menu-{{ post.post_id }}" class="menu-dropdown" style="display:none; position:absolute; right:0; top:30px; background:white; border:1px solid #ddd; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1); z-index:10; width:120px; text-align:left;">
+                        <div onclick="enableEditPost({{ post.post_id }}, {{ post.community_id }})" style="padding:10px; cursor:pointer; font-size:13px; border-bottom:1px solid #eee;">Edit</div>
+                        <div onclick="deletePost({{ post.post_id }}, {{ post.community_id }})" style="padding:10px; cursor:pointer; font-size:13px; color:red;">Delete</div>
+                    </div>
+                </div>
+                {% endif %}
             </div>
 
-            <div class="post-content">
-                <p>{{ post.content }}</p>
+            <div class="post-content" id="post-content-{{ post.post_id }}">
+                <p class="post-text-body">{{ post.content }}</p>
                 {% if post.image_url and post.image_url != "None" %}
                 <img src="{{ post.image_url }}" class="post-image" style="width:100%; border-radius: 12px; margin-top: 10px;">
                 {% endif %}
             </div>
 
             <div class="post-footer">
-                <div class="footer-section"
-                     onclick="toggleLike(this)"
-                     data-post-id="{{ post.post_id }}"
-                     data-community-id="{{ post.community_id or 0 }}">
+                <div class="footer-section" onclick="toggleLike(this)"
+                     data-post-id="{{ post.post_id }}" data-community-id="{{ post.community_id or 0 }}">
                     <div class="heart-btn {{ 'liked' if post.is_liked_by_viewer else '' }}">
                         <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                     </div>
                     <span class="count-text">{{ post.like_count }} Likes</span>
                 </div>
 
-                <div class="footer-section"
-                     onclick="toggleComments(this)"
-                     data-post-id="{{ post.post_id }}"
-                     data-community-id="{{ post.community_id or 0 }}">
+                <div class="footer-section" onclick="toggleComments(this)"
+                     data-post-id="{{ post.post_id }}" data-community-id="{{ post.community_id or 0 }}">
                     <div class="comment-btn">
                         <svg viewBox="0 0 24 24"><path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18z"/></svg>
                     </div>

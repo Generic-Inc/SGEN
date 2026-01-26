@@ -12,8 +12,16 @@ async def community_page(community_id: int):
     user = await User.get_user_by_token(token)
     if not user:
         return redirect(url_for('pages.login_page'))
-    posts = await Post.get_user_feed(user.user_id)
 
     community = await Community.get_community(community_id)
-
-    return render_template('communities.html', community_posts=posts, community=community)
+    if not community:
+        return "Community not found", 404
+    posts = await Post.get_by_community(
+        community_id,
+        viewer_id=user.user_id,
+        community_name=community.display_name
+    )
+    return render_template('communities.html',
+                           community_posts=posts,
+                           community=community,
+                           user=user)

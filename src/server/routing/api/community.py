@@ -237,7 +237,3 @@ async def get_community_member(community_id: int, user_id: int):
 
         target_member_updated = await target_member.update_role("banned")
         return target_member_updated.public_json
-
-            
-
-

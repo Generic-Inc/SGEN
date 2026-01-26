@@ -1,23 +1,48 @@
 from flask import request
-
 from global_src.global_classes import User
 from . import user_blueprint
+
+def get_token():
+    auth_header = request.headers.get('Authorization')
+    if auth_header:
+        return auth_header
+    return request.cookies.get('token')
+
+@user_blueprint.route("/me")
+async def get_current_user():
+    """Get the currently logged-in user's profile"""
+    token = get_token()
+    if not token:
+        return {"error": "Unauthorized"}, 401
+
+    user = await User.get_user_by_token(token)
+    if not user:
+        return {"error": "Invalid Token"}, 401
+
+    return user.public_json
 
 @user_blueprint.route("/<int:user_id>", methods=["GET", "PATCH", "DELETE"])
 async def get_user(user_id: int):
     """Get a user's public information by their user ID"""
-    authorization = request.headers.get('Authorization')
-    if not authorization:
+    token = get_token()
+    if not token:
         return {"error": "Unauthorized"}, 401
-    user = await User.get_user_by_token(authorization)
+
+    user = await User.get_user_by_token(token)
     if not user:
         return {"error": "Unauthorized"}, 401
+
     user_get = await User.get_user(user_id)
     if not user_get:
         return {"error": "User not found"}, 404
+
     if request.method == "GET":
         return user_get.public_json
+
     elif request.method == "PATCH":
+        if user.user_id != user_get.user_id:
+            return {"error": "Forbidden: You can only edit your own profile"}, 403
+
         data = request.get_json()
         kwargs = {}
         if "displayName" in data:
@@ -30,27 +55,33 @@ async def get_user(user_id: int):
             kwargs["language"] = data["language"]
         if "email" in data:
             kwargs["email"] = data["email"]
+
         updated_user = await user_get.update_user(**kwargs)
         if not updated_user:
             return {"error": "Failed to update user"}, 400
         return updated_user.public_json
+
     elif request.method == "DELETE":
+        if user.user_id != user_get.user_id:
+            return {"error": "Forbidden"}, 403
+
         deleted = await user_get.delete_user()
         if not deleted:
             return {"error": "Failed to delete user"}, 400
         return {"success": "User deleted successfully"}
 
 
-
-@user_blueprint.route("/<int:user_id>/communities")
+@user_blueprint.route("<int:user_id>/communities")
 async def get_user_communities(user_id: int):
-    """Get a list of communities that a user is a member of by their user ID"""
-    authorization = request.headers.get('Authorization')
-    if not authorization:
+    """Get a list of communities that a user is a member of"""
+    token = get_token()
+    if not token:
         return {"error": "Unauthorized"}, 401
-    user = await User.get_user_by_token(authorization)
+
+    user = await User.get_user_by_token(token)
     if not user:
         return {"error": "Unauthorized"}, 401
+
     user_get = await User.get_user(user_id)
     if not user_get:
         return {"error": "User not found"}, 404
@@ -58,3 +89,17 @@ async def get_user_communities(user_id: int):
     communities = await user_get.get_communities()
     return {"communities": [i.public_json for i in communities]}
 
+
+@user_blueprint.route("/communities")
+async def get_my_communities():
+    """Get a list of communities the CURRENT user is in"""
+    token = get_token()
+    if not token:
+        return {"error": "Unauthorized"}, 401
+
+    user = await User.get_user_by_token(token)
+    if not user:
+        return {"error": "Unauthorized"}, 401
+
+    communities = await user.get_communities()
+    return {"communities": [i.public_json for i in communities]}

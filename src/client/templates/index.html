@@ -3,7 +3,7 @@
 {% block title %}Home - SGEN{% endblock %}
 
 {% block content %}
-    <div class="feed-container" style="width: 100%; max-width: 600px;">
+    <div class="feed-container" id="feed-container" style="width: 100%; max-width: 600px;">
 
         <div class="post-card" style="padding: 16px; display: flex; gap: 12px; align-items: center;">
             <div class="user-avatar" style="background-image: url('https://placehold.co/50'); background-size: cover;"></div>
@@ -15,6 +15,30 @@
 
         <div id="feed-content">
             </div>
+    </div>
+
+    <div id="profile-view" style="display:none; width: 100%; max-width: 600px;">
+        <div class="profile-header-card">
+            <div class="profile-cover"></div>
+            <div class="profile-avatar-container">
+                <img id="profile-view-avatar" src="" alt="Avatar">
+            </div>
+            <div class="profile-info">
+                <h2 id="profile-view-name">User Name</h2>
+                <div id="profile-view-bio" class="profile-bio">Bio goes here...</div>
+                <div class="profile-stats">
+                    <span>Joined <span id="profile-view-joined">Date</span></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-title" style="margin-top:20px;">Member of Communities</div>
+        <div id="profile-communities-list" class="profile-comm-grid">
+            </div>
+
+        <button onclick="loadHome()" style="margin-top:20px; padding:10px; background:transparent; border:1px solid #ccc; cursor:pointer; width:100%; border-radius:8px; color:#666;">
+            &larr; Back to Feed
+        </button>
     </div>
 
     <div class="right-sidebar" style="margin-left: 20px;">

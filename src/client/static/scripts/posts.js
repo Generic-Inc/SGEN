@@ -132,9 +132,12 @@ function createPostHTML(post, showContext) {
             </div>
             
             <div style="display: flex; align-items: center; gap: 12px; width:100%; margin-top:4px;">
-                <img src="${post.author.avatarUrl || 'https://placehold.co/50'}" class="user-avatar">
+                <img src="${post.author.avatarUrl || 'https://placehold.co/50'}" class="user-avatar" 
+                     style="cursor: pointer;" onclick="loadUserProfile(${post.author.userId})">
                 <div class="user-info">
-                    <h4>${post.author.displayName}</h4>
+                    <h4 style="cursor: pointer;" onclick="loadUserProfile(${post.author.userId})">
+                        ${post.author.displayName}
+                    </h4>
                     <span>${dateStr} ${isEdited ? '<span style="font-size:11px; opacity:0.6; font-style:italic;">(edited)</span>' : ''}</span>
                 </div>
             </div>
@@ -193,10 +196,11 @@ async function toggleComments(communityId, postId, forceRefresh = false) {
 
                 section.innerHTML += `
                 <div style="display:flex; gap:10px; margin-bottom:15px; align-items: flex-start;">
-                    <img src="${c.author.avatarUrl || 'https://placehold.co/30'}" style="width:32px; height:32px; border-radius:50%;">
+                    <img src="${c.author.avatarUrl || 'https://placehold.co/30'}" style="width:32px; height:32px; border-radius:50%; cursor:pointer;"
+                         onclick="loadUserProfile(${c.author.userId})">
                     <div style="flex:1;">
                     <div style="background:#f0f2f5; padding:8px 12px; border-radius:15px; display:inline-block; position:relative;">
-                            <strong>${c.author.displayName}</strong>
+                            <strong style="cursor:pointer;" onclick="loadUserProfile(${c.author.userId})">${c.author.displayName}</strong>
                             <div style="margin-top:2px;">${c.content}</div>
                                 <div style="position:absolute; top:5px; right:-25px; cursor:pointer; color:#ccc; font-size:12px;" 
                                     onclick="deleteComment(${communityId}, ${postId}, ${c.commentId})">

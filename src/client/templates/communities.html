@@ -18,13 +18,12 @@
 
 
 <div class="container">
+    {{ sidenav(community) }}
+    <main class="main-content">
+        {{ postsfeed(community_posts) }}
+    </main>
+</div>
 
-        {{ sidenav(community) }}
-
-        <main class="main-content">
-            {{ postsfeed(community_posts) }}
-        </main>
-
-    </div>
+<script src="../../static/scripts/posts.js"></script>
 </body>
 </html>

@@ -2,51 +2,5 @@
 {% from "components/post.html" import postsfeed %}
 
 {% block content %}
-<div class="main-content">
-    <div id="feed-content" style="flex: 1;">
-        {{ postsfeed(posts) }}
-    </div>
-
-    <div class="right-sidebar">
-        <div class="post-card" style="padding: 24px;"> <h3 style="margin-top: 0;">Welcome to SGEN!</h3>
-            <p style="color: #65676B; font-size: 14px; line-height: 1.4; margin: 12px 0;">
-                Explore Singapore's vibrant communities.
-            </p>
-            <button class="post-submit-btn" style="width: 100%;" onclick="openCreateModal()">
-                Create Post
-            </button>
-        </div>
-    </div>
-</div>
-
-<div id="create-modal" class="modal" style="display: none;"> <div class="modal-content">
-        <div class="modal-header">
-            <h2>Create New Post</h2>
-            <span class="close-modal" onclick="closeCreateModal()">&times;</span>
-        </div>
-
-        <div id="createEventForm" style="padding: 20px;">
-            <div id="community-select-wrapper" class="form-group">
-                <label>Post To *</label>
-                <select id="modal-community-select" class="form-input"></select>
-                <input type="hidden" id="modal-community-id-hidden">
-            </div>
-
-            <div class="form-group">
-                <label>Title</label>
-                <input type="text" id="post-title" class="form-input" placeholder="Give your post a title">
-            </div>
-
-            <div class="form-group">
-                <label>Description *</label>
-                <textarea id="post-desc" class="form-textarea" rows="4" placeholder="What's on your mind?"></textarea>
-            </div>
-
-            <div class="modal-actions">
-                <button type="button" class="btn-secondary" onclick="closeCreateModal()">Cancel</button>
-                <button type="button" class="btn-primary" onclick="submitNewPost()">Post</button>
-            </div>
-        </div>
-    </div>
-</div>
+    {{ postsfeed(posts) }}
 {% endblock %}

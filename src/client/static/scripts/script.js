@@ -148,7 +148,6 @@ async function handleOtpVerification(email) {
 async function loadHome() {
     window.currentCommunityId = null;
     toggleView("home");
-    if(window.refreshFeed) window.refreshFeed();
 }
 
 function toggleView(mode) {

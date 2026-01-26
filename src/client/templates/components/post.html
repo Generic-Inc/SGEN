@@ -1,57 +1,56 @@
 {% macro postsfeed(posts) %}
 <div class="community-container">
-
     <div class="com-feed-container">
         {% for post in posts %}
-        <div class="post-card">
+        <div class="post-card" id="post-{{ post.post_id }}">
             <div class="post-header">
-                <img src="{{ post.author.avatar_url }}" alt="{{ post.author.display_name }}" class="post-avatar">
+                <a href="/user/{{ post.author.user_id }}">
+                    <img src="{{ post.author.avatar_url or 'https://placehold.co/40' }}" class="user-avatar"
+                         style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                </a>
                 <div class="post-info">
-                    <h4 class="post-author">{{post.author.display_name}}</h4>
-                    <span>{{post.created}}</span>
+                    <a href="/user/{{ post.author.user_id }}" style="text-decoration:none; color:inherit;">
+                        <h4 class="post-author">{{ post.author.display_name }}</h4>
+                    </a>
+                    <span>{{ post.created }}</span>
                 </div>
             </div>
+
             <div class="post-content">
-                <p>{{post.content}}</p>
-                <img src="{{ post.image_url }}" class="post-image">
+                <p>{{ post.content }}</p>
+                {% if post.image_url and post.image_url != "None" %}
+                <img src="{{ post.image_url }}" class="post-image" style="width:100%; border-radius: 12px; margin-top: 10px;">
+                {% endif %}
             </div>
+
             <div class="post-footer">
-                <div class="footer-section">
-                    <div class="heart-btn" onclick="likePost(this, {{post.post_id}}, {{post.community_id}})">
-                  <svg viewBox="0 0 24 24">
-                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                  </svg>
+                <div class="footer-section"
+                     onclick="toggleLike(this)"
+                     data-post-id="{{ post.post_id }}"
+                     data-community-id="{{ post.community_id or 0 }}">
+                    <div class="heart-btn {{ 'liked' if post.is_liked_by_viewer else '' }}">
+                        <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                    </div>
+                    <span class="count-text">{{ post.like_count }} Likes</span>
                 </div>
-                <span id="{{post.post_id}}-likes">{{post.like_count}} Likes</span>
-                </div>
-                <script>
-                    heart = document.getElementById("{{post.post_id}}-likes")
-                    console.log({{post.is_liked}})
-                    if ("{{post.is_liked_by_viewer}}" == "True") {
-                        heart.previousElementSibling.classList.add("liked");
-                    }
-                </script>
-                <div class="footer-section">
-                    <div class="comment-btn" onclick="this.classList.toggle('active')">
-                      <svg viewBox="0 0 24 24">
-                        <path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18z"/>
-                      </svg>
+
+                <div class="footer-section"
+                     onclick="toggleComments(this)"
+                     data-post-id="{{ post.post_id }}"
+                     data-community-id="{{ post.community_id or 0 }}">
+                    <div class="comment-btn">
+                        <svg viewBox="0 0 24 24"><path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18z"/></svg>
                     </div>
                     <span>Comment</span>
-                    </div>
+                </div>
 
                 <div class="footer-section">
-                <div class="share-btn" onclick="this.classList.toggle('active')">
-                  <svg viewBox="0 0 24 24">
-                    <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/>
-                  </svg>
-                </div>
+                    <div class="share-btn"><svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg></div>
                     <span>Share</span>
-                    </div>
-
-
-
+                </div>
             </div>
+
+            <div id="comments-{{ post.post_id }}" style="display:none; border-top:1px solid #f0f2f5; padding:15px; background:#fcfcfc;"></div>
         </div>
         {% endfor %}
     </div>

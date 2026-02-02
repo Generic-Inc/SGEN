@@ -129,7 +129,7 @@ async def verify_email():
         response = make_response({"success": "Email verified and user registered successfully",
                 "user": user.public_json,
                 "token": token})
-        response.set_cookie(key="token", value=token, httponly=True, max_age=30*24*60*60, samesite="None", secure=False)
+        response.set_cookie(key="token", value=token, httponly=True, max_age=30*24*60*60, samesite="Lax", secure=False)
         return response, 201
     except Exception as e:
         traceback.print_exc()
@@ -140,7 +140,7 @@ async def verify_email():
 async def logout():
     """Logout a user by invalidating their token"""
     resp = make_response(redirect(url_for('pages.login_page')))
-    resp.set_cookie('token', '', expires=0, samesite="None", secure=False)
+    resp.set_cookie('token', '', expires=0, samesite="Lax", secure=False)
     return resp
 
 @auth_blueprint.route("/check-status", methods=["GET"])

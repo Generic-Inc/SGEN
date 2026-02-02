@@ -34,7 +34,7 @@ async def login():
     if not login:
         return {"error": "Invalid username/email or password"}, 401
     response = make_response({"success": "Logged in successfully",})
-    response.set_cookie(key="token", value=login, httponly=True, max_age=30*24*60*60)
+    response.set_cookie(key="token", value=login, httponly=True, max_age=30*24*60*60, samesite="Lax", secure=False)
     return response
 
 @auth_blueprint.route("/signup", methods=["POST"])
@@ -129,7 +129,7 @@ async def verify_email():
         response = make_response({"success": "Email verified and user registered successfully",
                 "user": user.public_json,
                 "token": token})
-        response.set_cookie(key="token", value=token, httponly=True, max_age=30*24*60*60)
+        response.set_cookie(key="token", value=token, httponly=True, max_age=30*24*60*60, samesite="None", secure=False)
         return response, 201
     except Exception as e:
         traceback.print_exc()
@@ -140,5 +140,17 @@ async def verify_email():
 async def logout():
     """Logout a user by invalidating their token"""
     resp = make_response(redirect(url_for('pages.login_page')))
-    resp.set_cookie('token', '', expires=0)
+    resp.set_cookie('token', '', expires=0, samesite="None", secure=False)
     return resp
+
+@auth_blueprint.route("/check-status", methods=["GET"])
+async def check_status():
+    """Check if the user is authenticated"""
+    token = request.cookies.get("token")
+    print(token)
+    if not token:
+        return {"authenticated": False}, 200
+    user = await User.get_user_by_token(token)
+    if not user:
+        return {"authenticated": False}, 200
+    return {"authenticated": True, "user": user.public_json}, 200

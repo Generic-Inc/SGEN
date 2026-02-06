@@ -71,8 +71,6 @@ async def get_community(community_id: int):
         return {"error": "Community not found"}, 404
     community_member = await CommunityMember.get_member(user.user_id, community_id)
 
-
-
     if request.method == "GET":
         return community_get.public_json
 

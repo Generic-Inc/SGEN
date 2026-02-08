@@ -1,3 +1,10 @@
+
+import json
+
+class ConfigRoot:
+    def __init__(self):
+        pass
+
 import asyncio
 import json
 from typing import Optional
@@ -9,6 +16,18 @@ from global_src.constants import CONFIG_PATH
 class ConfigRoot:
     def __init__(self):
         self.config: Optional[dict] = None
+
+    @property
+    def default(self) -> dict:
+        return self.config["default"]
+
+    @property
+    def default_user(self) -> dict:
+        return self.default["user"]
+
+    @property
+    def default_community(self) -> dict:
+        return self.default["community"]
 
     async def load_config(self) -> dict:
         """Reloads the config from the remote URL specified in the local config file"""
@@ -26,6 +45,5 @@ class ConfigRoot:
         while True:
             await self.load_config()
             await asyncio.sleep(300)
-
 
 CONFIG = ConfigRoot()

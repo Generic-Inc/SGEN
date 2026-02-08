@@ -1,0 +1,145 @@
+
+.community-title {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    text-align: left;
+}
+
+.members-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 60%;
+    justify-content: left;
+}
+
+.member-card {
+    width: 80%;
+    display: flex;
+    padding: 1rem;
+}
+
+.member-card:hover {
+    background-color: rgba(100, 100, 100, 0.2);
+    border-radius: 1rem;
+    cursor: pointer;
+}
+
+.member-avatar {
+    height: 3rem;
+    width: 3rem;
+    border-radius: 50%;
+    margin-right: 1rem;
+}
+.member-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.member-username {
+    margin-bottom: 0.5rem;
+}
+
+.member-info > * {
+    color: black;
+    text-decoration: none !important;
+}
+
+.member-bio {
+    text-decoration: none !important;
+    margin-left: 0.5rem;
+    color: gray;
+}
+
+.members-list {
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+}
+
+.members-list a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.members-list a:visited {
+    color: inherit;
+}
+
+.members-list a:hover {
+    text-decoration: none;
+}
+
+.member-join-date {
+    margin-top: 0.5rem;
+    font-size: 0.7rem;
+    color: gray;
+}
+
+.info-card-container {
+    position: absolute;
+    visibility: hidden;
+    opacity: 0;
+    background-color: white;
+    border: 1px solid gray;
+    border-radius: 1rem;
+    padding: 1rem;
+    overflow: hidden;
+}
+
+.info-card-container.shown {
+    visibility: visible;
+    opacity: 1;
+}
+
+.info-card-section {
+    margin-top: 0.5rem
+}
+
+.info-card-title {
+    font-size: 1.1rem;
+}
+
+.info-card-avatar {
+    height: 2.5rem;
+    width: 2.5rem;
+    border-radius: 50%;
+    padding: 3rem 1rem;
+}
+
+.info-card-subtitle {
+    font-size: 0.9rem;
+    color: gray;
+}
+
+.info-card-bio {
+    width: 10rem;
+    font-size: 0.8rem;
+}
+
+.info-card-profile-background {
+    margin: -1rem -1rem 0 -1rem;
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+
+    background-color: pink;
+}
+
+.info-card-role {
+    display: block;
+    font-size: 0.8rem;
+    background-color: pink;
+    padding: 0.2rem;
+    border: black solid 1px;
+    border-radius: 0.5rem;
+    width: fit-content;
+}
+
+.info-card-other-info {
+    display: block;
+    font-size: 0.8rem;
+
+}

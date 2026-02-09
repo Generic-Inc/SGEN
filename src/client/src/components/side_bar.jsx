@@ -71,8 +71,12 @@ export default function SideBar() {
                                    href={`/community/${community.communityId}/chat`}
                                    material_style={{ fontSize: "1.4rem" }}
                         />
-                        <AsideItem symbol="calendar_today" text={`${community.displayName} Chat`}
+                        <AsideItem symbol="calendar_today" text={`${community.displayName} Events`}
                                    href={`/community/${community.communityId}/events`}
+                                   material_style={{ fontSize: "1.5rem" }}
+                        />
+                        <AsideItem symbol="people" text={`${community.displayName} Members`}
+                                   href={`/community/${community.communityId}/members`}
                                    material_style={{ fontSize: "1.5rem" }}
                         />
                         <li className="aside-category" id="your-communities">

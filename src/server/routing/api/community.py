@@ -7,7 +7,7 @@ from . import community_blueprint
 
 @community_blueprint.route('/', methods=['POST'])
 async def create_community():
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)
@@ -60,7 +60,7 @@ async def create_community():
 @community_blueprint.route("/<int:community_id>", methods=["GET", "PATCH", "DELETE"])
 async def get_community(community_id: int):
     """Get a community's public information by their community ID"""
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)
@@ -70,8 +70,6 @@ async def get_community(community_id: int):
     if not community_get:
         return {"error": "Community not found"}, 404
     community_member = await CommunityMember.get_member(user.user_id, community_id)
-
-
 
     if request.method == "GET":
         return community_get.public_json
@@ -126,7 +124,7 @@ async def get_community_members(community_id: int):
     POST: join a community by the community ID
     """
 
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)
@@ -176,7 +174,7 @@ async def get_community_member(community_id: int, user_id: int):
     DELETE: Remove a member from a community by the community ID and user ID
     """
 
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)
@@ -237,7 +235,3 @@ async def get_community_member(community_id: int, user_id: int):
 
         target_member_updated = await target_member.update_role("banned")
         return target_member_updated.public_json
-
-            
-
-

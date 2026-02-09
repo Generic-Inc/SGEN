@@ -53,7 +53,7 @@ class User(BaseClass):
             "displayName": self.display_name,
             "language": self.language,
             "avatarUrl": self.avatar_url,
-            "bio": self.bio,
+            "bio": self.bio.replace('{display_name}', self.display_name) if self.bio else None,
             "created": self.created,
         }
         return base_json

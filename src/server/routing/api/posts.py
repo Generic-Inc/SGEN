@@ -2,12 +2,14 @@ from flask import request
 from global_src.global_classes import Community, User, CommunityMember
 from modules.authentications import Permissions
 from modules.posts import Post, Comment, Like
+from global_src.db import DATABASE
 from . import community_blueprint
 from . import api
+from datetime import datetime
 
 @api.route("/my-communities", methods=["GET"])
 async def get_my_communities():
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)
@@ -18,7 +20,7 @@ async def get_my_communities():
 
 @api.route("/feed", methods=["GET"])
 async def get_home_feed():
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)
@@ -30,7 +32,7 @@ async def get_home_feed():
 
 @community_blueprint.route("/<int:community_id>/posts", methods=["GET", "POST"])
 async def community_posts(community_id: int):
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)
@@ -66,42 +68,44 @@ async def community_posts(community_id: int):
         )
         return new_post.public_json, 201
 
-@community_blueprint.route("/<int:community_id>/posts/<int:post_id>",
-                           methods=["GET", "PATCH", "DELETE"])
+@community_blueprint.route("/<int:community_id>/posts/<int:post_id>", methods=["GET", "PATCH", "DELETE"])
 async def single_post(community_id: int, post_id: int):
-    authorization = request.headers.get('Authorization')
-    if not authorization:
-        return {"error": "Unauthorized"}, 401
+    authorization = request.cookies.get('token')
+    if not authorization: return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)
-    if not user:
-        return {"error": "Unauthorized"}, 401
+    if not user: return {"error": "Unauthorized"}, 401
 
     post = await Post.get_by_id(post_id, viewer_id=user.user_id)
     if not post: return {"error": "Post not found"}, 404
 
-    if request.method == "GET":
-        return post.public_json
+    if request.method == "DELETE":
+        if post.author.user_id != user.user_id:
+            # can admin check here if needed later
+            return {"error": "Forbidden"}, 403
 
-
+        await DATABASE.execute("UPDATE Posts SET active=0 WHERE post_id=?", (post_id,))
+        return {"message": "Post deleted"}, 200
     elif request.method == "PATCH":
         if post.author.user_id != user.user_id:
-            return {"error": "Forbidden: You didn't write this!"}, 403
+            return {"error": "Forbidden"}, 403
+
         data = request.get_json() or {}
         new_content = data.get("content")
-        if not new_content: return {"error": "Content cannot be empty"}, 400
-        await post.update(new_content)
-        return post.public_json
 
-    elif request.method == "DELETE":
-        if post.author.user_id != user.user_id:
-            # can add admin check here: if not user.is_admin
-            return {"error": "Forbidden: You cannot delete this post."}, 403
-        await post.delete()
-        return {"success": "Post deleted"}
+        if not new_content: return {"error": "Missing content"}, 400
+        await DATABASE.execute(
+            "UPDATE Posts SET content=?, modified=? WHERE post_id=?",
+            (new_content, datetime.now(), post_id)
+        )
+        updated_post = await Post.get_by_id(post_id, viewer_id=user.user_id)
+        return updated_post.public_json
+
+    # GET
+    return post.public_json
 
 @community_blueprint.route("/<int:community_id>/posts/<int:post_id>/likes", methods=["POST"])
 async def post_likes(community_id: int, post_id: int):
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)
@@ -118,7 +122,7 @@ async def post_likes(community_id: int, post_id: int):
 
 @community_blueprint.route("/<int:community_id>/posts/<int:post_id>/comments", methods=["GET", "POST"])
 async def post_comments(community_id: int, post_id: int):
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)
@@ -146,46 +150,43 @@ async def post_comments(community_id: int, post_id: int):
         if new_comment: return new_comment.public_json, 201
         return {"error": "Failed"}, 500
 
+
 @community_blueprint.route("/<int:community_id>/posts/<int:post_id>/comments/<int:comment_id>",
                            methods=["GET", "PATCH", "DELETE"])
 async def single_comment(community_id: int, post_id: int, comment_id: int):
-    authorization = request.headers.get('Authorization')
-    if not authorization:
-        return {"error": "Unauthorized"}, 401
+    authorization = request.cookies.get('token')
+    if not authorization: return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)
-    if not user:
-        return {"error": "Unauthorized"}, 401
+    if not user: return {"error": "Unauthorized"}, 401
 
     comment = await Comment.get_by_id(comment_id)
     if not comment: return {"error": "Comment not found"}, 404
+    if request.method == "DELETE":
+        if comment.author.user_id != user.user_id:
+            return {"error": "Forbidden"}, 403
 
-    if request.method == "GET":
-        return comment.public_json
-
+        await DATABASE.execute("UPDATE Comments SET active=0 WHERE comment_id=?", (comment_id,))
+        return {"message": "Comment deleted"}, 200
     elif request.method == "PATCH":
         if comment.author.user_id != user.user_id:
             return {"error": "Forbidden"}, 403
+
         data = request.get_json() or {}
         new_content = data.get("content")
-        if not new_content: return {"error": "Content cannot be empty"}, 400
-        await comment.update(new_content)
-        return comment.public_json
+        if not new_content: return {"error": "Missing content"}, 400
 
-    elif request.method == "DELETE":
-        post = await Post.get_by_id(post_id)
-        is_comment_author = (comment.author.user_id == user.user_id)
-        is_post_author = False
-        if post and post.author:
-            is_post_author = (post.author.user_id == user.user_id)
-        if not (is_comment_author or is_post_author):
-            return {"error": "Forbidden: You don't have permission to delete this comment."}, 403
-        await comment.delete()
-        return {"success": "Comment deleted"}
+        await DATABASE.execute(
+            "UPDATE Comments SET content=?, modified=? WHERE comment_id=?",
+            (new_content, datetime.now(), comment_id)
+        )
+        updated_comment = await Comment.get_by_id(comment_id)
+        return updated_comment.public_json
 
+    return comment.public_json
 
 @community_blueprint.route("/<int:community_id>/posts/<int:post_id>/comments/<int:comment_id>/likes", methods=["POST"])
 async def comment_likes(community_id: int, post_id: int, comment_id: int):
-    authorization = request.headers.get('Authorization')
+    authorization = request.cookies.get('token')
     if not authorization:
         return {"error": "Unauthorized"}, 401
     user = await User.get_user_by_token(authorization)

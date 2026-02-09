@@ -1,4 +1,3 @@
-import random
 import asyncio
 from config.config import CONFIG
 from global_src.db import DATABASE
@@ -6,74 +5,137 @@ from global_src.global_classes import User, Community
 from modules.authentications import SaltHash, AuthenticationsUser
 from modules.posts import Post, Comment
 
-
-USER_DATA = [
-    {"user": "cyber_ninja", "name": "Ninja Coder", "email": "ninja@example.com", "bio": "I code in my sleep 😴"},
-    {"user": "artistic_soul", "name": "Bella Arts", "email": "bella@example.com", "bio": "Digital artist & cat mom 🐱"},
-    {"user": "gym_rat_99", "name": "Brad Lifts", "email": "brad@example.com", "bio": "Gains only. 💪"},
-    {"user": "travel_bug", "name": "Wanderlust", "email": "travel@example.com", "bio": "Catch me if you can ✈️"},
-    {"user": "meme_lord", "name": "Doge Coin", "email": "doge@example.com", "bio": "Much wow. Very code."},
-    {"user": "coffee_addict", "name": "Java Bean", "email": "coffee@example.com", "bio": " powered by caffeine ☕"},
-    {"user": "music_vibes", "name": "DJ Py", "email": "dj@example.com", "bio": "Beats and bytes 🎵"},
-    {"user": "gaming_god", "name": "Pro Gamer", "email": "gamer@example.com", "bio": "GG EZ"},
+# --- 1. USERS (Hardcoded) ---
+USERS = [
+    {"user": "cyber_ninja", "name": "Ninja Coder", "email": "ninja@example.com",
+     "bio": "Full Stack Dev | Python Enthusiast 🐍 | Coffee Lover ☕"},
+    {"user": "artistic_soul", "name": "Bella Arts", "email": "bella@example.com",
+     "bio": "Digital Illustrator & UI Designer 🎨"},
+    {"user": "gym_rat_99", "name": "Brad Lifts", "email": "brad@example.com", "bio": "Gains > Bugs. Keep grinding. 💪"},
+    {"user": "travel_bug", "name": "Wanderlust", "email": "travel@example.com",
+     "bio": "Digital Nomad. Currently in: Bali 🌴"},
+    {"user": "coffee_addict", "name": "Java Bean", "email": "coffee@example.com", "bio": "I turn coffee into code."},
+    {"user": "gaming_god", "name": "Pro Gamer", "email": "gamer@example.com", "bio": "FPS & RPGs. Add me on Steam."},
 ]
 
-COMMUNITY_DATA = [
+# --- 2. COMMUNITIES (Hardcoded) ---
+COMMUNITIES = [
     {
-        "name": "tech_talk", "display": "Tech Talk 💻",
-        "desc": "Everything tech, from Python to silicon.",
-        "guidelines": "No flame wars over tabs vs spaces."
+        "key": "tech", "name": "tech_talk", "display": "Tech Talk 💻",
+        "desc": "Discussion for developers, engineers, and tech enthusiasts.",
+        "guidelines": "Be respectful. No flame wars over tabs vs spaces.",
+        "members": ["cyber_ninja", "coffee_addict", "gaming_god", "artistic_soul"]
     },
     {
-        "name": "digital_art", "display": "Digital Artistry 🎨",
-        "desc": "Share your creations! (AI art allowed but tag it)",
-        "guidelines": "Be nice to beginners!"
+        "key": "art", "name": "creative_corner", "display": "Creative Corner 🎨",
+        "desc": "Share your art, UI designs, and creative projects.",
+        "guidelines": "Constructive criticism only.",
+        "members": ["cyber_ninja", "artistic_soul", "travel_bug"]
     },
     {
-        "name": "memes_only", "display": "Dank Memes 🐸",
-        "desc": "If it's not funny, don't post it.",
-        "guidelines": "No reposts!"
+        "key": "gym", "name": "iron_paradise", "display": "Iron Paradise 🏋️",
+        "desc": "Workouts, nutrition, and fitness goals.",
+        "guidelines": "No steroids discussion.",
+        "members": ["cyber_ninja", "gym_rat_99", "travel_bug"]
     }
 ]
 
-SAMPLE_POSTS = [
-    "Just deployed my first full-stack app! Feels good man.",
-    "Anyone know how to center a div? asking for a friend...",
-    "Check out this view from my hike today! [Image attached]",
-    "Why is coffee literally the best invention ever?",
-    "Python 3.14 is coming out soon, thoughts?",
-    "My cat walked on my keyboard and fixed my bug. Senior Dev material.",
+# --- 3. POSTS & CONVERSATIONS ---
+POSTS_DATA = [
+    {
+        "community": "tech",
+        "author": "cyber_ninja",
+        "content": "Just finished refactoring the backend for SGEN. Moved everything to a modular architecture and it runs 2x faster now! 🚀 #python #flask",
+        "image": "https://images.unsplash.com/photo-1555066931-4365d14bab8c",
+        "likes": ["coffee_addict", "gaming_god", "artistic_soul"],
+        "comments": [
+            {"user": "coffee_addict", "text": "That modular structure is a lifesaver. Did you use Blueprints?"},
+            {"user": "cyber_ninja", "text": "Yep! Blueprints for everything. Makes routing so much cleaner."},
+            {"user": "gaming_god", "text": "Huge W. Now help me fix my spaghetti code lol."}
+        ]
+    },
+    {
+        "community": "tech",
+        "author": "coffee_addict",
+        "content": "Why does CSS Grid make so much sense but Flexbox still confuses me sometimes? Centering a div is the hardest problem in CS. Change my mind.",
+        "image": None,
+        "likes": ["cyber_ninja", "artistic_soul"],
+        "comments": [
+            {"user": "artistic_soul", "text": "Flexbox is for 1D, Grid is for 2D! Once it clicks, you can't go back."},
+            {"user": "cyber_ninja",
+             "text": "justify-content: center; align-items: center; -> memorized this purely out of trauma."}
+        ]
+    },
+    {
+        "community": "art",
+        "author": "artistic_soul",
+        "content": "Working on a new UI kit for mobile apps. Going for a 'Glassmorphism' look. Thoughts on this color palette?",
+        "image": "https://images.unsplash.com/photo-1586717791821-3f44a5638d0f",
+        "likes": ["cyber_ninja", "travel_bug"],
+        "comments": [
+            {"user": "travel_bug", "text": "Love those pastels! Gives me sunset vibes."},
+            {"user": "cyber_ninja",
+             "text": "Looks clean! Make sure the contrast is high enough for accessibility though."}
+        ]
+    },
+    {
+        "community": "gym",
+        "author": "gym_rat_99",
+        "content": "Hit a new PR on deadlifts today! 180kg moving smooth. Consistency is key fam. 😤",
+        "image": "https://images.unsplash.com/photo-1517836357463-d25dfeac3438",
+        "likes": ["cyber_ninja", "travel_bug"],
+        "comments": [
+            {"user": "cyber_ninja", "text": "Beast mode! 💪 I'm still stuck at 140kg, need to fix my form."},
+            {"user": "gym_rat_99", "text": "You got this bro. Just focus on the brace. Let's hit a session next week?"}
+        ]
+    },
+    {
+        "community": "gym",
+        "author": "cyber_ninja",
+        "content": "Coding all day = back pain. 🥲 Anyone got good stretching routines for desk workers?",
+        "image": None,
+        "likes": ["gym_rat_99", "travel_bug"],
+        "comments": [
+            {"user": "travel_bug", "text": "Yoga helps a ton! Look up 'Yoga for programmers' on YouTube."},
+            {"user": "gym_rat_99", "text": "Face pulls and dead hangs. Saves your shoulders."}
+        ]
+    }
 ]
 
-SAMPLE_COMMENTS = [
-    "This is valid!", "Big mood.", "L + Ratio (jk)", "So aesthetic ✨",
-    "Can you share the repo?", "Literally me.", "Underrated post.", "Real.",
-    "Wait, explain this to me like I'm 5."
-]
-
-# Random generic images for "Actual Images"
-IMAGE_URLS = [
-    "https://images.unsplash.com/photo-1498050108023-c5249f4df085",  # Tech
-    "https://images.unsplash.com/photo-1542831371-29b0f74f9713",  # Code
-    "https://images.unsplash.com/photo-1517849845537-4d257902454a",  # Dog
-    "https://images.unsplash.com/photo-1472214103451-9374bd1c798e",  # Nature
+# --- 4. EVENTS ---
+EVENTS_DATA = [
+    {
+        "community": "tech",
+        "creator": "cyber_ninja",
+        "name": "Hackathon 2026 Kickoff",
+        "desc": "Join us for a 24-hour coding sprint! Pizza provided. 🍕",
+        "image": "https://images.unsplash.com/photo-1504384308090-c54be3855833"
+    },
+    {
+        "community": "gym",
+        "creator": "gym_rat_99",
+        "name": "Group HIIT Session",
+        "desc": "Burn those weekend calories. Open to all fitness levels.",
+        "image": "https://images.unsplash.com/photo-1571902943202-507ec2618e8f"
+    }
 ]
 
 
 async def create_user_helper(data):
-    """Helper to create a user and auth entry cleanly."""
+    """Helper to create or fetch a user."""
     password = "Password123!"
     salt_hash = SaltHash.create_salt_hash(password)
     try:
         new_user = await AuthenticationsUser.create_user(
             data["user"], data["name"], data["email"]
         )
-        # Update bio and avatar manually via SQL since create_user might not take them
+        # Dicebear avatar
+        avatar_url = f"https://api.dicebear.com/7.x/avataaars/svg?seed={data['user']}"
+
         await DATABASE.execute(
             "UPDATE Profiles SET bio = ?, avatar_url = ? WHERE user_id = ?",
-            (data["bio"], f"https://api.dicebear.com/7.x/avataaars/svg?seed={data['user']}", new_user.user_id)
+            (data["bio"], avatar_url, new_user.user_id)
         )
-
         await DATABASE.execute(
             "INSERT INTO UserAuthentication (user_id, salt, password_hash) VALUES (?, ?, ?)",
             (new_user.user_id, salt_hash.salt, salt_hash.hash_value)
@@ -81,109 +143,119 @@ async def create_user_helper(data):
         print(f"✅ Created user: {data['user']}")
         return new_user
     except Exception:
-        print(f"⚠️ User {data['user']} already exists, fetching...")
+        print(f"⚠️ User {data['user']} exists, fetching...")
         return await AuthenticationsUser.get_user_by_username(data["user"])
 
 
 async def main():
-    print("--- 🚀 STARTING SEED PROCESS ---")
+    print("--- 🚀 STARTING CONTROLLED SEED PROCESS ---")
     await DATABASE.initialize()
     await CONFIG.load_config()
 
-    # 1. Create Users
-    all_users = []
-    for u_data in USER_DATA:
-        user = await create_user_helper(u_data)
-        all_users.append(user)
+    user_map = {}
+    community_map = {}
 
-    # 2. Create Communities
-    all_communities = []
-    for c_data in COMMUNITY_DATA:
-        owner = all_users[0]  # First user owns them for simplicity
-        try:
-            comm = await Community.create_community(
-                community_name=c_data["name"],
-                display_name=c_data["display"],
-                owner=owner,
-                description=c_data["desc"],
-                icon_url=None,
-                post_guidelines=c_data["guidelines"],
-                messages_guidelines=None,
-                offline_text="Offline",
-                online_text="Online"
-            )
-            print(f"✅ Created Community: {c_data['display']}")
-        except Exception:
+    # 1. Create Users
+    print("\n--- 👤 Creating Users ---")
+    for u_data in USERS:
+        user = await create_user_helper(u_data)
+        if user:
+            user_map[u_data["user"]] = user
+        else:
+            # Fallback in case create_user returns False on duplicate and create_user_helper fails
+            user_map[u_data["user"]] = await AuthenticationsUser.get_user_by_username(u_data["user"])
+
+    # 2. Create Communities & Memberships
+    print("\n--- 🏘️ Creating Communities ---")
+    for c_data in COMMUNITIES:
+        owner = user_map["cyber_ninja"]
+
+        # --- FIXED LOGIC HERE ---
+        # The .create_community method returns False (boolean) if it exists, NOT an error.
+        # So we check "if not comm" instead of try/except.
+        comm = await Community.create_community(
+            community_name=c_data["name"],
+            display_name=c_data["display"],
+            owner=owner,
+            description=c_data["desc"],
+            icon_url=None,
+            post_guidelines=c_data["guidelines"],
+            messages_guidelines=None,
+            offline_text="Offline",
+            online_text="Online"
+        )
+
+        if not comm:
             print(f"⚠️ Community {c_data['name']} exists, fetching...")
             comm = await Community.get_community_by_name(c_data["name"])
+        else:
+            print(f"✅ Created Community: {c_data['display']}")
 
-        all_communities.append(comm)
+        community_map[c_data["key"]] = comm
 
-        # 3. Add random members to communities
-        # Shuffle users so membership is random
-        potential_members = all_users[1:]
-        random.shuffle(potential_members)
-        for member in potential_members[:4]:  # Add 4 random members
+        # Add Members
+        for username in c_data["members"]:
+            member = user_map[username]
             try:
                 await comm.add_member(member.user_id)
             except:
-                pass  # Already a member
+                pass
 
-    # 4. Create Posts, Comments, Likes, and Events
-    print("--- 📝 GENERATING CONTENT ---")
+                # 3. Create Posts & Conversations
+    print("\n--- 📝 Creating Content ---")
+    for p_data in POSTS_DATA:
+        comm = community_map[p_data["community"]]
+        author = user_map[p_data["author"]]
 
-    for comm in all_communities:
-        # Create 3-5 posts per community
-        for _ in range(random.randint(3, 5)):
-            author = random.choice(all_users)
-            content = random.choice(SAMPLE_POSTS)
-            img = random.choice(IMAGE_URLS) if random.random() > 0.6 else None  # 40% chance of image
+        post = await Post.create(
+            content=p_data["content"],
+            community_id=comm.community_id,
+            author_id=author.user_id,
+            image_url=p_data["image"]
+        )
+        print(f"  📝 Post by {p_data['author']} in {p_data['community']}")
 
-            post = await Post.create(
-                content=content,
-                community_id=comm.community_id,
-                author_id=author.user_id,
-                image_url=img
+        for liker_name in p_data["likes"]:
+            liker = user_map[liker_name]
+            try:
+                await DATABASE.execute(
+                    "INSERT OR IGNORE INTO PostLikes (post_id, user_id) VALUES (?, ?)",
+                    (post.post_id, liker.user_id)
+                )
+            except Exception:
+                pass
+
+        for c_data in p_data["comments"]:
+            commentor = user_map[c_data["user"]]
+            await Comment.create(
+                content=c_data["text"],
+                post_id=post.post_id,
+                author_id=commentor.user_id
             )
+            print(f"    💬 Comment by {c_data['user']}")
 
-            # Create Likes for this post (using raw SQL as PostLike class wasn't imported)
-            for liker in random.sample(all_users, k=random.randint(1, len(all_users))):
-                try:
-                    await DATABASE.execute(
-                        "INSERT OR IGNORE INTO PostLikes (post_id, user_id) VALUES (?, ?)",
-                        (post.post_id, liker.user_id)
-                    )
-                except Exception as e:
-                    print(f"Like Error: {e}")
+    # 4. Create Events
+    print("\n--- 📅 Scheduling Events ---")
+    for e_data in EVENTS_DATA:
+        comm = community_map[e_data["community"]]
+        creator = user_map[e_data["creator"]]
 
-            # Create Comments
-            for _ in range(random.randint(1, 4)):
-                commentor = random.choice(all_users)
-                c_text = random.choice(SAMPLE_COMMENTS)
-                await Comment.create(c_text, post_id=post.post_id, author_id=commentor.user_id)
-
-    # 5. Create Events (Raw SQL since Event class isn't in imports)
-    print("--- 📅 SCHEDULING EVENTS ---")
-    if all_communities:
-        # Tech Meetup
-        await DATABASE.execute("""
-                               INSERT INTO Events (event_name, event_description, scheduled_date, event_location,
-                                                   community_id, creator_id, image_url)
-                               VALUES (?, ?, DATETIME('now', '+7 days'), ?, ?, ?, ?)
-                               """, ("Python Workshop", "Learn async python!", "Discord Voice",
-                                     all_communities[0].community_id, all_users[0].user_id,
-                                     "https://images.unsplash.com/photo-1515879433151-3d85c4303e0b"))
-
-        # Gaming Night
-        if len(all_communities) > 2:
+        # Check if event already exists to prevent duplicates on re-run
+        check = await DATABASE.fetch_one("SELECT event_id FROM Events WHERE event_name=?", (e_data["name"],))
+        if not check:
             await DATABASE.execute("""
                                    INSERT INTO Events (event_name, event_description, scheduled_date, event_location,
-                                                       community_id, creator_id)
-                                   VALUES (?, ?, DATETIME('now', '+2 days'), ?, ?, ?)
-                                   """, ("Among Us Night", "Very sus behaviors allowed.", "Lobby 1",
-                                         all_communities[2].community_id, all_users[-1].user_id))
+                                                       community_id, creator_id, image_url)
+                                   VALUES (?, ?, DATETIME('now', '+5 days'), ?, ?, ?, ?)
+                                   """,
+                                   (e_data["name"], e_data["desc"], "Discord / Gym", comm.community_id, creator.user_id,
+                                    e_data["image"]))
+            print(f"  📅 Event Created: {e_data['name']}")
+        else:
+            print(f"  ⚠️ Event Exists: {e_data['name']}")
 
-    print("--- 🎉 SEEDING COMPLETE! ---")
+    print("\n--- 🎉 SEEDING COMPLETE! ---")
+    print("Login with: cyber_ninja / Password123!")
 
 
 if __name__ == "__main__":

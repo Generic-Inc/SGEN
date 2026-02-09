@@ -1,31 +1,53 @@
-/* FORCE the entire page to never scroll horizontally */
-body, html {
-    overflow-x: hidden !important;
-    width: 100% !important;
-    position: relative;
+/* src/client/src/static/styles/feed_override.css */
+
+/* 1. Force Navbar to be Fixed (Stuck to Top) */
+.nav-bar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    height: 5rem; /* Ensure height matches your design (80px) */
 }
 
-/* Fix the layout container */
+/* 2. Push the Main Content Down */
+/* We add padding-top equal to the Navbar's height so content isn't hidden */
 main {
+    padding-top: 5rem !important;
     display: flex;
     width: 100%;
     box-sizing: border-box;
+    overflow-x: hidden; /* Keep horizontal scroll killer */
 }
 
-/* The Sidebar is likely fixed, so we need to push the content */
-/* We use 'flex: 1' to make it take ONLY the available space */
+/* 3. Ensure Sidebar Starts BELOW Navbar */
+.side-bar {
+    position: fixed !important;
+    top: 5rem !important; /* 5rem from top */
+    height: calc(100vh - 5rem) !important;
+    z-index: 900;
+}
+
+/* 4. Layout Fixes (From previous steps) */
 .main-container {
     flex: 1;
-    min-width: 0; /* CRITICAL: Allows flex child to shrink below content size */
-    width: auto !important;
-    max-width: 100% !important;
+    min-width: 0;
+    width: 100%;
+    max-width: 1000px !important;
+    margin: 0 auto;
     padding: 20px !important;
-    box-sizing: border-box !important;
 }
 
-/* Force the Feed to behave */
 .feed-container {
     width: 100%;
     max-width: 650px;
     margin: 0 auto;
+}
+
+/* 5. Global Reset */
+body, html {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden !important;
+    width: 100%;
 }

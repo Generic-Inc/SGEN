@@ -1,127 +1,97 @@
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Added useEffect
 import Profile from "./profile";
 import { postData } from "../../static/api";
 import "../../static/styles/community.css";
 
 export default function PostCard({ post, currentUser, onDelete }) {
-    const [likeCount, setLikeCount] = useState(post.likeCount || 0);
-    const [isLiked, setIsLiked] = useState(post.isLiked || false);
+    // --- DEBUGGER: Print the first post if it looks broken ---
+    useEffect(() => {
+        if (!post.author && !post.author_id) {
+            console.log("⚠️ BROKEN POST FOUND:", post);
+        }
+    }, [post]);
+
+    // --- 🛡️ ROBUST DATA HANDLING ---
+    // 1. Get the Author Object (handle snake_case or nested object)
+    let authorObj = post.author || {};
+
+    // 2. Extract Name (Check for empty strings too!)
+    let rawName = authorObj.name || authorObj.displayName || post.author_name;
+    let displayName = (rawName && rawName.trim() !== "") ? rawName : "Unknown User";
+
+    // 3. Extract Avatar
+    let rawAvatar = authorObj.avatar_url || authorObj.avatarUrl || post.author_avatar;
+    let displayAvatar = rawAvatar || "https://placehold.co/40?text=?";
+
+    // 4. Extract Content & Date
+    const postContent = post.content || post.description || "";
+    const postImage = post.image_url || post.imageUrl || null;
+    const postDate = new Date(post.created_at || post.created || Date.now()).toLocaleDateString();
+
+    // --- STATE & HANDLERS ---
+    const [likeCount, setLikeCount] = useState(post.like_count || post.likeCount || 0);
+    const [isLiked, setIsLiked] = useState(post.is_liked || post.isLiked || false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
-    const [content, setContent] = useState(post.content);
+    const [content, setContent] = useState(postContent);
 
     const handleLike = async () => {
         const newLikedState = !isLiked;
         setIsLiked(newLikedState);
         setLikeCount(prev => newLikedState ? prev + 1 : prev - 1);
-
         try {
-            await postData(`community/${post.communityId}/posts/${post.postId}/likes`, {});
+            const cId = post.community_id || post.communityId;
+            const pId = post.post_id || post.postId;
+            await postData(`community/${cId}/posts/${pId}/likes`, {});
         } catch (error) {
-            console.error("Like failed", error);
             setIsLiked(!newLikedState);
             setLikeCount(prev => newLikedState ? prev - 1 : prev + 1);
         }
     };
 
     const handleDelete = async () => {
-        if (!confirm("Are you sure you want to delete this post?")) return;
-
+        if (!confirm("Delete this post?")) return;
         try {
-            const response = await fetch(`http://localhost:5000/api/community/${post.communityId}/posts/${post.postId}`, {
+            const cId = post.community_id || post.communityId;
+            const pId = post.post_id || post.postId;
+            await fetch(`http://localhost:5000/api/community/${cId}/posts/${pId}`, {
                 method: "DELETE",
                 credentials: "include"
             });
-
-            if (response.ok) {
-                onDelete(post.postId);
-            }
-        } catch (error) {
-            console.error("Delete failed", error);
-        }
+            onDelete(pId);
+        } catch (error) { console.error(error); }
     };
 
-    const handleSaveEdit = async () => {
-        try {
-            await fetch(`http://localhost:5000/api/community/${post.communityId}/posts/${post.postId}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content: content }),
-                credentials: "include"
-            });
-            setIsEditing(false);
-            setIsMenuOpen(false);
-        } catch (error) {
-            console.error("Edit failed", error);
-        }
-    };
-
-    const isOwner = currentUser && post.author && currentUser.user_id === post.author.userId;
+    const isOwner = currentUser && (currentUser.user_id === (authorObj.user_id || post.author_id));
 
     return (
-        <div className="post-card">
+        <div className="post-card" style={{ marginBottom: "20px", background: "#fff", borderRadius: "8px", padding: "15px", boxShadow: "0 1px 2px rgba(0,0,0,0.1)" }}>
             {/* HEADER */}
-            <div className="post-header">
+            <div className="post-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    {/* Reusing Profile Component */}
-                    <Profile src={post.author?.avatarUrl} />
-                    <div className="post-info">
-                        <h4>{post.author?.displayName}</h4>
-                        <span style={{ fontSize: '12px', color: '#65676B' }}>
-                            {new Date(post.created).toLocaleDateString()}
-                        </span>
+                    <img
+                        src={displayAvatar}
+                        alt={displayName}
+                        style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover", border: "1px solid #eee" }}
+                        onError={(e) => {e.target.src = "https://placehold.co/40?text=?"}} // Fallback if image fails
+                    />
+                    <div>
+                        <h4 style={{ margin: 0, fontSize: "15px", fontWeight: "600", color: "#050505" }}>{displayName}</h4>
+                        <span style={{ fontSize: '12px', color: '#65676B' }}>{postDate}</span>
                     </div>
                 </div>
-
-                {/* Edit Menu (Only for Owner) */}
-                {isOwner && (
-                    <div className="post-options" style={{ position: 'relative' }}>
-                        <button
-                            onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            style={{background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px'}}
-                        >
-                            ...
-                        </button>
-
-                        {isMenuOpen && (
-                            <div className="menu-dropdown" style={{
-                                position: 'absolute', right: 0, top: '100%',
-                                background: 'white', boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-                                padding: '10px', borderRadius: '8px', zIndex: 10, minWidth: '100px'
-                            }}>
-                                <div onClick={() => setIsEditing(true)} style={{ cursor: 'pointer', padding: '5px' }}>Edit</div>
-                                <div onClick={handleDelete} style={{ cursor: 'pointer', padding: '5px', color: 'red' }}>Delete</div>
-                            </div>
-                        )}
-                    </div>
-                )}
+                {isOwner && <button onClick={() => setIsMenuOpen(!isMenuOpen)} style={{border:'none', background:'none', cursor:'pointer', fontSize:'20px'}}>...</button>}
             </div>
 
             {/* CONTENT */}
-            <div className="post-content" style={{ marginTop: '10px' }}>
-                {isEditing ? (
-                    <div>
-                        <textarea
-                            value={content}
-                            onChange={(e) => setContent(e.target.value)}
-                            className="form-input"
-                            style={{ width: '100%', minHeight: '80px', marginBottom: '10px' }}
-                        />
-                        <button onClick={handleSaveEdit}>Save</button> &nbsp;
-                        <button onClick={() => setIsEditing(false)}>Cancel</button>
-                    </div>
-                ) : (
-                    <p>{content}</p>
-                )}
-
-                {post.imageUrl && (
-                    <img src={post.imageUrl} alt="Post" style={{ width: '100%', marginTop: '10px', borderRadius: '8px' }} />
-                )}
+            <div className="post-content" style={{ marginTop: "10px" }}>
+                <p style={{ fontSize: "15px", lineHeight: "1.5", color: "#050505" }}>{content}</p>
+                {postImage && <img src={postImage} alt="Post" style={{ width: '100%', borderRadius: '8px', marginTop: '10px' }} /> }
             </div>
 
             {/* FOOTER */}
-            <div className="post-footer" style={{ marginTop: '15px', borderTop: '1px solid #eee', paddingTop: '10px' }}>
-                <button onClick={handleLike} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px' }}>
+            <div className="post-footer" style={{ marginTop: '10px', borderTop: '1px solid #eee', paddingTop: '10px' }}>
+                <button onClick={handleLike} style={{ background: 'none', border: 'none', cursor: 'pointer', color: isLiked ? "#e0245e" : "#65676B", fontSize:'14px', display:'flex', alignItems:'center', gap:'5px' }}>
                     {isLiked ? "❤️" : "🤍"} {likeCount} Likes
                 </button>
             </div>

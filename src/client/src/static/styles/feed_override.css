@@ -1,0 +1,31 @@
+/* FORCE the entire page to never scroll horizontally */
+body, html {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    position: relative;
+}
+
+/* Fix the layout container */
+main {
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* The Sidebar is likely fixed, so we need to push the content */
+/* We use 'flex: 1' to make it take ONLY the available space */
+.main-container {
+    flex: 1;
+    min-width: 0; /* CRITICAL: Allows flex child to shrink below content size */
+    width: auto !important;
+    max-width: 100% !important;
+    padding: 20px !important;
+    box-sizing: border-box !important;
+}
+
+/* Force the Feed to behave */
+.feed-container {
+    width: 100%;
+    max-width: 650px;
+    margin: 0 auto;
+}

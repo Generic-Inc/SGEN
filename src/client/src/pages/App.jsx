@@ -5,6 +5,7 @@ import SideBar from "../components/side_bar.jsx";
 import { checkStatus } from "../static/api.js";
 
 import Feed from "../components/feed"; 
+import "../static/styles/feed_override.css";
 
 function App() {
   const [user, setUser] = useState(null);

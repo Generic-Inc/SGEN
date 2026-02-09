@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { fetchData } from "../static/api";
 import PostCard from "./sub components/post_card";
 import InputBox from "./sub components/input_box";
+import "../static/styles/feed_override.css";
 
 export default function Feed({ user }) {
     const [posts, setPosts] = useState([]);

@@ -3,8 +3,7 @@ import { postData, fetchData } from "../../static/api";
 import "../../static/styles/community.css";
 
 export default function PostCard({ post, currentUser, onDelete }) {
-    // --- 1. ROBUST DATA MAPPING ---
-    // Your backend sends camelCase keys (e.g., author.displayName), but we handle snake_case fallbacks just in case.
+    // --- MAPPING ---
     const authorObj = post.author || {};
     const authorName = authorObj.name || authorObj.displayName || post.author_name || "Unknown";
     const authorAvatar = authorObj.avatar_url || authorObj.avatarUrl || post.author_avatar || "https://placehold.co/40";
@@ -13,37 +12,37 @@ export default function PostCard({ post, currentUser, onDelete }) {
     const postImage = post.image_url || post.imageUrl || null;
     const postDate = new Date(post.created_at || post.created || Date.now()).toLocaleDateString();
 
-    // CRITICAL: The API route needs these IDs
     const communityId = post.communityId || post.community_id;
     const postId = post.postId || post.post_id;
 
-    // --- 2. STATE ---
+    // --- STATE ---
     const [likeCount, setLikeCount] = useState(post.likeCount || post.like_count || 0);
     const [isLiked, setIsLiked] = useState(post.isLiked || post.is_liked || false);
 
-    // Comments Logic
+    // 1. Initialize Comment Count from Prop
+    // The backend now sends "commentCount" (camelCase due to public_json) or "comment_count"
+    const [commentCount, setCommentCount] = useState(post.commentCount || post.comment_count || 0);
+
     const [showComments, setShowComments] = useState(false);
     const [comments, setComments] = useState([]);
     const [commentText, setCommentText] = useState("");
     const [commentsLoaded, setCommentsLoaded] = useState(false);
 
-    // --- 3. HANDLERS ---
-
+    // --- HANDLERS ---
     const toggleComments = async () => {
         const newShowState = !showComments;
         setShowComments(newShowState);
 
-        // Fetch comments only if opening and not already loaded
         if (newShowState && !commentsLoaded) {
             try {
-                // Route matches: @community_blueprint.route("/<int:community_id>/posts/<int:post_id>/comments")
                 const route = `community/${communityId}/posts/${postId}/comments`;
                 const data = await fetchData(route);
-
-                // Backend returns { "comments": [...] }
                 const loadedComments = data.comments || [];
+
                 setComments(loadedComments);
                 setCommentsLoaded(true);
+                // 2. Sync count just in case backend was slightly stale
+                setCommentCount(loadedComments.length);
             } catch (err) {
                 console.error("Failed to load comments:", err);
             }
@@ -55,24 +54,24 @@ export default function PostCard({ post, currentUser, onDelete }) {
             try {
                 const route = `community/${communityId}/posts/${postId}/comments`;
 
-                // Optimistic Update (Show it immediately)
                 const tempComment = {
                     commentId: Date.now(),
                     content: commentText,
-                    author: currentUser, // Assumes currentUser has display_name/avatar_url
+                    author: currentUser,
                     created: new Date().toISOString()
                 };
 
                 setComments([...comments, tempComment]);
-                setCommentText(""); // Clear input
+                setCommentText("");
+                // 3. Increment Count Immediately
+                setCommentCount(prev => prev + 1);
 
-                // Send to API
                 await postData(route, { content: tempComment.content });
-
-                // We assume success. If failed, you might want to show an error or revert.
             } catch (err) {
                 console.error("Failed to post comment:", err);
-                alert("Failed to post comment. You might not be a member of this community.");
+                // Revert on failure
+                setCommentCount(prev => prev - 1);
+                alert("Failed to post comment.");
             }
         }
     };
@@ -137,7 +136,8 @@ export default function PostCard({ post, currentUser, onDelete }) {
                     onClick={toggleComments}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: "#65676B", fontSize:'14px', display:'flex', alignItems:'center', gap:'5px' }}
                 >
-                    💬 {comments.length > 0 ? comments.length : ""} Comments
+                    {/* 4. Display the Count */}
+                    💬 {commentCount} Comments
                 </button>
             </div>
 
@@ -151,7 +151,6 @@ export default function PostCard({ post, currentUser, onDelete }) {
                             <p style={{ fontSize: "13px", color: "#888", textAlign: "center" }}>No comments yet. Be the first!</p>
                         ) : (
                             comments.map((c, idx) => {
-                                // Author Handling for Comments
                                 const cAuthor = c.author || {};
                                 const cName = cAuthor.displayName || cAuthor.display_name || cAuthor.username || "User";
                                 const cAvatar = cAuthor.avatarUrl || cAuthor.avatar_url || "https://placehold.co/30";

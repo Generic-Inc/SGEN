@@ -1,53 +1,53 @@
 /* src/client/src/static/styles/feed_override.css */
 
-/* 1. Force Navbar to be Fixed (Stuck to Top) */
+/* 1. Global Reset */
+body, html {
+    overflow-x: hidden;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* 2. Fix the MAIN container (The Root Cause) */
+main {
+    /* RESET HEIGHT: Allow the page to grow so scrolling works */
+    height: auto !important;
+    min-height: 100vh;
+
+    /* PUSH DOWN: Clear the Fixed Navbar (80px + extra space) */
+    padding-top: 6rem !important;
+
+    /* SIDEBAR SPACE: Keep space for the fixed sidebar on the left */
+    /* This matches your nav.css but ensures it works with flex */
+    padding-left: 14rem !important;
+
+    display: flex;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+/* 3. Main Container (The Feed Wrapper) */
+.main-container {
+    max-width: 800px;
+    width: 100%;
+    min-width: 0;
+    padding: 0 20px 20px 20px !important;
+}
+
+/* 4. Ensure Navbar stays on top */
 .nav-bar {
     position: fixed !important;
     top: 0;
     left: 0;
     width: 100%;
     z-index: 1000;
-    height: 5rem; /* Ensure height matches your design (80px) */
 }
 
-/* 2. Push the Main Content Down */
-/* We add padding-top equal to the Navbar's height so content isn't hidden */
-main {
-    padding-top: 5rem !important;
-    display: flex;
-    width: 100%;
-    box-sizing: border-box;
-    overflow-x: hidden; /* Keep horizontal scroll killer */
-}
-
-/* 3. Ensure Sidebar Starts BELOW Navbar */
+/* 5. Ensure Sidebar stays fixed */
 .side-bar {
     position: fixed !important;
-    top: 5rem !important; /* 5rem from top */
-    height: calc(100vh - 5rem) !important;
+    top: 5rem !important;
+    left: 0;
+    height: 100vh !important;
     z-index: 900;
-}
-
-/* 4. Layout Fixes (From previous steps) */
-.main-container {
-    flex: 1;
-    min-width: 0;
-    width: 100%;
-    max-width: 1000px !important;
-    margin: 0 auto;
-    padding: 20px !important;
-}
-
-.feed-container {
-    width: 100%;
-    max-width: 650px;
-    margin: 0 auto;
-}
-
-/* 5. Global Reset */
-body, html {
-    margin: 0;
-    padding: 0;
-    overflow-x: hidden !important;
-    width: 100%;
 }

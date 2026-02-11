@@ -7,6 +7,7 @@ from . import community_blueprint
 from . import api
 from datetime import datetime
 
+
 @api.route("/my-communities", methods=["GET"])
 async def get_my_communities():
     authorization = request.cookies.get('token')
@@ -17,6 +18,7 @@ async def get_my_communities():
         return {"error": "Unauthorized"}, 401
     communities = await user.get_communities()
     return {"communities": [c.public_json for c in communities]}
+
 
 @api.route("/feed", methods=["GET"])
 async def get_home_feed():
@@ -29,6 +31,7 @@ async def get_home_feed():
 
     posts = await Post.get_user_feed(user.user_id)
     return {"posts": [p.public_json for p in posts]}
+
 
 @community_blueprint.route("/<int:community_id>/posts", methods=["GET", "POST"])
 async def community_posts(community_id: int):
@@ -68,6 +71,7 @@ async def community_posts(community_id: int):
         )
         return new_post.public_json, 201
 
+
 @community_blueprint.route("/<int:community_id>/posts/<int:post_id>", methods=["GET", "PATCH", "DELETE"])
 async def single_post(community_id: int, post_id: int):
     authorization = request.cookies.get('token')
@@ -83,8 +87,10 @@ async def single_post(community_id: int, post_id: int):
             # can admin check here if needed later
             return {"error": "Forbidden"}, 403
 
-        await DATABASE.execute("UPDATE Posts SET active=0 WHERE post_id=?", (post_id,))
+        # USE CLASS METHOD (Handles Commit)
+        await post.delete()
         return {"message": "Post deleted"}, 200
+
     elif request.method == "PATCH":
         if post.author.user_id != user.user_id:
             return {"error": "Forbidden"}, 403
@@ -93,15 +99,14 @@ async def single_post(community_id: int, post_id: int):
         new_content = data.get("content")
 
         if not new_content: return {"error": "Missing content"}, 400
-        await DATABASE.execute(
-            "UPDATE Posts SET content=?, modified=? WHERE post_id=?",
-            (new_content, datetime.now(), post_id)
-        )
-        updated_post = await Post.get_by_id(post_id, viewer_id=user.user_id)
+
+        # USE CLASS METHOD (Handles Commit)
+        updated_post = await post.update(new_content)
         return updated_post.public_json
 
     # GET
     return post.public_json
+
 
 @community_blueprint.route("/<int:community_id>/posts/<int:post_id>/likes", methods=["POST"])
 async def post_likes(community_id: int, post_id: int):
@@ -119,6 +124,7 @@ async def post_likes(community_id: int, post_id: int):
     count = await Like.get_post_like_count(post_id)
 
     return {"liked": liked, "likeCount": count}
+
 
 @community_blueprint.route("/<int:community_id>/posts/<int:post_id>/comments", methods=["GET", "POST"])
 async def post_comments(community_id: int, post_id: int):
@@ -141,7 +147,7 @@ async def post_comments(community_id: int, post_id: int):
         if not community_user:
             return {"error": "You must first join this community before commenting"}, 403
         if not community_user.requires_permissions(
-            Permissions.CREATE_POST_COMMENTS
+                Permissions.CREATE_POST_COMMENTS
         ):
             return {"error": "Forbidden"}, 403
         data = request.get_json() or {}
@@ -161,12 +167,15 @@ async def single_comment(community_id: int, post_id: int, comment_id: int):
 
     comment = await Comment.get_by_id(comment_id)
     if not comment: return {"error": "Comment not found"}, 404
+
     if request.method == "DELETE":
         if comment.author.user_id != user.user_id:
             return {"error": "Forbidden"}, 403
 
-        await DATABASE.execute("UPDATE Comments SET active=0 WHERE comment_id=?", (comment_id,))
+        # USE CLASS METHOD (Handles Commit)
+        await comment.delete()
         return {"message": "Comment deleted"}, 200
+
     elif request.method == "PATCH":
         if comment.author.user_id != user.user_id:
             return {"error": "Forbidden"}, 403
@@ -175,14 +184,12 @@ async def single_comment(community_id: int, post_id: int, comment_id: int):
         new_content = data.get("content")
         if not new_content: return {"error": "Missing content"}, 400
 
-        await DATABASE.execute(
-            "UPDATE Comments SET content=?, modified=? WHERE comment_id=?",
-            (new_content, datetime.now(), comment_id)
-        )
-        updated_comment = await Comment.get_by_id(comment_id)
+        # USE CLASS METHOD (Handles Commit)
+        updated_comment = await comment.update(new_content)
         return updated_comment.public_json
 
     return comment.public_json
+
 
 @community_blueprint.route("/<int:community_id>/posts/<int:post_id>/comments/<int:comment_id>/likes", methods=["POST"])
 async def comment_likes(community_id: int, post_id: int, comment_id: int):

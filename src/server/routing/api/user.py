@@ -41,8 +41,8 @@ async def get_user(user_id: int):
         return {"success": "User deleted successfully"}
 
 
-
-@user_blueprint.route("<int:user_id>/communities")
+# --- FIX WAS HERE (Added slash before <int:user_id>) ---
+@user_blueprint.route("/<int:user_id>/communities")
 async def get_user_communities(user_id: int):
     """Get a list of communities that a user is a member of by their user ID"""
     authorization = request.cookies.get('token')
@@ -70,4 +70,3 @@ async def get_communities():
 
     communities = await user.get_communities()
     return {"communities": [i.public_json for i in communities]}
-

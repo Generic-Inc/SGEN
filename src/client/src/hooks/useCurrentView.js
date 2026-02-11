@@ -9,9 +9,15 @@ export function useCurrentView() {
         if (path.includes("/community/")) {
             const parts = path.split("/");
             const idIndex = parts.indexOf("community") + 1;
-
             if (parts[idIndex]) {
                 setView({ type: "community", id: parts[idIndex] });
+            }
+        } else if (path.includes("/user/")) {
+            // NEW: Detect User Profile URL
+            const parts = path.split("/");
+            const idIndex = parts.indexOf("user") + 1;
+            if (parts[idIndex]) {
+                setView({ type: "user", id: parts[idIndex] });
             }
         } else {
             setView({ type: "home", id: null });

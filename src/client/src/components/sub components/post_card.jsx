@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { postData, fetchData } from "../../static/api";
-import CommentItem from "./comment_item"; // <--- IMPORT OUR NEW COMPONENT
+import CommentItem from "./comment_item";
 import "../../static/styles/community.css";
 
 export default function PostCard({ post, currentUser, onDelete, view }) {
@@ -42,7 +42,6 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
 
     // --- HANDLERS ---
 
-    // 1. Load Comments
     const toggleComments = async () => {
         const newShowState = !showComments;
         setShowComments(newShowState);
@@ -61,7 +60,6 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
         }
     };
 
-    // 2. Create Comment
     const handlePostComment = async (e) => {
         if (e.key === 'Enter' && commentText.trim()) {
             try {
@@ -91,7 +89,6 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
         }
     };
 
-    // 3. Update Local Comment State (Passed to Child)
     const handleCommentDelete = (cId) => {
         setComments(prev => prev.filter(c => (c.commentId || c.comment_id) !== cId));
         setCommentCount(prev => prev - 1);
@@ -167,19 +164,22 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
             {/* POST HEADER */}
             <div className="post-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <img
-                        src={authorAvatar}
-                        alt={authorName}
-                        style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover", border: "1px solid #eee" }}
-                        onError={(e) => {e.target.src = "https://placehold.co/40?text=?"}}
-                    />
-                    <div>
-                        <h4 style={{ margin: 0, fontSize: "15px", fontWeight: "600", color: "#050505" }}>{authorName}</h4>
-                        <span style={{ fontSize: '12px', color: '#65676B' }}>
-                            {postDate}
-                            {isPostEdited && <span style={{marginLeft: "5px", fontStyle: "italic"}}>• Edited</span>}
-                        </span>
-                    </div>
+                    {/* LINK TO PROFILE (This is what you were missing!) */}
+                    <a href={`/user/${postAuthorId}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: 'inherit' }}>
+                        <img
+                            src={authorAvatar}
+                            alt={authorName}
+                            style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover", border: "1px solid #eee" }}
+                            onError={(e) => {e.target.src = "https://placehold.co/40?text=?"}}
+                        />
+                        <div>
+                            <h4 style={{ margin: 0, fontSize: "15px", fontWeight: "600", color: "#050505" }}>{authorName}</h4>
+                            <span style={{ fontSize: '12px', color: '#65676B' }}>
+                                {postDate}
+                                {isPostEdited && <span style={{marginLeft: "5px", fontStyle: "italic"}}>• Edited</span>}
+                            </span>
+                        </div>
+                    </a>
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>

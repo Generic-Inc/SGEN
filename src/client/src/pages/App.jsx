@@ -2,6 +2,7 @@ import '../static/styles/App.css';
 import NavBar from "../components/nav_bar.jsx";
 import SideBar from "../components/side_bar.jsx";
 import Feed from "../components/feed.jsx";
+import UserProfile from "../components/user_profile.jsx"; // IMPORT THIS
 import CreatePostModal from "../components/create_post_modal.jsx";
 import "../static/styles/feed_override.css";
 
@@ -23,7 +24,11 @@ function App() {
                 {loading ? (
                     <div style={{textAlign: "center"}}>Loading...</div>
                 ) : user ? (
-                    <Feed user={user} view={currentView} />
+                    currentView.type === 'user' ? (
+                        <UserProfile userId={currentView.id} />
+                    ) : (
+                        <Feed user={user} view={currentView} />
+                    )
                 ) : (
                     <div style={{ textAlign: 'center', marginTop: '50px' }}>
                         <h2>Welcome to SGEN</h2>

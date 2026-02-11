@@ -10,7 +10,6 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
     // Permissions
     const currentUserId = currentUser?.userId || currentUser?.user_id;
     const commentAuthorId = cAuthor.userId || cAuthor.user_id;
-    // Loose comparison (==) handles string vs int IDs if backend varies
     const canManageComment = currentUserId && commentAuthorId && (currentUserId == commentAuthorId);
 
     // State
@@ -79,7 +78,10 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
 
     return (
         <div style={{ display: "flex", gap: "8px" }}>
-            <img src={cAvatar} style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit:"cover", marginTop: "4px" }} />
+            {/* LINK TO PROFILE */}
+            <a href={`/user/${commentAuthorId}`} style={{ textDecoration: "none" }}>
+                <img src={cAvatar} style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit:"cover", marginTop: "4px" }} />
+            </a>
 
             <div style={{ flex: 1 }}>
                 {/* BUBBLE CONTAINER */}
@@ -100,10 +102,10 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
 
                     {/* Header */}
                     <div style={{ fontWeight: "600", fontSize: "13px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span>
+                        <a href={`/user/${commentAuthorId}`} style={{ textDecoration: "none", color: "inherit" }}>
                             {cName}
-                            {isEdited && <span style={{marginLeft: "5px", fontWeight: "normal", fontStyle: "italic", fontSize: "11px", color: "#666"}}>• Edited</span>}
-                        </span>
+                        </a>
+                        {isEdited && <span style={{marginLeft: "5px", fontWeight: "normal", fontStyle: "italic", fontSize: "11px", color: "#666"}}>• Edited</span>}
                     </div>
 
                     {/* Content: View vs Edit Mode */}

@@ -66,6 +66,27 @@ BEGIN
     UPDATE Communities SET community_name = lower(NEW.community_name) WHERE community_id = NEW.community_id;
 END;
 
+CREATE TABLE IF NOT EXISTS ChatMessage(
+    message_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    community_id INT NOT NULL,
+    author_id INT NOT NULL,
+    content VARCHAR(2048) NOT NULL,
+
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    modified DATETIME DEFAULT (DATETIME('now', 'localtime')),
+
+    FOREIGN KEY (community_id) REFERENCES Communities(community_id),
+    FOREIGN KEY (author_id) REFERENCES Profiles(user_id)
+);
+
+
+CREATE TRIGGER IF NOT EXISTS UpdateChatMessageModified
+AFTER UPDATE ON ChatMessage
+FOR EACH ROW
+BEGIN
+    UPDATE ChatMessage SET modified = DATETIME('now', 'localtime') WHERE message_id = OLD.message_id;
+END;
+
 CREATE TABLE IF NOT EXISTS Memberships (
     member_id INT NOT NULL,
     community_id INT NOT NULL,

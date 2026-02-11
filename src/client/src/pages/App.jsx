@@ -4,7 +4,7 @@ import NavBar from "../components/nav_bar.jsx";
 import SideBar from "../components/side_bar.jsx";
 import { checkStatus } from "../static/api.js";
 
-import Feed from "../components/feed"; 
+import Feed from "../components/feed";
 import "../static/styles/feed_override.css";
 
 function App() {
@@ -23,7 +23,7 @@ function App() {
         <NavBar user={user} />
         <main style={{ display: "flex", justifyContent: "center", marginTop: "60px" }}>
             <SideBar />
-            
+
             {/* Insert Feed Here */}
             <div className="main-container" style={{ flex: 1, padding: "20px" }}>
                 {user ? (

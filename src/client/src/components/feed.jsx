@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { fetchData } from "../static/api";
 import PostCard from "./sub components/post_card";
-// Removed InputBox import entirely
 import "../static/styles/feed_override.css";
 
 export default function Feed({ user, view }) {
@@ -15,7 +14,6 @@ export default function Feed({ user, view }) {
                 setLoading(true);
                 let endpoint = "feed";
 
-                // Handle switching between Home and Community feeds
                 if (view && view.type === "community" && view.id) {
                     endpoint = `community/${view.id}/posts`;
                 }
@@ -48,12 +46,6 @@ export default function Feed({ user, view }) {
 
     return (
         <div className="feed-container">
-            {/* --- INPUT BOX REMOVED ---
-               The "undefined *" box was here. It is now gone.
-               We can add a proper "Create Post" button later when you are ready.
-            */}
-
-            {/* List of Posts */}
             {posts.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: "40px", color: '#888' }}>
                     <h3>No posts found</h3>
@@ -66,6 +58,7 @@ export default function Feed({ user, view }) {
                         post={post}
                         currentUser={user}
                         onDelete={removePost}
+                        view={view}
                     />
                 ))
             )}

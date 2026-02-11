@@ -2,6 +2,7 @@ import '../static/styles/App.css';
 import NavBar from "../components/nav_bar.jsx";
 import SideBar from "../components/side_bar.jsx";
 import Feed from "../components/feed.jsx";
+import CreatePostModal from "../components/create_post_modal.jsx";
 import "../static/styles/feed_override.css";
 
 import { useAuth } from "../hooks/useAuth";
@@ -31,6 +32,8 @@ function App() {
                 )}
             </div>
         </main>
+
+        <CreatePostModal user={user} view={currentView} />
     </>
   )
 }

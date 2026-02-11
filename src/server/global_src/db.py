@@ -14,7 +14,7 @@ class Database:
     async def _create_tables(self, schema_path: str | Path=SCHEMA_PATH) -> None:
         """
         Creates tables in the database based on the schema in the schema path.
-        :param schema_path: path to the schema file
+        :ram schema_path: path to the schema file
         :return: None
         """
         con = self.con

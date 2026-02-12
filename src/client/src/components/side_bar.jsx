@@ -68,7 +68,7 @@ export default function SideBar() {
                                    material_style={{ fontSize: "1.5rem" }}
                         />
                         <AsideItem symbol="chat" text={`${community.displayName} Chat`}
-                                   href={`/community/${community.communityId}/chat`}
+                                   href={`/community/${community.communityId}/messages`}
                                    material_style={{ fontSize: "1.4rem" }}
                         />
                         <AsideItem symbol="calendar_today" text={`${community.displayName} Events`}

@@ -1,0 +1,110 @@
+.calendar-widget {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    border: 2px solid #2196F3;
+    width: 100%;
+    max-width: 500px;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.calendar-month {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.calendar-nav-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+    color: #333;
+}
+
+.calendar-nav-btn:hover {
+    background-color: #f0f2f5;
+}
+
+.calendar-nav-btn .material-icons {
+    font-size: 24px;
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.calendar-weekday {
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: #65676B;
+    padding: 8px 0;
+}
+
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.2s;
+    position: relative;
+}
+
+.calendar-day:hover {
+    background-color: #f0f2f5;
+}
+
+.calendar-day.today {
+    background-color: #2196F3;
+    color: white;
+    font-weight: 600;
+}
+
+.calendar-day.selected {
+    background-color: #2196F3;
+    color: white;
+}
+
+.calendar-day.other-month {
+    color: #ccc;
+}
+
+.calendar-day.has-events::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    width: 4px;
+    height: 4px;
+    background-color: #FF4500;
+    border-radius: 50%;
+}
+
+/* If selected day has events, show orange dot on blue background */
+.calendar-day.selected.has-events::after {
+    background-color: #FFD700;
+}

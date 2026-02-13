@@ -2,7 +2,7 @@ import {useEffect, useRef, useState} from "react";
 
 export function CreateButton() {
     const [isOpen, setIsOpen] = useState(false);
-    const containerRef = useRef(null);
+    const containerRef = useRef(null); // Ref for the whole container
 
     const toggleOverlay = () => setIsOpen(!isOpen);
 
@@ -17,12 +17,6 @@ export function CreateButton() {
         return () => document.removeEventListener("mousedown", handleDocumentClick);
     }, []);
 
-    // Helper to broadcast the signal
-    const triggerPostModal = () => {
-        setIsOpen(false);
-        window.dispatchEvent(new Event("openPostModal"));
-    };
-
     return (
         <div className="create-button-container" ref={containerRef}>
             <button className="create-button" onClick={toggleOverlay}>
@@ -32,14 +26,7 @@ export function CreateButton() {
             <ul className={`dropdown-list ${isOpen ? 'shown' : ''}`} id="create-overlay">
                 <DropdownElement icon="group" text="New Group" link="/create/group"/>
                 <DropdownElement icon="event" text="New Event" link="/create/event"/>
-
-                {/* MODIFIED: Dispatches Event instead of using Props */}
-                <li className="dropdown-list-element" onClick={triggerPostModal}>
-                    <a href="#" onClick={(e) => e.preventDefault()}>
-                        <span className="material-symbols-outlined">article</span>
-                        <span className="text">New Post</span>
-                    </a>
-                </li>
+                <DropdownElement icon="article" text="New Post" link="/create/post"/>
             </ul>
         </div>
     );

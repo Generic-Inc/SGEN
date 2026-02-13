@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import NavBar from '../components/navbar.jsx';
-import SideBar from '../components/sidebar.jsx';
+import NavBar from '../components/nav_bar.jsx';
+import SideBar from '../components/side_bar.jsx';
 import Calendar from '../components/sub components/calendar.jsx';
 import EventCard from '../components/sub components/event_card.jsx';
 import EventModal from '../components/sub components/event_modal.jsx';

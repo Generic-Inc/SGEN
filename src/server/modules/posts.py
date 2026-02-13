@@ -129,6 +129,41 @@ class Post(BaseClass):
         return cls._parse_rows([row])[0]
 
     @classmethod
+    async def get_by_author(cls, author_id: int, viewer_id: int = None) -> list['Post']:
+        query = """
+                SELECT p.post_id, \
+                       p.content, \
+                       p.image_url, \
+                       p.community_id,
+                       c.display_name,
+                       p.created, \
+                       p.modified, \
+                       p.active,
+                       u.user_id, \
+                       u.username, \
+                       u.display_name, \
+                       u._email, \
+                       u.language, \
+                       u.avatar_url, \
+                       u.bio, \
+                       u.created,
+                       (SELECT COUNT(*) FROM PostLikes pl WHERE pl.post_id = p.post_id)                    as like_count,
+                       (SELECT COUNT(*) FROM PostLikes pl WHERE pl.post_id = p.post_id AND pl.user_id = ?) as is_liked,
+                       (SELECT COUNT(*) \
+                        FROM Comments cm \
+                        WHERE cm.post_id = p.post_id \
+                          AND cm.active = 1)                                                               as comment_count
+                FROM Posts p
+                         JOIN Profiles u ON p.author_id = u.user_id
+                         JOIN Communities c ON p.community_id = c.community_id
+                WHERE p.author_id = ? \
+                  AND p.active = 1
+                ORDER BY p.created DESC \
+                """
+        rows = await DATABASE.fetch_all(query, (viewer_id, author_id))
+        return cls._parse_rows(rows)
+
+    @classmethod
     def _parse_rows(cls, rows, default_community_name=None):
         posts = []
         for row in rows:

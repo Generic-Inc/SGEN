@@ -4,12 +4,10 @@ import CommentItem from "./comment_item";
 import "../../static/styles/community.css";
 
 export default function PostCard({ post, currentUser, onDelete, view }) {
-    // --- POST MAPPING ---
     const authorObj = post.author || {};
     const authorName = authorObj.displayName || authorObj.display_name || authorObj.name || post.author_name || "Unknown";
     const authorAvatar = authorObj.avatarUrl || authorObj.avatar_url || post.author_avatar || "https://placehold.co/40";
 
-    // ID Handling
     const currentUserId = currentUser?.userId || currentUser?.user_id;
     const postAuthorId = authorObj.userId || authorObj.user_id || post.author_id;
 
@@ -24,7 +22,6 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
     const postId = post.postId || post.post_id;
     const communityName = post.communityName || post.community_name || null;
 
-    // --- STATE ---
     const [likeCount, setLikeCount] = useState(post.likeCount || post.like_count || 0);
     const [isLiked, setIsLiked] = useState(post.isLiked || post.is_liked || false);
     const [commentCount, setCommentCount] = useState(post.commentCount || post.comment_count || 0);
@@ -34,29 +31,21 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
     const [commentText, setCommentText] = useState("");
     const [commentsLoaded, setCommentsLoaded] = useState(false);
 
-    // MENU & EDITING STATE (POST)
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editContent, setEditContent] = useState(content);
     const [isSaving, setIsSaving] = useState(false);
 
-    // --- HANDLERS ---
-
     const toggleComments = async () => {
         const newShowState = !showComments;
         setShowComments(newShowState);
-
         if (newShowState && !commentsLoaded) {
             try {
                 const route = `community/${communityId}/posts/${postId}/comments`;
                 const data = await fetchData(route);
-                const loadedComments = data.comments || [];
-                setComments(loadedComments);
+                setComments(data.comments || []);
                 setCommentsLoaded(true);
-                setCommentCount(loadedComments.length);
-            } catch (err) {
-                console.error("Failed to load comments:", err);
-            }
+            } catch (err) { console.error("Failed to load comments:", err); }
         }
     };
 
@@ -64,23 +53,16 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
         if (e.key === 'Enter' && commentText.trim()) {
             try {
                 const route = `community/${communityId}/posts/${postId}/comments`;
-
-                // Optimistic UI Update
                 const tempComment = {
                     commentId: Date.now(),
                     content: commentText,
                     author: currentUser,
                     created: new Date().toISOString(),
                     modified: new Date().toISOString(),
-                    likeCount: 0,
-                    isLiked: false
                 };
-
                 setComments([...comments, tempComment]);
                 setCommentText("");
                 setCommentCount(prev => prev + 1);
-
-                // Actual API Call
                 await postData(route, { content: tempComment.content });
             } catch (err) {
                 setCommentCount(prev => prev - 1);
@@ -119,7 +101,8 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
     const handleDelete = async () => {
         if (!confirm("Delete this post?")) return;
         try {
-            await fetch(`http://localhost:5000/api/community/${communityId}/posts/${postId}`, {
+            // UPDATED URL: Relative path to API
+            await fetch(`/api/community/${communityId}/posts/${postId}`, {
                 method: "DELETE",
                 credentials: "include"
             });
@@ -131,16 +114,14 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
         if (!editContent.trim()) return alert("Content cannot be empty");
         setIsSaving(true);
         try {
-            const response = await fetch(`http://localhost:5000/api/community/${communityId}/posts/${postId}`, {
+            const response = await fetch(`/api/community/${communityId}/posts/${postId}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ content: editContent }),
                 credentials: "include"
             });
-
             if (!response.ok) throw new Error("Failed to update");
             const updatedPost = await response.json();
-
             setContent(updatedPost.content);
             setModifiedAt(updatedPost.modified);
             setIsEditing(false);
@@ -153,18 +134,16 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
         }
     };
 
-    // Permissions & Labels
-    const canManagePost = currentUserId && postAuthorId && (currentUserId == postAuthorId);
+    // Permissions
+    // Checks if the logged-in user matches the post author
+    const canManagePost = currentUserId && postAuthorId && (String(currentUserId) === String(postAuthorId));
     const isPostEdited = modifiedAt && createdAt && (modifiedAt !== createdAt);
     const showCommunityLabel = communityName && (!view || view.type !== "community");
 
     return (
         <div className="post-card" style={{ marginBottom: "20px", background: "#fff", borderRadius: "8px", padding: "15px", boxShadow: "0 1px 2px rgba(0,0,0,0.1)", position: "relative" }}>
-
-            {/* POST HEADER */}
             <div className="post-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    {/* LINK TO PROFILE (This is what you were missing!) */}
                     <a href={`/user/${postAuthorId}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: 'inherit' }}>
                         <img
                             src={authorAvatar}
@@ -184,14 +163,10 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
 
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     {showCommunityLabel && (
-                        <a
-                            href={`/community/${communityId}`}
-                            style={{ fontSize: "12px", color: "#65676B", textDecoration: "none", fontWeight: "500" }}
-                        >
+                        <a href={`/community/${communityId}`} style={{ fontSize: "12px", color: "#65676B", textDecoration: "none", fontWeight: "500" }}>
                             Posted in <span style={{ color: "#1877F2" }}>{communityName}</span>
                         </a>
                     )}
-
                     {canManagePost && (
                         <div style={{ position: "relative" }}>
                             <button onClick={() => setIsMenuOpen(!isMenuOpen)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px', padding: "0 5px", color: "#606770", fontWeight: "bold" }}>&#x22EF;</button>
@@ -206,7 +181,6 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
                 </div>
             </div>
 
-            {/* POST CONTENT */}
             <div className="post-content" style={{ marginTop: "10px" }}>
                 {isEditing ? (
                     <div style={{ marginBottom: "10px" }}>
@@ -224,7 +198,6 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
                 )}
             </div>
 
-            {/* FOOTER */}
             <div className="post-footer" style={{ marginTop: '10px', borderTop: '1px solid #eee', paddingTop: '10px', display: 'flex', gap: '20px' }}>
                 <button onClick={handleLike} style={{ background: 'none', border: 'none', cursor: 'pointer', color: isLiked ? "#e0245e" : "#65676B", fontSize:'14px', display:'flex', alignItems:'center', gap:'5px' }}>
                     {isLiked ? "❤️" : "🤍"} {likeCount} Likes
@@ -234,36 +207,19 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
                 </button>
             </div>
 
-            {/* COMMENT SECTION */}
             {showComments && (
                 <div style={{ marginTop: "15px", paddingTop: "15px", borderTop: "1px dashed #eee" }}>
-
-                    {/* List of Comments */}
                     <div style={{ marginBottom: "15px", display: "flex", flexDirection: "column", gap: "10px" }}>
-                        {comments.length === 0 ? (
-                            <p style={{ fontSize: "13px", color: "#888", textAlign: "center" }}>No comments yet. Be the first!</p>
-                        ) : (
-                            comments.map((c, idx) => (
-                                <CommentItem
-                                    key={c.commentId || c.comment_id || idx}
-                                    comment={c}
-                                    currentUser={currentUser}
-                                    communityId={communityId}
-                                    postId={postId}
-                                    onDelete={handleCommentDelete}
-                                    onUpdate={handleCommentUpdate}
-                                />
-                            ))
-                        )}
+                        {comments.length === 0 ? <p style={{ fontSize: "13px", color: "#888", textAlign: "center" }}>No comments yet.</p> : comments.map((c, idx) => (
+                            <CommentItem key={c.commentId || c.comment_id || idx} comment={c} currentUser={currentUser} communityId={communityId} postId={postId} onDelete={handleCommentDelete} onUpdate={handleCommentUpdate} />
+                        ))}
                     </div>
-
-                    {/* New Comment Input */}
                     <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                         <img src={currentUser?.avatarUrl || currentUser?.avatar_url || "https://placehold.co/30"} style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit:"cover" }} />
-                        <input
-                            type="text" placeholder="Write a comment... (Press Enter)" value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={handlePostComment}
-                            style={{ flex: 1, padding: "8px 12px", borderRadius: "20px", border: "1px solid #ddd", background: "#f0f2f5", outline: "none" }}
-                        />
+                        <input type="text" placeholder="Write a comment..." value={commentText}
+                               onChange={(e) => setCommentText(e.target.value)}
+                               onKeyDown={handlePostComment}
+                               style={{ flex: 1, padding: "8px 12px", borderRadius: "20px", border: "1px solid #ddd", background: "#f0f2f5", outline: "none" }} />
                     </div>
                 </div>
             )}

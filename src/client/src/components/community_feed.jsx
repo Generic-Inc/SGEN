@@ -1,18 +1,19 @@
 import { useState, useEffect } from "react";
-import { fetchData, getCommunityIdFromPage } from "../static/api";
+import { fetchData, checkStatus, getCommunityIdFromPage } from "../static/api";
 import PostCard from "./sub components/post_card";
 import { DropdownElement } from "./sub components/create_button";
 import "../static/styles/feed_override.css";
 
 export default function CommunityFeed() {
     const [posts, setPosts] = useState([]);
+    const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const communityId = getCommunityIdFromPage();
 
     useEffect(() => {
-        async function loadCommunityPosts() {
+        async function loadData() {
             if (!communityId) {
                 setLoading(false);
                 return;
@@ -20,18 +21,27 @@ export default function CommunityFeed() {
 
             try {
                 setLoading(true);
-                const data = await fetchData(`community/${communityId}/posts`);
-                const postList = data.posts || data || [];
+                const [postsData, authData] = await Promise.all([
+                    fetchData(`community/${communityId}/posts`),
+                    checkStatus().catch(() => ({ user: null }))
+                ]);
+
+                const postList = postsData.posts || postsData || [];
                 setPosts(postList);
+
+                if (authData && authData.user) {
+                    setCurrentUser(authData.user);
+                }
+
             } catch (err) {
                 console.error("Community Feed error:", err);
-                setError("Failed to load posts.");
+                setError("Failed to load data.");
             } finally {
                 setLoading(false);
             }
         }
 
-        loadCommunityPosts();
+        loadData();
     }, [communityId]);
 
     const removePost = (id) => {
@@ -44,9 +54,9 @@ export default function CommunityFeed() {
         <div className="feed-container">
             <div className="feed-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
                 <h2>Community Feed</h2>
-                <div style={{ listStyle: "none" }}>
+                <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
                     <DropdownElement icon="article" text="New Post" link="/create/post"/>
-                </div>
+                </ul>
             </div>
 
             {loading && <div style={{ textAlign: "center" }}>Loading...</div>}
@@ -57,7 +67,7 @@ export default function CommunityFeed() {
                     <PostCard
                         key={post.postId || post.post_id}
                         post={post}
-                        currentUser={post.author}
+                        currentUser={currentUser}
                         onDelete={removePost}
                         view={{ type: "community", id: communityId }}
                     />

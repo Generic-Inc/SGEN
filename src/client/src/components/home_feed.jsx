@@ -1,20 +1,29 @@
 import { useState, useEffect } from "react";
-import { fetchData } from "../static/api";
+import { fetchData, checkStatus } from "../static/api";
 import PostCard from "./sub components/post_card";
 import { DropdownElement } from "./sub components/create_button";
 import "../static/styles/feed_override.css";
 
 export default function HomeFeed() {
     const [posts, setPosts] = useState([]);
+    const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        async function loadHomeFeed() {
+        async function loadData() {
             try {
                 setLoading(true);
-                const data = await fetchData("feed");
-                const postList = data.posts || data || [];
+                const [postsData, authData] = await Promise.all([
+                    fetchData("feed"),
+                    checkStatus().catch(() => ({ user: null }))
+                ]);
+
+                const postList = postsData.posts || postsData || [];
                 setPosts(postList);
+
+                if (authData && authData.user) {
+                    setCurrentUser(authData.user);
+                }
             } catch (err) {
                 console.error("Home Feed error:", err);
             } finally {
@@ -22,7 +31,7 @@ export default function HomeFeed() {
             }
         }
 
-        loadHomeFeed();
+        loadData();
     }, []);
 
     const removePost = (id) => {
@@ -33,9 +42,9 @@ export default function HomeFeed() {
         <div className="feed-container">
             <div className="feed-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
                 <h2>Home Feed</h2>
-                <div style={{ listStyle: "none" }}>
+                <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
                     <DropdownElement icon="article" text="New Post" link="/create/post"/>
-                </div>
+                </ul>
             </div>
 
             {loading ? (
@@ -47,7 +56,7 @@ export default function HomeFeed() {
                             <PostCard
                                 key={post.postId || post.post_id}
                                 post={post}
-                                currentUser={null}
+                                currentUser={currentUser}
                                 onDelete={removePost}
                                 view={{ type: "home" }}
                             />

@@ -1,48 +1,54 @@
 import { useState, useEffect } from "react";
-import { fetchData, postData } from "../static/api";
+import { fetchData, postData, getCommunityIdFromPage } from "../static/api";
 import "../static/styles/community.css";
 
-export default function CreatePostModal({ user, view }) {
-    // 1. Internal State for Visibility
+export default function CreatePostModal() {
     const [isOpen, setIsOpen] = useState(false);
-
-    // 2. Data State
     const [content, setContent] = useState("");
     const [imageUrl, setImageUrl] = useState("");
+
     const [communities, setCommunities] = useState([]);
     const [selectedCommunity, setSelectedCommunity] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // 3. LISTEN for the "openPostModal" event here!
+    const currentCommunityId = getCommunityIdFromPage();
+
     useEffect(() => {
         const handleOpen = () => setIsOpen(true);
         window.addEventListener("openPostModal", handleOpen);
         return () => window.removeEventListener("openPostModal", handleOpen);
     }, []);
 
-    // 4. Load Communities when opening
     useEffect(() => {
-        if (!isOpen) return; // Only load if open
+        if (!isOpen) return;
 
         async function loadContext() {
-            if (view.type === "community" && view.id) {
-                setSelectedCommunity(view.id);
-            } else {
+            if (currentCommunityId) {
+                setSelectedCommunity(currentCommunityId);
+            }
+            else {
                 try {
                     const data = await fetchData("my-communities");
                     const list = data.communities || [];
                     setCommunities(list);
-                    if (list.length > 0) setSelectedCommunity(list[0].communityId || list[0].community_id);
+                    if (list.length > 0) {
+                        setSelectedCommunity(list[0].communityId || list[0].community_id);
+                    }
                 } catch (err) {
-                    setError("Could not load communities.");
+                    setError("Could not load your communities.");
                 }
             }
         }
         loadContext();
-    }, [isOpen, view]);
+    }, [isOpen, currentCommunityId]);
 
-    const onClose = () => setIsOpen(false);
+    const onClose = () => {
+        setIsOpen(false);
+        setError(null);
+        setContent("");
+        setImageUrl("");
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -55,16 +61,13 @@ export default function CreatePostModal({ user, view }) {
                 content: content,
                 imageUrl: imageUrl
             });
-            onClose();
             window.location.reload();
         } catch (err) {
             setError(err.message || "Failed to create post.");
-        } finally {
             setLoading(false);
         }
     };
 
-    // 5. If closed, render NOTHING (Invisible)
     if (!isOpen) return null;
 
     return (
@@ -87,9 +90,10 @@ export default function CreatePostModal({ user, view }) {
                 <form onSubmit={handleSubmit}>
                     <div style={{ marginBottom: "15px" }}>
                         <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Community</label>
-                        {view.type === "community" ? (
-                            <div style={{ padding: "10px", background: "#eee", borderRadius: "4px" }}>
-                                Posting to current community
+
+                        {currentCommunityId ? (
+                            <div style={{ padding: "10px", background: "#eee", borderRadius: "4px", color: "#555" }}>
+                                🔒 Posting to current community
                             </div>
                         ) : (
                             <select
@@ -97,6 +101,7 @@ export default function CreatePostModal({ user, view }) {
                                 onChange={(e) => setSelectedCommunity(e.target.value)}
                                 style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ddd" }}
                             >
+                                {communities.length === 0 && <option>Loading communities...</option>}
                                 {communities.map(c => (
                                     <option key={c.communityId || c.community_id} value={c.communityId || c.community_id}>
                                         {c.displayName || c.display_name}

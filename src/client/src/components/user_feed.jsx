@@ -4,7 +4,7 @@ import PostCard from "./sub components/post_card";
 import { DropdownElement } from "./sub components/create_button";
 import "../static/styles/feed_override.css";
 
-export default function UserFeed() {
+export default function User_feed() {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const pathParts = window.location.pathname.split('/');

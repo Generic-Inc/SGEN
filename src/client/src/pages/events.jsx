@@ -21,8 +21,8 @@ export default function Events() {
         const loadData = async () => {
             try {
                 const [communityData, eventsData] = await Promise.all([
-                    fetchData(`community/${communityId}`),
-                    fetchData(`community/${communityId}/events`)
+                    fetchData(`pages/community/${communityId}`),
+                    fetchData(`pages/community/${communityId}/events`)
                 ]);
 
                 setCommunity(communityData);
@@ -69,14 +69,16 @@ export default function Events() {
         if (!confirm('Are you sure you want to delete this event?')) return;
 
         try {
-            await fetch(`/api/community/${communityId}/events/${eventId}`, {
+            const response = await fetch(`/pages/community/${communityId}/events/${eventId}`, {
                 method: 'DELETE',
-                headers: {
-                    'Authorization': document.cookie.split('token=')[1]?.split(';')[0]
-                }
+                credentials: 'include'
             });
 
-            setEvents(events.filter(e => e.eventId !== eventId));
+            if (response.ok) {
+                setEvents(events.filter(e => e.eventId !== eventId));
+            } else {
+                alert('Failed to delete event');
+            }
         } catch (error) {
             console.error('Error deleting event:', error);
             alert('Failed to delete event');
@@ -85,11 +87,11 @@ export default function Events() {
 
     const handleToggleInterest = async (eventId) => {
         try {
-            const response = await fetch(`/api/community/${communityId}/events/${eventId}/interest`, {
+            const response = await fetch(`/pages/community/${communityId}/events/${eventId}/interest`, {
                 method: 'PUT',
+                credentials: 'include',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': document.cookie.split('token=')[1]?.split(';')[0]
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({})
             });
@@ -113,22 +115,36 @@ export default function Events() {
     const handleModalSave = async (eventData) => {
         try {
             const url = editingEvent
-                ? `/api/community/${communityId}/events/${editingEvent.eventId}`
-                : `/api/community/${communityId}/events`;
+                ? `/pages/community/${communityId}/events/${editingEvent.eventId}`
+                : `/pages/community/${communityId}/events`;
 
             const method = editingEvent ? 'PATCH' : 'POST';
 
             const response = await fetch(url, {
                 method,
+                credentials: 'include',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': document.cookie.split('token=')[1]?.split(';')[0]
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(eventData)
             });
 
             if (response.ok) {
-                window.location.reload();
+                const savedEvent = await response.json();
+
+                if (editingEvent) {
+                    setEvents(events.map(e =>
+                        e.eventId === savedEvent.eventId ? savedEvent : e
+                    ));
+                } else {
+                    const now = new Date();
+                    const scheduledDate = new Date(savedEvent.scheduledDate);
+                    const daysUntil = Math.ceil((scheduledDate - now) / (1000 * 60 * 60 * 24));
+
+                    setEvents([...events, { ...savedEvent, daysUntil: daysUntil > 0 ? daysUntil : 0 }]);
+                }
+
+                setShowModal(false);
             } else {
                 const error = await response.json();
                 alert(error.error || 'Failed to save event');

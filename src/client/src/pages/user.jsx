@@ -1,5 +1,6 @@
 import NavBar from "../components/nav_bar.jsx";
 import SideBar from "../components/side_bar.jsx";
+import UserComponent from "../components/user.jsx";
 
 export default function User() {
     return (
@@ -8,7 +9,7 @@ export default function User() {
             <main>
                 <SideBar />
                 <div className="main-container">
-
+                    <UserComponent />
                 </div>
             </main>
         </>

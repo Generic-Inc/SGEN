@@ -1,6 +1,3 @@
-/* src/client/src/static/styles/feed_override.css */
-
-/* 1. Global Reset */
 body, html {
     overflow-x: hidden;
     width: 100%;
@@ -8,17 +5,11 @@ body, html {
     padding: 0;
 }
 
-/* 2. Fix the MAIN container (The Root Cause) */
 main {
-    /* RESET HEIGHT: Allow the page to grow so scrolling works */
     height: auto !important;
     min-height: 100vh;
 
-    /* PUSH DOWN: Clear the Fixed Navbar (80px + extra space) */
     padding-top: 6rem !important;
-
-    /* SIDEBAR SPACE: Keep space for the fixed sidebar on the left */
-    /* This matches your nav.css but ensures it works with flex */
     padding-left: 14rem !important;
 
     display: flex;
@@ -26,7 +17,6 @@ main {
     box-sizing: border-box;
 }
 
-/* 3. Main Container (The Feed Wrapper) */
 .main-container {
     max-width: 800px;
     width: 100%;
@@ -34,7 +24,6 @@ main {
     padding: 0 20px 20px 20px !important;
 }
 
-/* 4. Ensure Navbar stays on top */
 .nav-bar {
     position: fixed !important;
     top: 0;
@@ -43,7 +32,6 @@ main {
     z-index: 1000;
 }
 
-/* 5. Ensure Sidebar stays fixed */
 .side-bar {
     position: fixed !important;
     top: 5rem !important;

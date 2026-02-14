@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { fetchData, checkStatus } from "../static/api";
 import PostCard from "./sub components/post_card";
 import "../static/styles/feed_override.css";
@@ -6,38 +6,77 @@ import "../static/styles/feed_override.css";
 export default function UserFeed() {
     const [posts, setPosts] = useState([]);
     const [currentUser, setCurrentUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
+
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
 
     const pathParts = window.location.pathname.split('/');
     const userIndex = pathParts.indexOf('user');
     const targetUserId = (userIndex !== -1 && pathParts[userIndex + 1]) ? pathParts[userIndex + 1] : null;
 
     useEffect(() => {
-        async function loadData() {
-            if (!targetUserId) return;
+        if (!targetUserId) return;
+
+        async function init() {
+            setLoading(true);
+            setPage(1);
+            setHasMore(true);
 
             try {
-                setLoading(true);
-                const [postsData, authData] = await Promise.all([
-                    fetchData(`user/${targetUserId}/posts`),
-                    checkStatus().catch(() => ({ user: null }))
+                const [authData, postsData] = await Promise.all([
+                    checkStatus().catch(() => ({ user: null })),
+                    fetchData(`user/${targetUserId}/posts?page=1`)
                 ]);
 
-                const postList = postsData.posts || postsData || [];
-                setPosts(postList);
+                if (authData?.user) setCurrentUser(authData.user);
 
-                if (authData && authData.user) {
-                    setCurrentUser(authData.user);
-                }
+                const newPosts = postsData.posts || [];
+                setPosts(newPosts);
+
+                if (newPosts.length < 10) setHasMore(false);
+
             } catch (err) {
-                console.error("User Feed error:", err);
+                console.error(err);
             } finally {
                 setLoading(false);
             }
         }
-
-        loadData();
+        init();
     }, [targetUserId]);
+
+    const loadMore = useCallback(async () => {
+        if (loading || !hasMore || !targetUserId) return;
+
+        setLoading(true);
+        try {
+            const nextPage = page + 1;
+            const data = await fetchData(`user/${targetUserId}/posts?page=${nextPage}`);
+            const newPosts = data.posts || [];
+
+            if (newPosts.length === 0) {
+                setHasMore(false);
+            } else {
+                setPosts(prev => [...prev, ...newPosts]);
+                setPage(nextPage);
+                if (newPosts.length < 10) setHasMore(false);
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    }, [page, hasMore, loading, targetUserId]);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 100) {
+                loadMore();
+            }
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [loadMore]);
 
     const removePost = (id) => {
         setPosts(posts.filter(p => (p.postId || p.post_id) !== id));
@@ -47,25 +86,24 @@ export default function UserFeed() {
 
     return (
         <div className="feed-container">
-            {loading ? (
-                <div style={{ textAlign: "center", padding: "20px" }}>Loading history...</div>
-            ) : (
-                <div className="posts-list">
-                    {posts.length > 0 ? (
-                        posts.map(post => (
-                            <PostCard
-                                key={post.postId || post.post_id}
-                                post={post}
-                                currentUser={currentUser}
-                                onDelete={removePost}
-                                view={{ type: "user", id: targetUserId }}
-                            />
-                        ))
-                    ) : (
-                        <div style={{ textAlign: "center", color: "#888", padding: "20px" }}>No post history found.</div>
-                    )}
-                </div>
-            )}
+            <div className="posts-list" style={{width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+                {posts.length > 0 ? (
+                    posts.map(post => (
+                        <PostCard
+                            key={post.postId || post.post_id}
+                            post={post}
+                            currentUser={currentUser}
+                            onDelete={removePost}
+                            view={{ type: "user", id: targetUserId }}
+                        />
+                    ))
+                ) : (
+                    !loading && <div style={{ textAlign: "center", padding: "20px", color: "#888" }}>No post history found.</div>
+                )}
+            </div>
+
+            {loading && <div style={{ textAlign: "center", padding: "20px", width: '100%' }}>Loading history...</div>}
+            {!hasMore && posts.length > 0 && <div style={{ textAlign: "center", padding: "20px", color: "#ccc", width: '100%' }}>No more posts.</div>}
         </div>
     );
 }

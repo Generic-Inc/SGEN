@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { fetchData, checkStatus, getCommunityIdFromPage } from "../static/api";
 import PostCard from "./sub components/post_card";
 import "../static/styles/feed_override.css";
@@ -6,42 +6,76 @@ import "../static/styles/feed_override.css";
 export default function CommunityFeed() {
     const [posts, setPosts] = useState([]);
     const [currentUser, setCurrentUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
 
     const communityId = getCommunityIdFromPage();
 
     useEffect(() => {
-        async function loadData() {
-            if (!communityId) {
-                setLoading(false);
-                return;
-            }
+        if (!communityId) return;
+
+        async function init() {
+            setLoading(true);
+            setPage(1);
+            setHasMore(true);
 
             try {
-                setLoading(true);
-                const [postsData, authData] = await Promise.all([
-                    fetchData(`community/${communityId}/posts`),
-                    checkStatus().catch(() => ({ user: null }))
+                const [authData, postsData] = await Promise.all([
+                    checkStatus().catch(() => ({ user: null })),
+                    fetchData(`community/${communityId}/posts?page=1`)
                 ]);
 
-                const postList = postsData.posts || postsData || [];
-                setPosts(postList);
+                if (authData?.user) setCurrentUser(authData.user);
 
-                if (authData && authData.user) {
-                    setCurrentUser(authData.user);
-                }
+                const newPosts = postsData.posts || [];
+                setPosts(newPosts);
+
+                if (newPosts.length < 10) setHasMore(false);
 
             } catch (err) {
-                console.error("Community Feed error:", err);
+                console.error(err);
                 setError("Failed to load data.");
             } finally {
                 setLoading(false);
             }
         }
-
-        loadData();
+        init();
     }, [communityId]);
+
+    const loadMore = useCallback(async () => {
+        if (loading || !hasMore || !communityId) return;
+
+        setLoading(true);
+        try {
+            const nextPage = page + 1;
+            const data = await fetchData(`community/${communityId}/posts?page=${nextPage}`);
+            const newPosts = data.posts || [];
+
+            if (newPosts.length === 0) {
+                setHasMore(false);
+            } else {
+                setPosts(prev => [...prev, ...newPosts]);
+                setPage(nextPage);
+                if (newPosts.length < 10) setHasMore(false);
+            }
+        } catch (err) {
+            console.error("Failed to load more:", err);
+        } finally {
+            setLoading(false);
+        }
+    }, [page, hasMore, loading, communityId]);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 100) {
+                loadMore();
+            }
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [loadMore]);
 
     const removePost = (id) => {
         setPosts(posts.filter(p => (p.postId || p.post_id) !== id));
@@ -51,10 +85,9 @@ export default function CommunityFeed() {
 
     return (
         <div className="feed-container">
-            {loading && <div style={{ textAlign: "center", padding: "20px" }}>Loading...</div>}
             {error && <div style={{ color: "red", textAlign: "center", padding: "20px" }}>{error}</div>}
 
-            <div className="posts-list">
+            <div className="posts-list" style={{width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
                 {posts.length > 0 ? (
                     posts.map(post => (
                         <PostCard
@@ -66,9 +99,12 @@ export default function CommunityFeed() {
                         />
                     ))
                 ) : (
-                    !loading && <div style={{ textAlign: "center", color: "#888", padding: "20px" }}>No posts yet.</div>
+                    !loading && <div style={{ textAlign: "center", padding: "20px", color: "#888" }}>No posts yet.</div>
                 )}
             </div>
+
+            {loading && <div style={{ textAlign: "center", padding: "20px", width: '100%' }}>Loading more...</div>}
+            {!hasMore && posts.length > 0 && <div style={{ textAlign: "center", padding: "20px", color: "#ccc", width: '100%' }}>End of feed.</div>}
         </div>
     );
 }

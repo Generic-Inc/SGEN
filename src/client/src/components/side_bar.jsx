@@ -71,7 +71,7 @@ export default function SideBar() {
                                    href={`/community/${community.communityId}/chat`}
                                    material_style={{ fontSize: "1.4rem" }}
                         />
-                        <AsideItem symbol="calendar_today" text={`${community.displayName} Chat`}
+                        <AsideItem symbol="calendar_today" text={`${community.displayName} Events`}
                                    href={`/community/${community.communityId}/events`}
                                    material_style={{ fontSize: "1.5rem" }}
                         />
@@ -124,20 +124,22 @@ function CommunityList({apiPath = "user/communities"}) {
 
 function CommunityItem({community}) {
     return (
-        <>
-            <li>
-                <a href={`/community/${community.communityId}`}>
-                    <div className="side-bar-item">
-                        <img src={community.iconUrl} alt="Community Icon" className="side-bar-community-icon"/>
-                        <div className="side-bar-community-text">
-                            <h4 className="side-bar-community-title">{community.displayName}</h4>
-                            <span className="side-bar-community-subtitle">{community.communityName}</span>
-                        </div>
-
+        <li>
+            <a href={`/community/${community.communityId}`}>
+                <div className="side-bar-item">
+                    <img
+                        src={community.iconUrl || "https://placehold.co/40?text=C"}
+                        alt="Icon"
+                        className="side-bar-community-icon"
+                        onError={(e) => {e.target.src = "https://placehold.co/40?text=?"}}
+                    />
+                    <div className="side-bar-community-text">
+                        <h4 className="side-bar-community-title">{community.displayName}</h4>
+                        <span className="side-bar-community-subtitle">{community.communityName}</span>
                     </div>
-                </a>
-            </li>
-        </>
+                </div>
+            </a>
+        </li>
     )
 }
 

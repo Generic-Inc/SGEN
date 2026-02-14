@@ -1,7 +1,6 @@
 import {useEffect, useState} from "react";
 import {fetchData} from "../static/api.js";
 import {addListeners, isInCommunity, openAsideBar} from "../static/aside-bar.js";
-import "../static/styles/sidebar.css";
 
 export default function SideBar() {
     const [community, setCommunity] = useState(null);

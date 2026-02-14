@@ -1,261 +1,198 @@
 import asyncio
+import random
 from config.config import CONFIG
 from global_src.db import DATABASE
 from global_src.global_classes import User, Community
-from modules.authentications import SaltHash, AuthenticationsUser
+from modules.authentications import SaltHash
 from modules.posts import Post, Comment
 
-# --- 1. USERS (Hardcoded) ---
-USERS = [
-    {"user": "cyber_ninja", "name": "Ninja Coder", "email": "ninja@example.com",
-     "bio": "Full Stack Dev | Python Enthusiast 🐍 | Coffee Lover ☕"},
-    {"user": "artistic_soul", "name": "Bella Arts", "email": "bella@example.com",
-     "bio": "Digital Illustrator & UI Designer 🎨"},
-    {"user": "gym_rat_99", "name": "Brad Lifts", "email": "brad@example.com", "bio": "Gains > Bugs. Keep grinding. 💪"},
-    {"user": "travel_bug", "name": "Wanderlust", "email": "travel@example.com",
-     "bio": "Digital Nomad. Currently in: Bali 🌴"},
-    {"user": "coffee_addict", "name": "Java Bean", "email": "coffee@example.com", "bio": "I turn coffee into code."},
-    {"user": "gaming_god", "name": "Pro Gamer", "email": "gamer@example.com", "bio": "FPS & RPGs. Add me on Steam."},
+# --- CONFIGURATION ---
+NUM_USERS = 50  # Random users to create
+NUM_COMMUNITIES = 5  # Communities to create
+POSTS_PER_USER = 5  # Posts per user
+COMMENTS_PER_POST = 3  # Comments per post
+
+# --- 👑 ADMIN CONFIG (Your "Original Guy") ---
+ADMIN_USERNAME = "cyber_ninja"
+ADMIN_EMAIL = "ninja@example.com"
+ADMIN_NAME = "Ninja Coder"
+ADMIN_PASSWORD = "Password123!"
+
+# --- DATA POOLS ---
+USER_NAMES = ["Alex", "Jordan", "Taylor", "Morgan", "Casey", "Riley", "Jamie", "Robin", "Drew", "Cameron"]
+ADJECTIVES = ["Happy", "Grumpy", "Sleepy", "Hyper", "Chill", "Crazy", "Silent", "Loud", "Mega", "Ultra"]
+TOPICS = ["Tech", "Art", "Gym", "Food", "Travel", "Gaming", "Music", "Movie", "Book", "Code"]
+
+POST_TEMPLATES = [
+    "Just discovered {topic}! It's amazing.",
+    "Why is {topic} so hard to master? 😭",
+    "Unpopular opinion: {topic} is overrated.",
+    "Anyone want to collab on a {topic} project?",
+    "Finally hit my goals in {topic} today! 🚀",
+    "Spending my whole weekend doing {topic}.",
+    "What is the best resource for learning {topic}?",
+    "I can't believe what happened in the {topic} world today.",
 ]
 
-# --- 2. COMMUNITIES (Hardcoded) ---
-COMMUNITIES = [
-    {
-        "key": "tech", "name": "tech_talk", "display": "Tech Talk 💻",
-        "desc": "Discussion for developers, engineers, and tech enthusiasts.",
-        "guidelines": "Be respectful. No flame wars over tabs vs spaces.",
-        "members": ["cyber_ninja", "coffee_addict", "gaming_god", "artistic_soul"]
-    },
-    {
-        "key": "art", "name": "creative_corner", "display": "Creative Corner 🎨",
-        "desc": "Share your art, UI designs, and creative projects.",
-        "guidelines": "Constructive criticism only.",
-        "members": ["cyber_ninja", "artistic_soul", "travel_bug"]
-    },
-    {
-        "key": "gym", "name": "iron_paradise", "display": "Iron Paradise 🏋️",
-        "desc": "Workouts, nutrition, and fitness goals.",
-        "guidelines": "No steroids discussion.",
-        "members": ["cyber_ninja", "gym_rat_99", "travel_bug"]
-    }
-]
-
-# --- 3. POSTS & CONVERSATIONS ---
-POSTS_DATA = [
-    {
-        "community": "tech",
-        "author": "cyber_ninja",
-        "content": "Just finished refactoring the backend for SGEN. Moved everything to a modular architecture and it runs 2x faster now! 🚀 #python #flask",
-        "image": "https://images.unsplash.com/photo-1555066931-4365d14bab8c",
-        "likes": ["coffee_addict", "gaming_god", "artistic_soul"],
-        "comments": [
-            {"user": "coffee_addict", "text": "That modular structure is a lifesaver. Did you use Blueprints?"},
-            {"user": "cyber_ninja", "text": "Yep! Blueprints for everything. Makes routing so much cleaner."},
-            {"user": "gaming_god", "text": "Huge W. Now help me fix my spaghetti code lol."}
-        ]
-    },
-    {
-        "community": "tech",
-        "author": "coffee_addict",
-        "content": "Why does CSS Grid make so much sense but Flexbox still confuses me sometimes? Centering a div is the hardest problem in CS. Change my mind.",
-        "image": None,
-        "likes": ["cyber_ninja", "artistic_soul"],
-        "comments": [
-            {"user": "artistic_soul", "text": "Flexbox is for 1D, Grid is for 2D! Once it clicks, you can't go back."},
-            {"user": "cyber_ninja",
-             "text": "justify-content: center; align-items: center; -> memorized this purely out of trauma."}
-        ]
-    },
-    {
-        "community": "art",
-        "author": "artistic_soul",
-        "content": "Working on a new UI kit for mobile apps. Going for a 'Glassmorphism' look. Thoughts on this color palette?",
-        "image": "https://images.unsplash.com/photo-1586717791821-3f44a5638d0f",
-        "likes": ["cyber_ninja", "travel_bug"],
-        "comments": [
-            {"user": "travel_bug", "text": "Love those pastels! Gives me sunset vibes."},
-            {"user": "cyber_ninja",
-             "text": "Looks clean! Make sure the contrast is high enough for accessibility though."}
-        ]
-    },
-    {
-        "community": "gym",
-        "author": "gym_rat_99",
-        "content": "Hit a new PR on deadlifts today! 180kg moving smooth. Consistency is key fam. 😤",
-        "image": "https://images.unsplash.com/photo-1517836357463-d25dfeac3438",
-        "likes": ["cyber_ninja", "travel_bug"],
-        "comments": [
-            {"user": "cyber_ninja", "text": "Beast mode! 💪 I'm still stuck at 140kg, need to fix my form."},
-            {"user": "gym_rat_99", "text": "You got this bro. Just focus on the brace. Let's hit a session next week?"}
-        ]
-    },
-    {
-        "community": "gym",
-        "author": "cyber_ninja",
-        "content": "Coding all day = back pain. 🥲 Anyone got good stretching routines for desk workers?",
-        "image": None,
-        "likes": ["gym_rat_99", "travel_bug"],
-        "comments": [
-            {"user": "travel_bug", "text": "Yoga helps a ton! Look up 'Yoga for programmers' on YouTube."},
-            {"user": "gym_rat_99", "text": "Face pulls and dead hangs. Saves your shoulders."}
-        ]
-    }
-]
-
-# --- 4. EVENTS ---
-EVENTS_DATA = [
-    {
-        "community": "tech",
-        "creator": "cyber_ninja",
-        "name": "Hackathon 2026 Kickoff",
-        "desc": "Join us for a 24-hour coding sprint! Pizza provided. 🍕",
-        "image": "https://images.unsplash.com/photo-1504384308090-c54be3855833"
-    },
-    {
-        "community": "gym",
-        "creator": "gym_rat_99",
-        "name": "Group HIIT Session",
-        "desc": "Burn those weekend calories. Open to all fitness levels.",
-        "image": "https://images.unsplash.com/photo-1571902943202-507ec2618e8f"
-    }
+COMMENT_TEMPLATES = [
+    "Totally agree!", "No way, really?", "This is fire 🔥", "Can you explain more?",
+    "Sent you a DM.", "LMAO 😂", "Big if true.", "Keep grinding!", "Nice work.", "Idk about that chief."
 ]
 
 
-async def create_user_helper(data):
-    """Helper to create or fetch a user."""
-    password = "Password123!"
+async def reset_db():
+    print("🗑️  Wiping Database...")
+    await DATABASE.execute("DELETE FROM PostLikes")
+    await DATABASE.execute("DELETE FROM Comments")
+    await DATABASE.execute("DELETE FROM Posts")
+    await DATABASE.execute("DELETE FROM Events")
+    await DATABASE.execute("DELETE FROM CommunityMembers")
+    await DATABASE.execute("DELETE FROM Communities")
+    await DATABASE.execute("DELETE FROM UserAuthentication")
+    await DATABASE.execute("DELETE FROM Profiles")
+    await DATABASE.execute("DELETE FROM Users")
+    await DATABASE.commit()
+
+
+async def create_user(username, email, name, password="Password123!"):
     salt_hash = SaltHash.create_salt_hash(password)
-    try:
-        new_user = await AuthenticationsUser.create_user(
-            data["user"], data["name"], data["email"]
-        )
-        # Dicebear avatar
-        avatar_url = f"https://api.dicebear.com/7.x/avataaars/svg?seed={data['user']}"
 
-        await DATABASE.execute(
-            "UPDATE Profiles SET bio = ?, avatar_url = ? WHERE user_id = ?",
-            (data["bio"], avatar_url, new_user.user_id)
-        )
-        await DATABASE.execute(
-            "INSERT INTO UserAuthentication (user_id, salt, password_hash) VALUES (?, ?, ?)",
-            (new_user.user_id, salt_hash.salt, salt_hash.hash_value)
-        )
-        print(f"✅ Created user: {data['user']}")
-        return new_user
-    except Exception:
-        print(f"⚠️ User {data['user']} exists, fetching...")
-        return await AuthenticationsUser.get_user_by_username(data["user"])
+    # 1. Insert User
+    await DATABASE.execute("INSERT INTO Users (username, email, display_name) VALUES (?, ?, ?)",
+                           (username, email, name))
+    user_row = await DATABASE.fetch_one("SELECT user_id FROM Users WHERE username = ?", (username,))
+    user_id = user_row[0]
+
+    # 2. Insert Profile
+    avatar_url = f"https://api.dicebear.com/7.x/avataaars/svg?seed={username}"
+    await DATABASE.execute("INSERT INTO Profiles (user_id, bio, avatar_url) VALUES (?, ?, ?)",
+                           (user_id, "Generated User", avatar_url))
+
+    # 3. Insert Auth
+    await DATABASE.execute("INSERT INTO UserAuthentication (user_id, salt, password_hash) VALUES (?, ?, ?)",
+                           (user_id, salt_hash.salt, salt_hash.hash_value))
+
+    return user_id
 
 
 async def main():
-    print("--- 🚀 STARTING CONTROLLED SEED PROCESS ---")
+    print("--- 🚀 STARTING MASSIVE SEED ---")
     await DATABASE.initialize()
     await CONFIG.load_config()
 
-    user_map = {}
-    community_map = {}
+    await reset_db()
 
-    # 1. Create Users
-    print("\n--- 👤 Creating Users ---")
-    for u_data in USERS:
-        user = await create_user_helper(u_data)
-        if user:
-            user_map[u_data["user"]] = user
-        else:
-            # Fallback in case create_user returns False on duplicate and create_user_helper fails
-            user_map[u_data["user"]] = await AuthenticationsUser.get_user_by_username(u_data["user"])
+    user_ids = []
 
-    # 2. Create Communities & Memberships
-    print("\n--- 🏘️ Creating Communities ---")
-    for c_data in COMMUNITIES:
-        owner = user_map["cyber_ninja"]
+    # 0. CREATE ADMIN USER
+    print(f"\n--- 👑 Creating Admin User ({ADMIN_USERNAME}) ---")
+    try:
+        admin_id = await create_user(ADMIN_USERNAME, ADMIN_EMAIL, ADMIN_NAME, ADMIN_PASSWORD)
+        user_ids.append(admin_id)
+        print(f"  ✅ Admin Created: {ADMIN_USERNAME} (ID: {admin_id})")
+    except Exception as e:
+        print(f"  ❌ Failed to create admin: {e}")
+        return
 
-        # --- FIXED LOGIC HERE ---
-        # The .create_community method returns False (boolean) if it exists, NOT an error.
-        # So we check "if not comm" instead of try/except.
-        comm = await Community.create_community(
-            community_name=c_data["name"],
-            display_name=c_data["display"],
-            owner=owner,
-            description=c_data["desc"],
-            icon_url=None,
-            post_guidelines=c_data["guidelines"],
-            messages_guidelines=None,
-            offline_text="Offline",
-            online_text="Online"
+    # 1. GENERATE RANDOM USERS
+    print(f"\n--- 👤 Generating {NUM_USERS} Random Users ---")
+    for i in range(NUM_USERS):
+        adj = random.choice(ADJECTIVES)
+        name = random.choice(USER_NAMES)
+        username = f"{adj}_{name}_{random.randint(10, 999)}".lower()
+        email = f"{username}@example.com"
+
+        try:
+            uid = await create_user(username, email, f"{adj} {name}")
+            user_ids.append(uid)
+            if i % 10 == 0: print(f"  Created {i} users...")
+        except:
+            pass
+
+            # 2. GENERATE COMMUNITIES
+    print(f"\n--- 🏘️ Generating {NUM_COMMUNITIES} Communities ---")
+    community_ids = []
+    for i in range(NUM_COMMUNITIES):
+        topic = TOPICS[i]
+        c_name = f"{topic}_Lounge_{random.randint(100, 999)}"
+        c_desc = f"The place to discuss all things {topic}."
+
+        # Admin owns the communities
+        await DATABASE.execute(
+            "INSERT INTO Communities (community_name, display_name, description, owner_id) VALUES (?, ?, ?, ?)",
+            (c_name.lower(), f"{topic} Lounge", c_desc, admin_id)
         )
+        row = await DATABASE.fetch_one("SELECT community_id FROM Communities WHERE community_name = ?",
+                                       (c_name.lower(),))
+        cid = row[0]
+        community_ids.append(cid)
+        print(f"  Created Community: {topic} Lounge")
 
-        if not comm:
-            print(f"⚠️ Community {c_data['name']} exists, fetching...")
-            comm = await Community.get_community_by_name(c_data["name"])
-        else:
-            print(f"✅ Created Community: {c_data['display']}")
+    # 3. JOIN USERS TO COMMUNITIES
+    print("\n--- 🤝 Joining Users to Communities ---")
 
-        community_map[c_data["key"]] = comm
+    # 3a. Admin joins ALL communities (The "Original Guy" rule)
+    print(f"  👑 Admin joining ALL communities...")
+    for cid in community_ids:
+        await DATABASE.execute("INSERT OR IGNORE INTO CommunityMembers (community_id, user_id) VALUES (?, ?)",
+                               (cid, admin_id))
 
-        # Add Members
-        for username in c_data["members"]:
-            member = user_map[username]
-            try:
-                await comm.add_member(member.user_id)
-            except:
-                pass
+    # 3b. Random users join 2 random communities
+    for uid in user_ids:
+        if uid == admin_id: continue  # Skip admin, already done
+        joined = random.sample(community_ids, k=2)
+        for cid in joined:
+            await DATABASE.execute("INSERT OR IGNORE INTO CommunityMembers (community_id, user_id) VALUES (?, ?)",
+                                   (cid, uid))
 
-                # 3. Create Posts & Conversations
-    print("\n--- 📝 Creating Content ---")
-    for p_data in POSTS_DATA:
-        comm = community_map[p_data["community"]]
-        author = user_map[p_data["author"]]
+    # 4. GENERATE POSTS
+    print(f"\n--- 📝 Generating ~{len(user_ids) * POSTS_PER_USER} Posts ---")
+    total_posts = 0
+    post_ids = []
 
-        post = await Post.create(
-            content=p_data["content"],
-            community_id=comm.community_id,
-            author_id=author.user_id,
-            image_url=p_data["image"]
-        )
-        print(f"  📝 Post by {p_data['author']} in {p_data['community']}")
+    for uid in user_ids:
+        # Each user posts a few times
+        for _ in range(random.randint(1, POSTS_PER_USER)):
+            # Pick a random community
+            cid = random.choice(community_ids)
 
-        for liker_name in p_data["likes"]:
-            liker = user_map[liker_name]
-            try:
-                await DATABASE.execute(
-                    "INSERT OR IGNORE INTO PostLikes (post_id, user_id) VALUES (?, ?)",
-                    (post.post_id, liker.user_id)
-                )
-            except Exception:
-                pass
+            topic = random.choice(TOPICS)
+            content = random.choice(POST_TEMPLATES).format(topic=topic)
+            image_url = f"https://picsum.photos/seed/{random.randint(1, 1000)}/400/300" if random.random() > 0.7 else None
 
-        for c_data in p_data["comments"]:
-            commentor = user_map[c_data["user"]]
-            await Comment.create(
-                content=c_data["text"],
-                post_id=post.post_id,
-                author_id=commentor.user_id
+            await DATABASE.execute(
+                "INSERT INTO Posts (content, community_id, author_id, image_url) VALUES (?, ?, ?, ?)",
+                (content, cid, uid, image_url)
             )
-            print(f"    💬 Comment by {c_data['user']}")
+            total_posts += 1
 
-    # 4. Create Events
-    print("\n--- 📅 Scheduling Events ---")
-    for e_data in EVENTS_DATA:
-        comm = community_map[e_data["community"]]
-        creator = user_map[e_data["creator"]]
+            row = await DATABASE.fetch_one("SELECT last_insert_rowid()")
+            pid = row[0]
+            post_ids.append(pid)
 
-        # Check if event already exists to prevent duplicates on re-run
-        check = await DATABASE.fetch_one("SELECT event_id FROM Events WHERE event_name=?", (e_data["name"],))
-        if not check:
-            await DATABASE.execute("""
-                                   INSERT INTO Events (event_name, event_description, scheduled_date, event_location,
-                                                       community_id, creator_id, image_url)
-                                   VALUES (?, ?, DATETIME('now', '+5 days'), ?, ?, ?, ?)
-                                   """,
-                                   (e_data["name"], e_data["desc"], "Discord / Gym", comm.community_id, creator.user_id,
-                                    e_data["image"]))
-            print(f"  📅 Event Created: {e_data['name']}")
-        else:
-            print(f"  ⚠️ Event Exists: {e_data['name']}")
+    await DATABASE.commit()
+    print(f"  ✅ Created {total_posts} total posts.")
 
-    print("\n--- 🎉 SEEDING COMPLETE! ---")
-    print("Login with: cyber_ninja / Password123!")
+    # 5. GENERATE COMMENTS & LIKES
+    print(f"\n--- 💬 Generating Interactions ---")
+    for pid in post_ids:
+        # Random Likes
+        num_likes = random.randint(0, 10)
+        likers = random.sample(user_ids, k=min(num_likes, len(user_ids)))
+        for liker in likers:
+            await DATABASE.execute("INSERT OR IGNORE INTO PostLikes (post_id, user_id) VALUES (?, ?)", (pid, liker))
+
+        # Random Comments
+        num_comments = random.randint(0, COMMENTS_PER_POST)
+        for _ in range(num_comments):
+            commentor = random.choice(user_ids)
+            text = random.choice(COMMENT_TEMPLATES)
+            await DATABASE.execute("INSERT INTO Comments (content, post_id, author_id) VALUES (?, ?, ?)",
+                                   (text, pid, commentor))
+
+    await DATABASE.commit()
+    print("\n--- 🎉 MASSIVE SEED COMPLETE! ---")
+    print(f"Login with: {ADMIN_USERNAME} / {ADMIN_PASSWORD}")
 
 
 if __name__ == "__main__":

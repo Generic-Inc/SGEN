@@ -29,7 +29,15 @@ async def get_home_feed():
     if not user:
         return {"error": "Unauthorized"}, 401
 
-    posts = await Post.get_user_feed(user.user_id)
+    try:
+        page = int(request.args.get('page', 1))
+    except:
+        page = 1
+    limit = 10
+    offset = (page - 1) * limit
+
+    # Updated to use pagination
+    posts = await Post.get_user_feed(user.user_id, limit=limit, offset=offset)
     return {"posts": [p.public_json for p in posts]}
 
 
@@ -45,11 +53,21 @@ async def community_posts(community_id: int):
     community = await Community.get_community(community_id)
     if not community:
         return {"error": "Community not found"}, 404
+
     if request.method == "GET":
+        try:
+            page = int(request.args.get('page', 1))
+        except:
+            page = 1
+        limit = 10
+        offset = (page - 1) * limit
+
         posts = await Post.get_by_community(
             community_id,
             viewer_id=user.user_id,
-            community_name=community.display_name
+            community_name=community.display_name,
+            limit=limit,
+            offset=offset
         )
         return {"posts": [p.public_json for p in posts]}
 
@@ -84,10 +102,8 @@ async def single_post(community_id: int, post_id: int):
 
     if request.method == "DELETE":
         if post.author.user_id != user.user_id:
-            # can admin check here if needed later
             return {"error": "Forbidden"}, 403
 
-        # USE CLASS METHOD (Handles Commit)
         await post.delete()
         return {"message": "Post deleted"}, 200
 
@@ -100,11 +116,9 @@ async def single_post(community_id: int, post_id: int):
 
         if not new_content: return {"error": "Missing content"}, 400
 
-        # USE CLASS METHOD (Handles Commit)
         updated_post = await post.update(new_content)
         return updated_post.public_json
 
-    # GET
     return post.public_json
 
 
@@ -172,7 +186,6 @@ async def single_comment(community_id: int, post_id: int, comment_id: int):
         if comment.author.user_id != user.user_id:
             return {"error": "Forbidden"}, 403
 
-        # USE CLASS METHOD (Handles Commit)
         await comment.delete()
         return {"message": "Comment deleted"}, 200
 
@@ -184,7 +197,6 @@ async def single_comment(community_id: int, post_id: int, comment_id: int):
         new_content = data.get("content")
         if not new_content: return {"error": "Missing content"}, 400
 
-        # USE CLASS METHOD (Handles Commit)
         updated_comment = await comment.update(new_content)
         return updated_comment.public_json
 

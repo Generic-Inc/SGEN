@@ -41,7 +41,6 @@ async def get_user(user_id: int):
         return {"success": "User deleted successfully"}
 
 
-# --- FIX WAS HERE (Added slash before <int:user_id>) ---
 @user_blueprint.route("/<int:user_id>/communities")
 async def get_user_communities(user_id: int):
     """Get a list of communities that a user is a member of by their user ID"""
@@ -83,6 +82,12 @@ async def get_user_posts(user_id: int):
     target_user = await User.get_user(user_id)
     if not target_user:
          return {"error": "User not found"}, 404
+    try:
+        page = int(request.args.get('page', 1))
+    except:
+        page = 1
+    limit = 10
+    offset = (page - 1) * limit
 
-    posts = await Post.get_by_author(user_id, viewer_id=user.user_id)
+    posts = await Post.get_by_author(user_id, viewer_id=user.user_id, limit=limit, offset=offset)
     return {"posts": [p.public_json for p in posts]}

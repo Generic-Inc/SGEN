@@ -2,17 +2,15 @@ import asyncio
 import random
 from config.config import CONFIG
 from global_src.db import DATABASE
-from global_src.global_classes import User, Community
 from modules.authentications import SaltHash
-from modules.posts import Post, Comment
 
 # --- CONFIGURATION ---
-NUM_USERS = 50  # Random users to create
-NUM_COMMUNITIES = 5  # Communities to create
-POSTS_PER_USER = 5  # Posts per user
-COMMENTS_PER_POST = 3  # Comments per post
+NUM_USERS = 50
+NUM_COMMUNITIES = 5
+POSTS_PER_USER = 5
+COMMENTS_PER_POST = 3
 
-# --- 👑 ADMIN CONFIG (Your "Original Guy") ---
+# --- 👑 ADMIN CONFIG ---
 ADMIN_USERNAME = "cyber_ninja"
 ADMIN_EMAIL = "ninja@example.com"
 ADMIN_NAME = "Ninja Coder"
@@ -42,35 +40,39 @@ COMMENT_TEMPLATES = [
 
 async def reset_db():
     print("🗑️  Wiping Database...")
+    # CORRECTED TABLE NAMES BASED ON YOUR SCHEMA
     await DATABASE.execute("DELETE FROM PostLikes")
     await DATABASE.execute("DELETE FROM Comments")
     await DATABASE.execute("DELETE FROM Posts")
     await DATABASE.execute("DELETE FROM Events")
-    await DATABASE.execute("DELETE FROM CommunityMembers")
+    await DATABASE.execute("DELETE FROM Memberships")  # Was CommunityMembers
     await DATABASE.execute("DELETE FROM Communities")
     await DATABASE.execute("DELETE FROM UserAuthentication")
-    await DATABASE.execute("DELETE FROM Profiles")
-    await DATABASE.execute("DELETE FROM Users")
+    await DATABASE.execute("DELETE FROM Profiles")  # Was Users
     await DATABASE.commit()
 
 
 async def create_user(username, email, name, password="Password123!"):
     salt_hash = SaltHash.create_salt_hash(password)
 
-    # 1. Insert User
-    await DATABASE.execute("INSERT INTO Users (username, email, display_name) VALUES (?, ?, ?)",
-                           (username, email, name))
-    user_row = await DATABASE.fetch_one("SELECT user_id FROM Users WHERE username = ?", (username,))
+    # 1. Insert Profile (Your schema uses 'Profiles', not 'Users')
+    # Note: Your schema uses '_email', not 'email'
+    avatar_url = f"https://api.dicebear.com/7.x/avataaars/svg?seed={username}"
+
+    await DATABASE.execute(
+        "INSERT INTO Profiles (username, _email, display_name, bio, avatar_url) VALUES (?, ?, ?, ?, ?)",
+        (username, email, name, "Generated User", avatar_url)
+    )
+
+    # Get the ID we just created
+    user_row = await DATABASE.fetch_one("SELECT user_id FROM Profiles WHERE username = ?", (username,))
     user_id = user_row[0]
 
-    # 2. Insert Profile
-    avatar_url = f"https://api.dicebear.com/7.x/avataaars/svg?seed={username}"
-    await DATABASE.execute("INSERT INTO Profiles (user_id, bio, avatar_url) VALUES (?, ?, ?)",
-                           (user_id, "Generated User", avatar_url))
-
-    # 3. Insert Auth
-    await DATABASE.execute("INSERT INTO UserAuthentication (user_id, salt, password_hash) VALUES (?, ?, ?)",
-                           (user_id, salt_hash.salt, salt_hash.hash_value))
+    # 2. Insert Auth
+    await DATABASE.execute(
+        "INSERT INTO UserAuthentication (user_id, salt, password_hash) VALUES (?, ?, ?)",
+        (user_id, salt_hash.salt, salt_hash.hash_value)
+    )
 
     return user_id
 
@@ -117,7 +119,7 @@ async def main():
         c_name = f"{topic}_Lounge_{random.randint(100, 999)}"
         c_desc = f"The place to discuss all things {topic}."
 
-        # Admin owns the communities
+        # Schema uses 'owner_id'
         await DATABASE.execute(
             "INSERT INTO Communities (community_name, display_name, description, owner_id) VALUES (?, ?, ?, ?)",
             (c_name.lower(), f"{topic} Lounge", c_desc, admin_id)
@@ -131,18 +133,19 @@ async def main():
     # 3. JOIN USERS TO COMMUNITIES
     print("\n--- 🤝 Joining Users to Communities ---")
 
-    # 3a. Admin joins ALL communities (The "Original Guy" rule)
+    # 3a. Admin joins ALL communities
     print(f"  👑 Admin joining ALL communities...")
     for cid in community_ids:
-        await DATABASE.execute("INSERT OR IGNORE INTO CommunityMembers (community_id, user_id) VALUES (?, ?)",
+        # Schema uses table 'Memberships' with columns 'member_id' and 'community_id'
+        await DATABASE.execute("INSERT OR IGNORE INTO Memberships (community_id, member_id) VALUES (?, ?)",
                                (cid, admin_id))
 
     # 3b. Random users join 2 random communities
     for uid in user_ids:
-        if uid == admin_id: continue  # Skip admin, already done
+        if uid == admin_id: continue
         joined = random.sample(community_ids, k=2)
         for cid in joined:
-            await DATABASE.execute("INSERT OR IGNORE INTO CommunityMembers (community_id, user_id) VALUES (?, ?)",
+            await DATABASE.execute("INSERT OR IGNORE INTO Memberships (community_id, member_id) VALUES (?, ?)",
                                    (cid, uid))
 
     # 4. GENERATE POSTS
@@ -151,11 +154,8 @@ async def main():
     post_ids = []
 
     for uid in user_ids:
-        # Each user posts a few times
         for _ in range(random.randint(1, POSTS_PER_USER)):
-            # Pick a random community
             cid = random.choice(community_ids)
-
             topic = random.choice(TOPICS)
             content = random.choice(POST_TEMPLATES).format(topic=topic)
             image_url = f"https://picsum.photos/seed/{random.randint(1, 1000)}/400/300" if random.random() > 0.7 else None

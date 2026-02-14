@@ -37,18 +37,18 @@ class Post(BaseClass):
         }
 
     @classmethod
-    async def get_user_feed(cls, viewer_id: int) -> list['Post']:
+    async def get_user_feed(cls, viewer_id: int, limit: int = 10, offset: int = 0) -> list['Post']:
         membership_query = "SELECT community_id FROM Memberships WHERE member_id = ? AND active = 1"
         rows = await DATABASE.fetch_all(membership_query, (viewer_id,))
         community_ids = [r[0] for r in rows] if rows else []
 
         if not community_ids:
             where_clause = "p.active = 1"
-            params = (viewer_id,)
+            params = [viewer_id, limit, offset]
         else:
             placeholders = ",".join(["?"] * len(community_ids))
             where_clause = f"p.community_id IN ({placeholders}) AND p.active = 1"
-            params = (viewer_id, *community_ids)
+            params = [viewer_id, *community_ids, limit, offset]
 
         query = f"""
             SELECT p.post_id, p.content, p.image_url, p.community_id, c.display_name,
@@ -62,13 +62,13 @@ class Post(BaseClass):
             JOIN Communities c ON p.community_id = c.community_id 
             WHERE {where_clause}
             ORDER BY p.created DESC
-            LIMIT 50
+            LIMIT ? OFFSET ?
         """
-        rows = await DATABASE.fetch_all(query, params)
+        rows = await DATABASE.fetch_all(query, tuple(params))
         return cls._parse_rows(rows)
 
     @classmethod
-    async def get_by_community(cls, community_id: int, viewer_id: int = None, community_name: str = "Unknown") -> list['Post']:
+    async def get_by_community(cls, community_id: int, viewer_id: int = None, community_name: str = "Unknown", limit: int = 10, offset: int = 0) -> list['Post']:
         query = """
                 SELECT p.post_id, \
                        p.content, \
@@ -93,8 +93,9 @@ class Post(BaseClass):
                 WHERE p.community_id = ? \
                   AND p.active = 1
                 ORDER BY p.created DESC \
+                LIMIT ? OFFSET ?
                 """
-        rows = await DATABASE.fetch_all(query, (viewer_id, community_id))
+        rows = await DATABASE.fetch_all(query, (viewer_id, community_id, limit, offset))
         return cls._parse_rows(rows, default_community_name=community_name)
 
     @classmethod
@@ -129,7 +130,7 @@ class Post(BaseClass):
         return cls._parse_rows([row])[0]
 
     @classmethod
-    async def get_by_author(cls, author_id: int, viewer_id: int = None) -> list['Post']:
+    async def get_by_author(cls, author_id: int, viewer_id: int = None, limit: int = 10, offset: int = 0) -> list['Post']:
         query = """
                 SELECT p.post_id, \
                        p.content, \
@@ -159,8 +160,9 @@ class Post(BaseClass):
                 WHERE p.author_id = ? \
                   AND p.active = 1
                 ORDER BY p.created DESC \
+                LIMIT ? OFFSET ?
                 """
-        rows = await DATABASE.fetch_all(query, (viewer_id, author_id))
+        rows = await DATABASE.fetch_all(query, (viewer_id, author_id, limit, offset))
         return cls._parse_rows(rows)
 
     @classmethod

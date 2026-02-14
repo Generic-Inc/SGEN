@@ -39,3 +39,17 @@ main {
     height: 100vh !important;
     z-index: 900;
 }
+
+.post-card {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto 20px auto;
+    display: block;
+}
+
+.feed-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}

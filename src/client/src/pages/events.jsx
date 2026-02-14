@@ -194,13 +194,6 @@ export default function Events() {
                         <div className="events-list-section">
                             <div className="events-list-header">
                                 <h2 className="section-heading">Upcoming events</h2>
-                                <button
-                                    className="btn-create-event"
-                                    onClick={handleCreateEvent}
-                                >
-                                    <span className="material-icons">add</span>
-                                    Create Event
-                                </button>
                             </div>
 
                             <div className="events-scroll">

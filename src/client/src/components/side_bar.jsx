@@ -75,6 +75,10 @@ export default function SideBar() {
                                    href={`/community/${community.communityId}/events`}
                                    material_style={{ fontSize: "1.5rem" }}
                         />
+                        <AsideItem symbol="people" text={`${community.displayName} Members`}
+                                   href={`/community/${community.communityId}/members`}
+                                   material_style={{ fontSize: "1.5rem" }}
+                        />
                         <li className="aside-category" id="your-communities">
                             <h3 className="side-bar-title category-title">Your Communities</h3>
                             <CommunityList />

@@ -152,7 +152,8 @@
     background-color: rgba(100, 100, 100, 0.3);
 }
 
-.dropdown-list-element a {
+.dropdown-list-element a,
+.dropdown-list-element div{
     display: flex;
     justify-content: center;
     align-items: center;

@@ -31,6 +31,7 @@ export default function Profile({avatarUrl, hrefUrl=null, className=null}) {
     return <div onClick={toggleOverlay} ref={containerRef}>
         <img src={avatarUrl} alt="Profile Avatar" className={className ? className : "profile-avatar"} />
         <DropdownWrapper id={"profile-dropdown"} isOpen={isOpen}>
+            <DropdownElement icon={"person"} text={"Profile"} link={hrefUrl}/>
             <li className="dropdown-list-element">
                 <div onClick={logout}>
                     <span className="material-symbols-outlined">{"logout"}</span>

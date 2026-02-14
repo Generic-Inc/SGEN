@@ -49,6 +49,13 @@ body,
     width: auto;
 }
 
+.main-login-box > form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
 .form-change-text {
     margin-bottom: 2rem;
     color: black

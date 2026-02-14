@@ -114,7 +114,8 @@ async def recommend_communities():
     try:
 
         recommendations = await user.recommended_communities()
-        return {"recommendations": [i.public_json for i in recommendations]}
+        return {"communities": [i.public_json for i in recommendations]}
     except Exception as e:
-        return {"recommendations": []}
+        print(e)
+        return {"communities": []}
 

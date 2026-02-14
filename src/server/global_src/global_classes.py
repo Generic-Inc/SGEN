@@ -266,10 +266,12 @@ FROM Profiles
         interests = onboarding.interests
         results = search_communities(interests)
         community_ids = []
-        print(results)
         for i in results["result"]["hits"]:
-            community_ids.append(i["_id"])
-
+            try:
+                community_ids.append(i["fields"]["community_id"])
+            except KeyError:
+                continue
+        print(community_ids)
         communities_get = [Community.get_community(i) for i in community_ids]
         communities = await asyncio.gather(*communities_get)
         return communities
@@ -378,22 +380,25 @@ FROM Communities
         community_id, = community_fetch
         return await cls.get_community(community_id)
 
-
     @classmethod
     async def create_community(cls,
                                community_name: str,
                                display_name: str,
                                owner: User,
-                               description: str=None,
-                               icon_url: str=None,
-                               post_guidelines: str=None,
-                               messages_guidelines: str=None,
-                               offline_text: str=None,
-                               online_text: str=None) -> Union["Community", bool]:
+                               description: str = None,
+                               icon_url: str = None,
+                               post_guidelines: str = None,
+                               messages_guidelines: str = None,
+                               offline_text: str = None,
+                               online_text: str = None) -> Union["Community", bool]:
         community_name = slugify(community_name)
-        check = await DATABASE.fetch_one("""SELECT * FROM Communities WHERE community_name=?""", (community_name,))
+
+        check = await DATABASE.fetch_one("""SELECT community_id
+                                            FROM Communities
+                                            WHERE community_name = ?""", (community_name,))
         if check:
-            return False
+            print(f"Community creation failed: '{community_name}' already exists.")
+            return await cls.get_community(check[0])
 
         description = random.choice(CONFIG.default_community["description"]) if not description else description
         icon_url = random.choice(CONFIG.default_community["icon_url"]) if not icon_url else icon_url
@@ -401,18 +406,38 @@ FROM Communities
         online_text = CONFIG.default_community["online_text"] if not online_text else online_text
 
         await DATABASE.execute("""
-        INSERT INTO Communities (community_name, display_name, owner_id, description, icon_url, posts_guidelines, messages_guidelines, offline_text, online_text)
-            VALUES (?,?,?,?,?,?,?,?,?)
-            ON CONFLICT DO NOTHING
+                               INSERT INTO Communities (community_name, display_name, owner_id, description, icon_url,
+                                                        posts_guidelines, messages_guidelines, offline_text,
+                                                        online_text)
+                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING
+                               """,
+                               (community_name, display_name, owner.user_id, description, icon_url, post_guidelines,
+                                messages_guidelines, offline_text, online_text))
 
-        """, (community_name, display_name, owner.user_id, description, icon_url, post_guidelines, messages_guidelines, offline_text, online_text), commit=True)
-        community_id = await DATABASE.fetch_one("""SELECT community_id FROM Communities WHERE community_name=?""", (community_name,))
-        if not community_id:
+        community_id_row = await DATABASE.fetch_one("""SELECT community_id
+                                                       FROM Communities
+                                                       WHERE community_name = ?""", (community_name,))
+
+        if not community_id_row:
+            print(f"Community creation failed: Database insert failed for '{community_name}'")
             return False
-        add_community_to_db(community_id, f"{community_name} {description}")
-        community = await cls.get_community(community_id[0])
+
+        community_id = community_id_row[0]
+
+        try:
+            interest_text = f"{community_name} {description}"
+            add_community_to_db(community_id, interest_text)
+        except Exception as e:
+            print(f"Pinecone indexing failed (non-fatal): {e}")
+
+        community = await cls.get_community(community_id)
+        if not community:
+            print("Failed to re-fetch created community object.")
+            return False
+
         await community.add_member(owner.user_id, role="owner")
         community.member_count += 1
+
         return community
 
     async def delete_community(self):

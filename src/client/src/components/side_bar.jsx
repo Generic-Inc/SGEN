@@ -51,7 +51,7 @@ export default function SideBar() {
                         </li>
                         <li className="aside-category open" id="communities-test">
                             <h3 className="side-bar-title category-title">Recommended Communities</h3>
-                            <CommunityList />
+                            <CommunityList apiPath={"user/communities/recommendations"}/>
                         </li>
                     </ul>
                 </nav>
@@ -88,7 +88,7 @@ export default function SideBar() {
                         </li>
                         <li className="aside-category" id="communities-test">
                             <h3 className="side-bar-title category-title">Recommended Communities</h3>
-                            <CommunityList />
+                            <CommunityList apiPath={"user/communities/recommendations"}/>
                         </li>
                     </ul>
                 </nav>

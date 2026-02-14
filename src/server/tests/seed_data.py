@@ -59,6 +59,17 @@ async def main():
             online_text=None
         )
         await test_community.add_member(user_2.user_id)
+        test_community2 = await Community.create_community(
+            community_name="testcommunity2",
+            display_name="Test Community 2",
+            owner=user_1,
+            description="This is a test community created for seeding data.",
+            icon_url=None,
+            post_guidelines="Be respectful and follow the rules.",
+            messages_guidelines=None,
+            offline_text=None,
+            online_text=None
+        )
     except Exception as e:
         print(e)
         test_community = await Community.get_community_by_name("testcommunity")

@@ -36,8 +36,9 @@ def add_community_to_db(community_id, interest_text):
     index.upsert_records(
         records=[
             {
-                "_id": community_id,  # Unique ID for the record
-                "interest_text": interest_text
+                "_id": str(community_id),  # Unique ID for the record
+                "interest_text": interest_text,
+                "community_id": community_id  # Store the community ID for retrieval
             }
         ],
         namespace=namespace

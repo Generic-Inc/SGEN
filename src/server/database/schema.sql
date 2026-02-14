@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS Profiles (
     username VARCHAR(32) NOT NULL,
     display_name VARCHAR(64) NOT NULL,
     _email VARCHAR(254) NOT NULL,
-    language VARCHAR(32) DEFAULT 'en',
+    language VARCHAR(32) NOT NULL DEFAULT 'en',
     avatar_url VARCHAR(2048),
     bio VARCHAR(1024),
 

@@ -63,7 +63,7 @@ class User(BaseClass):
                             username: str,
                             display_name: str,
                             email: str,
-                            language: str=None,
+                            language: str="en",
                             avatar_url: str=None,
                             bio: str=None
                             ) -> Union["User"]:

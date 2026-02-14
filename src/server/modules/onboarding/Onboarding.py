@@ -40,12 +40,12 @@ class Onboarding:
 
     @classmethod
     async def get_onboarding(cls, user_id: int) -> "Onboarding":
-        data = await DATABASE.execute("""
+        data = await DATABASE.fetch_one("""
             SELECT age, interests, pronouns, region
             FROM OnboardingInformation
             WHERE user_id = ?
         """, (user_id,))
         if not data:
             return None
-        age, interests, pronouns, region = data[0]
+        age, interests, pronouns, region = data
         return cls(user_id, age, interests, pronouns, region)

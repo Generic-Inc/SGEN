@@ -1,51 +1,70 @@
-import chromadb
-from google import genai
 import os
-
 from dotenv import load_dotenv
 
+from pinecone import Pinecone
+
 load_dotenv()
-gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
+# 1. Initialize Pinecone
+pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 
-def get_google_embedding(text):
-    """Generates a 768-dimension vector using Google's model."""
-    result = gemini_client.models.embed_content(
-        model="gemini-embedding-001",
-        content=text
+INDEX_NAME = "auto-embed-communities"
+namespace="communities"
+
+# 2. Create an Integrated Index (Run this once)
+if not pc.has_index(INDEX_NAME):
+    pc.create_index_for_model(
+        name=INDEX_NAME,
+        cloud="aws",
+        region="us-east-1",
+        embed={
+            "model": "multilingual-e5-large",  # Pinecone's hosted model
+            "field_map": {"text": "interest_text"}  # Tells Pinecone which field to embed
+        }
     )
-    return result.embeddings
 
-
-client = chromadb.PersistentClient(path="./my_vector_db")
-collection = client.get_or_create_collection(name="communities")
+# Connect to the index
+index = pc.Index(INDEX_NAME)
 
 
 def add_community_to_db(community_id, interest_text):
-    """Embeds the interest and stores it in Chroma."""
-    vector = get_google_embedding(interest_text)
-
-    collection.add(
-        ids=[str(community_id)],
-        embeddings=[vector],
-        metadatas=[{"community_id": community_id}],
-        documents=[interest_text]
+    """
+    Sends raw text to Pinecone.
+    The 'upsert_records' method triggers automatic embedding.
+    """
+    print(community_id, interest_text)
+    index.upsert_records(
+        records=[
+            {
+                "_id": community_id,  # Unique ID for the record
+                "interest_text": interest_text
+            }
+        ],
+        namespace=namespace
     )
 
 
 def edit_community_in_db(community_id, new_interest_text):
-    """
-    Updates an existing community's embedding and text.
-    Uses 'update' to modify existing records based on ID.
-    """
-    new_vector = get_google_embedding(new_interest_text)
+    """Updates work exactly like adds."""
+    add_community_to_db(community_id, new_interest_text)
 
-    collection.update(
-        ids=[str(community_id)],
-        embeddings=[new_vector],
-        metadatas=[{"community_id": community_id}],
-        documents=[new_interest_text]
+
+def search_communities(query_text):
+    """
+    Search using raw text. Pinecone embeds the query for you!
+    """
+    return index.search_records(
+        namespace=namespace,
+        query={
+            "inputs": {"text": query_text},
+            "top_k": 3
+        }
     )
 
 
+if __name__ == "__main__":
+    # Example usage: No manual vector handling required!
+    add_community_to_db("789", "A group for people who love retro pixel art.")
 
+    results = search_communities("digital art and sprites")
+    print(results)

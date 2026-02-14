@@ -2,8 +2,10 @@ import "../static/styles/login_signup.css";
 import InputBox from "./sub components/input_box.jsx";
 import {checkStatus, postData} from "../static/api.js";
 import {useEffect, useState} from "react";
+import {useNavigate} from "react-router-dom";
 
 export default function OnboardingOverlay() {
+    const navigate = useNavigate();
     const [status, setStatus] = useState(null);
     useEffect(() => {
         setStatus(checkStatus());
@@ -31,6 +33,9 @@ export default function OnboardingOverlay() {
             }
 
             console.log("Onboarding complete:", res);
+            const targetPath = `/`;
+
+            navigate(targetPath, { replace: true });
 
         } catch (err) {
             const message = err instanceof Error ? err.message : String(err);

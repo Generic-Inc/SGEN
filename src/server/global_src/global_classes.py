@@ -11,7 +11,7 @@ from slugify import slugify
 
 from config.config import CONFIG
 from modules.onboarding.Onboarding import Onboarding
-from modules.onboarding.utils import add_community_to_db, edit_community_in_db, get_google_embedding, collection
+from modules.onboarding.utils import add_community_to_db, edit_community_in_db, search_communities
 from .db import DATABASE
 if TYPE_CHECKING:
     from modules.authentications import Permissions
@@ -260,17 +260,16 @@ FROM Profiles
         communities = [Community.get_community(i) for i in community_ids]
         return await asyncio.gather(*communities)
 
-    async def recommended_communities(self, n_results=5):
+    async def recommended_communities(self):
         onboarding = await Onboarding.get_onboarding(self.user_id)
+        print(onboarding)
         interests = onboarding.interests
-        query_vector = get_google_embedding(interests)
+        results = search_communities(interests)
+        community_ids = []
+        print(results)
+        for i in results["result"]["hits"]:
+            community_ids.append(i["_id"])
 
-        results = collection.query(
-            query_embeddings=[query_vector],
-            n_results=n_results
-        )
-
-        community_ids = [int(result['metadata']['community_id']) for result in results['matches']]
         communities_get = [Community.get_community(i) for i in community_ids]
         communities = await asyncio.gather(*communities_get)
         return communities

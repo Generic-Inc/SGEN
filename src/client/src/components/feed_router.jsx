@@ -3,7 +3,7 @@ import HomeFeed from "./home_feed.jsx";
 import CommunityFeed from "./community_feed.jsx";
 import UserFeed from "./user_feed.jsx";
 
-export default function PageRouter() {
+export default function FeedRouter() {
     const path = window.location.pathname;
 
     if (path.startsWith("/community/")) {

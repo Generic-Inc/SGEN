@@ -4,7 +4,7 @@ import SignupOverlay from "../components/signup_overlay.jsx"
 import "../static/styles/App.css";
 import NavBar from "../components/nav_bar";
 import SideBar from "../components/side_bar";
-import PageRouter from "../components/page_router";
+import FeedRouter from "../components/feed_router.jsx";
 import CreatePostModal from "../components/create_post_modal";
 
 export default function App() {
@@ -16,7 +16,7 @@ export default function App() {
                 <SideBar />
 
                 <main className="content-area">
-                    <PageRouter />
+                    <FeedRouter />
                 </main>
             </div>
 

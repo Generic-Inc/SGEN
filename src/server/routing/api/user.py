@@ -18,6 +18,8 @@ async def get_user(user_id: int):
     if request.method == "GET":
         return user_get.public_json
     elif request.method == "PATCH":
+        if user.user_id != user_get.user_id:
+            return {"error": "Forbidden"}, 403
         data = request.get_json()
         kwargs = {}
         if "displayName" in data:
@@ -35,6 +37,8 @@ async def get_user(user_id: int):
             return {"error": "Failed to update user"}, 400
         return updated_user.public_json
     elif request.method == "DELETE":
+        if user.user_id != user_get.user_id:
+            return {"error": "Forbidden"}, 403
         deleted = await user_get.delete_user()
         if not deleted:
             return {"error": "Failed to delete user"}, 400

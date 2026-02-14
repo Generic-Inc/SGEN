@@ -227,3 +227,21 @@ CREATE TABLE IF NOT EXISTS EventAttendance (
     UNIQUE(event_id, user_id)
 );
 
+CREATE TABLE IF NOT EXISTS Translations (
+    translation_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    table_name VARCHAR(64) NOT NULL,
+    column_name VARCHAR(64) NOT NULL,
+    record_id INTEGER NOT NULL,
+    record_column VARCHAR(64) NOT NULL,
+    language VARCHAR(32) NOT NULL,
+    translated_text TEXT NOT NULL,
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    modified DATETIME DEFAULT (DATETIME('now', 'localtime'))
+);
+
+CREATE TRIGGER IF NOT EXISTS UpdateTranslationsModified
+AFTER UPDATE ON Translations FOR EACH ROW
+BEGIN
+    UPDATE Translations SET modified = (DATETIME('now', 'localtime')) WHERE translation_id = OLD.translation_id;
+end;
+

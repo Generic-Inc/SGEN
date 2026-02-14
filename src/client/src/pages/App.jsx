@@ -12,8 +12,6 @@ function App() {
             <SideBar />
             <div className="main-container"></div>
         </main>
-
-
     </>
   )
 }

@@ -1,4 +1,4 @@
-const root_url = "http://localhost:5000";
+const root_url = window.location.href.split('/')[0];
 
 async function parseResponseBody(response) {
     const contentType = response.headers.get("content-type") || "";

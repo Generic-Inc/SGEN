@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import '/static/styles/events.css';
+import '../../static/styles/events.css';
 
 const Calendar = ({ events = [], onDateSelect }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());

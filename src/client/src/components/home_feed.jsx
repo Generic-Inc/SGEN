@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { fetchData, checkStatus } from "../static/api";
 import PostCard from "./sub components/post_card";
-import { DropdownElement } from "./sub components/create_button";
 import "../static/styles/feed_override.css";
 
 export default function HomeFeed() {
@@ -40,15 +39,8 @@ export default function HomeFeed() {
 
     return (
         <div className="feed-container">
-            <div className="feed-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                <h2>Home Feed</h2>
-                <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-                    <DropdownElement icon="article" text="New Post" link="/create/post"/>
-                </ul>
-            </div>
-
             {loading ? (
-                <div style={{ textAlign: "center" }}>Loading your feed...</div>
+                <div style={{ textAlign: "center", padding: "20px" }}>Loading your feed...</div>
             ) : (
                 <div className="posts-list">
                     {posts.length > 0 ? (
@@ -62,7 +54,7 @@ export default function HomeFeed() {
                             />
                         ))
                     ) : (
-                        <div style={{ textAlign: "center", color: "#888" }}>
+                        <div style={{ textAlign: "center", color: "#888", padding: "20px" }}>
                             <h3>Your feed is empty</h3>
                             <p>Join some communities to see posts here!</p>
                         </div>

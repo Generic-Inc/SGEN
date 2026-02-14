@@ -8,36 +8,49 @@ export default function CreatePostModal() {
     const [imageUrl, setImageUrl] = useState("");
 
     const [communities, setCommunities] = useState([]);
-    const [selectedCommunity, setSelectedCommunity] = useState(null);
+    const [selectedCommunity, setSelectedCommunity] = useState(""); // Default to empty
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
     const currentCommunityId = getCommunityIdFromPage();
 
+    // --- THE MAGIC INTERCEPTOR (Kept this from before) ---
     useEffect(() => {
-        const handleOpen = () => setIsOpen(true);
-        window.addEventListener("openPostModal", handleOpen);
-        return () => window.removeEventListener("openPostModal", handleOpen);
+        const handleLinkClick = (e) => {
+            const anchor = e.target.closest('a');
+            if (anchor && anchor.getAttribute('href') === "/create/post") {
+                e.preventDefault();
+                setIsOpen(true);
+            }
+        };
+
+        const handleOpenEvent = () => setIsOpen(true);
+
+        document.addEventListener("click", handleLinkClick);
+        window.addEventListener("openPostModal", handleOpenEvent);
+
+        return () => {
+            document.removeEventListener("click", handleLinkClick);
+            window.removeEventListener("openPostModal", handleOpenEvent);
+        };
     }, []);
 
     useEffect(() => {
         if (!isOpen) return;
 
         async function loadContext() {
-            if (currentCommunityId) {
-                setSelectedCommunity(currentCommunityId);
-            }
-            else {
-                try {
-                    const data = await fetchData("my-communities");
-                    const list = data.communities || [];
-                    setCommunities(list);
-                    if (list.length > 0) {
-                        setSelectedCommunity(list[0].communityId || list[0].community_id);
-                    }
-                } catch (err) {
-                    setError("Could not load your communities.");
+            try {
+                const data = await fetchData("my-communities");
+                const list = data.communities || [];
+                setCommunities(list);
+
+                if (currentCommunityId) {
+                    setSelectedCommunity(currentCommunityId);
+                } else {
+                    setSelectedCommunity("");
                 }
+            } catch (err) {
+                setError("Could not load your communities.");
             }
         }
         loadContext();
@@ -48,6 +61,7 @@ export default function CreatePostModal() {
         setError(null);
         setContent("");
         setImageUrl("");
+        setSelectedCommunity(""); // Reset selection on close
     };
 
     const handleSubmit = async (e) => {
@@ -91,24 +105,20 @@ export default function CreatePostModal() {
                     <div style={{ marginBottom: "15px" }}>
                         <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Community</label>
 
-                        {currentCommunityId ? (
-                            <div style={{ padding: "10px", background: "#eee", borderRadius: "4px", color: "#555" }}>
-                                🔒 Posting to current community
-                            </div>
-                        ) : (
-                            <select
-                                value={selectedCommunity || ""}
-                                onChange={(e) => setSelectedCommunity(e.target.value)}
-                                style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ddd" }}
-                            >
-                                {communities.length === 0 && <option>Loading communities...</option>}
-                                {communities.map(c => (
-                                    <option key={c.communityId || c.community_id} value={c.communityId || c.community_id}>
-                                        {c.displayName || c.display_name}
-                                    </option>
-                                ))}
-                            </select>
-                        )}
+                        <select
+                            value={selectedCommunity}
+                            onChange={(e) => setSelectedCommunity(e.target.value)}
+                            style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ddd" }}
+                        >
+                            {/* The "Placeholder" option */}
+                            <option value="" disabled>Select a community...</option>
+
+                            {communities.map(c => (
+                                <option key={c.communityId || c.community_id} value={c.communityId || c.community_id}>
+                                    {c.displayName || c.display_name}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     <div style={{ marginBottom: "15px" }}>

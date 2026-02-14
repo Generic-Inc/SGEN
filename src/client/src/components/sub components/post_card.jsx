@@ -3,6 +3,33 @@ import { postData, fetchData } from "../../static/api";
 import CommentItem from "./comment_item";
 import "../../static/styles/community.css";
 
+function formatTimeAgo(dateString) {
+    if (!dateString) return "";
+
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+
+    if (diffInSeconds < 0) return "Just now";
+
+    if (diffInSeconds < 60) {
+        return "Just now";
+    }
+    if (diffInSeconds < 3600) {
+        return `${Math.floor(diffInSeconds / 60)}m ago`;
+    }
+    if (diffInSeconds < 86400) {
+        return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    }
+    if (diffInSeconds < 2592000) {
+        return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    }
+    if (diffInSeconds < 31536000) {
+        return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+    }
+    return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 export default function PostCard({ post, currentUser, onDelete, view }) {
     const authorObj = post.author || {};
     const authorName = authorObj.displayName || authorObj.display_name || authorObj.name || post.author_name || "Unknown";
@@ -12,11 +39,13 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
     const postAuthorId = authorObj.userId || authorObj.user_id || post.author_id;
 
     const [content, setContent] = useState(post.content || post.description || "");
-    const [modifiedAt, setModifiedAt] = useState(post.modified);
+    const [modifiedAt, setModifiedAt] = useState(post.modified || post.created);
     const createdAt = post.created;
 
     const postImage = post.image_url || post.imageUrl || null;
-    const postDate = new Date(createdAt || Date.now()).toLocaleDateString();
+
+    const displayCreated = formatTimeAgo(createdAt);
+    const displayEdited = formatTimeAgo(modifiedAt);
 
     const communityId = post.communityId || post.community_id;
     const postId = post.postId || post.post_id;
@@ -53,19 +82,13 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
         if (e.key === 'Enter' && commentText.trim()) {
             try {
                 const route = `community/${communityId}/posts/${postId}/comments`;
-                const tempComment = {
-                    commentId: Date.now(),
-                    content: commentText,
-                    author: currentUser,
-                    created: new Date().toISOString(),
-                    modified: new Date().toISOString(),
-                };
-                setComments([...comments, tempComment]);
+                const newCommentReal = await postData(route, { content: commentText });
+                setComments([...comments, newCommentReal]);
+
                 setCommentText("");
                 setCommentCount(prev => prev + 1);
-                await postData(route, { content: tempComment.content });
             } catch (err) {
-                setCommentCount(prev => prev - 1);
+                console.error(err);
                 alert("Failed to post comment.");
             }
         }
@@ -101,8 +124,7 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
     const handleDelete = async () => {
         if (!confirm("Delete this post?")) return;
         try {
-            // UPDATED URL: Relative path to API
-            await fetch(`/api/community/${communityId}/posts/${postId}`, {
+            await fetch(`http://localhost:5000/api/community/${communityId}/posts/${postId}`, {
                 method: "DELETE",
                 credentials: "include"
             });
@@ -114,16 +136,19 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
         if (!editContent.trim()) return alert("Content cannot be empty");
         setIsSaving(true);
         try {
-            const response = await fetch(`/api/community/${communityId}/posts/${postId}`, {
+            const response = await fetch(`http://localhost:5000/api/community/${communityId}/posts/${postId}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ content: editContent }),
                 credentials: "include"
             });
             if (!response.ok) throw new Error("Failed to update");
+
             const updatedPost = await response.json();
+
             setContent(updatedPost.content);
             setModifiedAt(updatedPost.modified);
+
             setIsEditing(false);
             setIsMenuOpen(false);
         } catch (err) {
@@ -134,11 +159,11 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
         }
     };
 
-    // Permissions
-    // Checks if the logged-in user matches the post author
     const canManagePost = currentUserId && postAuthorId && (String(currentUserId) === String(postAuthorId));
-    const isPostEdited = modifiedAt && createdAt && (modifiedAt !== createdAt);
     const showCommunityLabel = communityName && (!view || view.type !== "community");
+
+    const isPostEdited = modifiedAt && createdAt &&
+        (new Date(modifiedAt).getTime() > new Date(createdAt).getTime() + 1000);
 
     return (
         <div className="post-card" style={{ marginBottom: "20px", background: "#fff", borderRadius: "8px", padding: "15px", boxShadow: "0 1px 2px rgba(0,0,0,0.1)", position: "relative" }}>
@@ -154,8 +179,13 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
                         <div>
                             <h4 style={{ margin: 0, fontSize: "15px", fontWeight: "600", color: "#050505" }}>{authorName}</h4>
                             <span style={{ fontSize: '12px', color: '#65676B' }}>
-                                {postDate}
-                                {isPostEdited && <span style={{marginLeft: "5px", fontStyle: "italic"}}>• Edited</span>}
+                                {displayCreated}
+
+                                {isPostEdited && (
+                                    <span style={{ marginLeft: "5px", fontStyle: "italic", color: "#888" }}>
+                                        • Edited {displayEdited}
+                                    </span>
+                                )}
                             </span>
                         </div>
                     </a>
@@ -216,10 +246,7 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
                     </div>
                     <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                         <img src={currentUser?.avatarUrl || currentUser?.avatar_url || "https://placehold.co/30"} style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit:"cover" }} />
-                        <input type="text" placeholder="Write a comment..." value={commentText}
-                               onChange={(e) => setCommentText(e.target.value)}
-                               onKeyDown={handlePostComment}
-                               style={{ flex: 1, padding: "8px 12px", borderRadius: "20px", border: "1px solid #ddd", background: "#f0f2f5", outline: "none" }} />
+                        <input type="text" placeholder="Write a comment..." value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={handlePostComment} style={{ flex: 1, padding: "8px 12px", borderRadius: "20px", border: "1px solid #ddd", background: "#f0f2f5", outline: "none" }} />
                     </div>
                 </div>
             )}

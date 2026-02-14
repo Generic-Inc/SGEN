@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { fetchData, checkStatus, getCommunityIdFromPage } from "../static/api";
 import PostCard from "./sub components/post_card";
-import { DropdownElement } from "./sub components/create_button";
 import "../static/styles/feed_override.css";
 
 export default function CommunityFeed() {
@@ -52,26 +51,23 @@ export default function CommunityFeed() {
 
     return (
         <div className="feed-container">
-            <div className="feed-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                <h2>Community Feed</h2>
-                <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-                    <DropdownElement icon="article" text="New Post" link="/create/post"/>
-                </ul>
-            </div>
-
-            {loading && <div style={{ textAlign: "center" }}>Loading...</div>}
-            {error && <div style={{ color: "red", textAlign: "center" }}>{error}</div>}
+            {loading && <div style={{ textAlign: "center", padding: "20px" }}>Loading...</div>}
+            {error && <div style={{ color: "red", textAlign: "center", padding: "20px" }}>{error}</div>}
 
             <div className="posts-list">
-                {posts.map(post => (
-                    <PostCard
-                        key={post.postId || post.post_id}
-                        post={post}
-                        currentUser={currentUser}
-                        onDelete={removePost}
-                        view={{ type: "community", id: communityId }}
-                    />
-                ))}
+                {posts.length > 0 ? (
+                    posts.map(post => (
+                        <PostCard
+                            key={post.postId || post.post_id}
+                            post={post}
+                            currentUser={currentUser}
+                            onDelete={removePost}
+                            view={{ type: "community", id: communityId }}
+                        />
+                    ))
+                ) : (
+                    !loading && <div style={{ textAlign: "center", color: "#888", padding: "20px" }}>No posts yet.</div>
+                )}
             </div>
         </div>
     );

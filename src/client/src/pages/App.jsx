@@ -1,21 +1,26 @@
-
-import '../static/styles/App.css'
+import { useState, useEffect } from "react";
 import SignupOverlay from "../components/signup_overlay.jsx"
-import NavBar from "../components/nav_bar.jsx";
-import SideBar from "../components/side_bar.jsx";
 
-function App() {
-  return (
-    <>
-        <NavBar />
-        <main>
-            <SideBar />
-            <div className="main-container"></div>
-        </main>
+import "../static/styles/App.css";
+import NavBar from "../components/nav_bar";
+import SideBar from "../components/side_bar";
+import PageRouter from "../components/page_router";
+import CreatePostModal from "../components/create_post_modal";
 
+export default function App() {
+    return (
+        <div className="app-container">
+            <NavBar />
 
-    </>
-  )
+            <div className="main-layout">
+                <SideBar />
+
+                <main className="content-area">
+                    <PageRouter />
+                </main>
+            </div>
+
+            <CreatePostModal />
+        </div>
+    );
 }
-
-export default App

@@ -209,8 +209,7 @@ class Post(BaseClass):
             (new_content, self.post_id)
         )
         await DATABASE.commit()
-        self.content = new_content
-        return self
+        return await self.get_by_id(self.post_id)
 
     async def delete(self) -> bool:
         await DATABASE.execute("UPDATE Posts SET active = 0 WHERE post_id = ?", (self.post_id,))

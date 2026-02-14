@@ -96,7 +96,6 @@ function CommunityCard({community}) {
             <img src={community.iconUrl} className={"user-community-icon"} />
             <div className={"user-community-info"}>
                 <h3 className={"user-community-name"}>{community.displayName}</h3>
-                <p className={"user-community-description"}>{community.description}</p>
             </div>
         </div>
     )

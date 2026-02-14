@@ -245,3 +245,20 @@ BEGIN
     UPDATE Translations SET modified = (DATETIME('now', 'localtime')) WHERE translation_id = OLD.translation_id;
 end;
 
+CREATE TABLE IF NOT EXISTS OnboardingInformation (
+    user_id INTEGER PRIMARY KEY,
+    age INT,
+    pronouns VARCHAR(32),
+    region VARCHAR(64),
+    interests VARCHAR(512),
+    created DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    modified DATETIME DEFAULT (DATETIME('now', 'localtime')),
+    FOREIGN KEY (user_id) REFERENCES Profiles(user_id)
+);
+
+CREATE TRIGGER IF NOT EXISTS UpdateOnboardingInformationModified
+AFTER UPDATE ON OnboardingInformation FOR EACH ROW
+BEGIN
+    UPDATE OnboardingInformation SET modified = (DATETIME('now', 'localtime')) WHERE user_id = OLD.user_id;
+END;
+

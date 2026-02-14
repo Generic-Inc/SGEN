@@ -83,6 +83,7 @@ async def verify_email():
 
     email = data.get("email")
     verification_code = data.get("verificationCode")
+    print(email, verification_code)
 
     if not email or not verification_code:
         return {"error": "Email and verification code are required"}, 400
@@ -97,10 +98,6 @@ async def verify_email():
         return {"error": "Invalid email or verification code"}, 400
 
     username, display_name, language, avatar_url, bio, password_hash, salt, created = record
-
-    if datetime.now() - timedelta(minutes=5) > datetime.fromisoformat(created):
-        await DATABASE.execute("""DELETE FROM EmailVerifications WHERE email = ?""", (email,))
-        return {"error": "Email verification code expired"}, 400
 
     try:
         user = await AuthenticationsUser.create_user(

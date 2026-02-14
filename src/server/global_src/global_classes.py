@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING
 from slugify import slugify
 
 from config.config import CONFIG
+from modules.onboarding.Onboarding import Onboarding
+from modules.onboarding.utils import add_community_to_db, edit_community_in_db, get_google_embedding, collection
 from .db import DATABASE
 if TYPE_CHECKING:
     from modules.authentications import Permissions
@@ -70,6 +72,8 @@ class User(BaseClass):
         check = await DATABASE.execute("""SELECT * FROM Profiles WHERE username=? OR _email=?""", (username, email))
         if check:
             return False
+        if not language:
+            language = "en"
         avatar_url = random.choice(CONFIG.default_user["avatar_url"]) if not avatar_url else avatar_url
         bio = random.choice(CONFIG.default_user["bio"]) if not bio else bio
         await DATABASE.execute("""
@@ -256,6 +260,21 @@ FROM Profiles
         communities = [Community.get_community(i) for i in community_ids]
         return await asyncio.gather(*communities)
 
+    async def recommended_communities(self, n_results=5):
+        onboarding = await Onboarding.get_onboarding(self.user_id)
+        interests = onboarding.interests
+        query_vector = get_google_embedding(interests)
+
+        results = collection.query(
+            query_embeddings=[query_vector],
+            n_results=n_results
+        )
+
+        community_ids = [int(result['metadata']['community_id']) for result in results['matches']]
+        communities_get = [Community.get_community(i) for i in community_ids]
+        communities = await asyncio.gather(*communities_get)
+        return communities
+
 
 class Community(BaseClass):
     """A class representing a community"""
@@ -360,6 +379,7 @@ FROM Communities
         community_id, = community_fetch
         return await cls.get_community(community_id)
 
+
     @classmethod
     async def create_community(cls,
                                community_name: str,
@@ -390,6 +410,7 @@ FROM Communities
         community_id = await DATABASE.fetch_one("""SELECT community_id FROM Communities WHERE community_name=?""", (community_name,))
         if not community_id:
             return False
+        add_community_to_db(community_id, f"{community_name} {description}")
         community = await cls.get_community(community_id[0])
         await community.add_member(owner.user_id, role="owner")
         community.member_count += 1
@@ -444,6 +465,8 @@ FROM Communities
         await DATABASE.execute(f"""
         UPDATE Communities SET {fields} WHERE community_id=?
         """, tuple(values + [self.community_id]))
+        if description and self.description != description:
+            edit_community_in_db(community_id=self.community_id, new_interest_text=description)
         return await Community.get_community(self.community_id)
 
 

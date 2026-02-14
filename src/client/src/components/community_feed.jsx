@@ -8,6 +8,7 @@ export default function CommunityFeed() {
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
 
@@ -56,7 +57,12 @@ export default function CommunityFeed() {
             if (newPosts.length === 0) {
                 setHasMore(false);
             } else {
-                setPosts(prev => [...prev, ...newPosts]);
+                setPosts(prev => {
+                    const existingIds = new Set(prev.map(p => p.postId || p.post_id));
+                    const uniqueNewPosts = newPosts.filter(p => !existingIds.has(p.postId || p.post_id));
+                    return [...prev, ...uniqueNewPosts];
+                });
+
                 setPage(nextPage);
                 if (newPosts.length < 10) setHasMore(false);
             }
@@ -68,13 +74,19 @@ export default function CommunityFeed() {
     }, [page, hasMore, loading, communityId]);
 
     useEffect(() => {
-        const handleScroll = () => {
-            if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 100) {
+        const handleScroll = (e) => {
+            const target = e.target.scrollingElement || e.target;
+            const scrollTop = target.scrollTop || window.scrollY;
+            const clientHeight = target.clientHeight || window.innerHeight;
+            const scrollHeight = target.scrollHeight || document.documentElement.scrollHeight;
+
+            if (scrollTop + clientHeight >= scrollHeight - 100) {
                 loadMore();
             }
         };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+
+        window.addEventListener('scroll', handleScroll, true); // capture: true
+        return () => window.removeEventListener('scroll', handleScroll, true);
     }, [loadMore]);
 
     const removePost = (id) => {

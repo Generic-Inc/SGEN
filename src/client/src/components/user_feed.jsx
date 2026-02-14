@@ -57,7 +57,12 @@ export default function UserFeed() {
             if (newPosts.length === 0) {
                 setHasMore(false);
             } else {
-                setPosts(prev => [...prev, ...newPosts]);
+                setPosts(prev => {
+                    const existingIds = new Set(prev.map(p => p.postId || p.post_id));
+                    const uniqueNewPosts = newPosts.filter(p => !existingIds.has(p.postId || p.post_id));
+                    return [...prev, ...uniqueNewPosts];
+                });
+
                 setPage(nextPage);
                 if (newPosts.length < 10) setHasMore(false);
             }
@@ -69,13 +74,19 @@ export default function UserFeed() {
     }, [page, hasMore, loading, targetUserId]);
 
     useEffect(() => {
-        const handleScroll = () => {
-            if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 100) {
+        const handleScroll = (e) => {
+            const target = e.target.scrollingElement || e.target;
+            const scrollTop = target.scrollTop || window.scrollY;
+            const clientHeight = target.clientHeight || window.innerHeight;
+            const scrollHeight = target.scrollHeight || document.documentElement.scrollHeight;
+
+            if (scrollTop + clientHeight >= scrollHeight - 100) {
                 loadMore();
             }
         };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+
+        window.addEventListener('scroll', handleScroll, true); // capture: true
+        return () => window.removeEventListener('scroll', handleScroll, true);
     }, [loadMore]);
 
     const removePost = (id) => {

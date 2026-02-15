@@ -3,7 +3,7 @@ import os
 
 # Use the absolute path of the current working directory (which is /app on Railway)
 SRC_PATH = Path(os.getcwd())
-
+print(SRC_PATH)
 SERVER_PATH = SRC_PATH
 CLIENT_PATH = SRC_PATH / "client"
 

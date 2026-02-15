@@ -4,6 +4,7 @@ import CommentItem from "./comment_item";
 import TranslatedText from "./translated_text";
 import { useVoice } from "../../static/use_voice";
 import "../../static/styles/community.css";
+import SlangHighlighter from "./slang_highlighter";
 
 // ... (formatTimeAgo function remains the same) ...
 function formatTimeAgo(dateString) {
@@ -186,8 +187,9 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
                     </div>
                 ) : (
                     <>
-                        <p style={{ fontSize: "15px", lineHeight: "1.5", color: "#050505", whiteSpace: "pre-wrap" }}><TranslatedText content={content} translations={post.translations} /></p>
-                        {postImage && <img src={postImage} alt="Post" style={{ width: '100%', borderRadius: '8px', marginTop: '10px' }} /> }
+                        <p className="post-text-body" style={{ fontSize: "15px", lineHeight: "1.5", color: "#050505", whiteSpace: "pre-wrap" }}>
+                            <SlangHighlighter text={content} />
+                        </p>
                     </>
                 )}
             </div>

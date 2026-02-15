@@ -7,7 +7,28 @@ body.senior-mode {
     line-height: 1.5 !important;
 }
 
-/* Headers */
+/* --- FIX LAYOUT OVERLAP (The most important part) --- */
+body.senior-mode .main-layout {
+    display: block !important;
+    width: 100% !important;
+    /* Pushes content down so it doesn't hide behind the navbar */
+    padding-top: 100px !important;
+}
+
+/* --- TEXT SIZING --- */
+
+/* 1. Main Post Text (Make it BIG) */
+/* We target the p tag specifically to override React's inline styles */
+body.senior-mode .post-card p,
+body.senior-mode .post-text-body,
+body.senior-mode .comment-item div {
+    font-size: 24px !important;
+    line-height: 1.6 !important;
+    font-weight: 500 !important;
+    color: #000 !important;
+}
+
+/* 2. Headers & Titles */
 body.senior-mode h1,
 body.senior-mode h2,
 body.senior-mode h3,
@@ -20,7 +41,13 @@ body.senior-mode a {
     color: #000 !important;
 }
 
-/* Inputs */
+/* 3. Metadata (Name, Date) - Keep smaller for hierarchy */
+body.senior-mode .post-header span,
+body.senior-mode .post-header a {
+    font-size: 18px !important;
+}
+
+/* --- INTERACTIVE ELEMENTS --- */
 body.senior-mode input,
 body.senior-mode textarea,
 body.senior-mode button {
@@ -34,16 +61,7 @@ body.senior-mode .side-bar {
     display: none !important;
 }
 
-/* FIX LAYOUT OVERLAP
-   1. Switch to block layout (removes sidebar gap)
-   2. Add massive padding to top so it clears the NavBar
-*/
-body.senior-mode .main-layout {
-    display: block !important;
-    width: 100% !important;
-    padding-top: 100px !important; /* <--- THIS FIXES THE OVERLAP */
-}
-
+/* Center Content */
 body.senior-mode .content-area,
 body.senior-mode .app-container {
     width: 95% !important;
@@ -52,7 +70,7 @@ body.senior-mode .app-container {
     padding: 0 20px !important;
 }
 
-/* Ensure the Nav Bar text is also readable in Senior Mode */
+/* Nav Bar visibility */
 body.senior-mode .nav-bar {
     border-bottom: 4px solid #000 !important;
 }

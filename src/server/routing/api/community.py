@@ -5,7 +5,7 @@ from global_src.global_classes import Community, User, CommunityMember
 from modules.authentications import Permissions, PresetRoles, ROLE_HIERARCHY
 from . import community_blueprint
 
-@community_blueprint.route('/', methods=['POST'])
+@community_blueprint.route('/', methods=['POST'], strict_slashes=False)
 async def create_community():
     authorization = request.cookies.get('token')
     if not authorization:

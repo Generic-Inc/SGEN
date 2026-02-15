@@ -65,7 +65,6 @@ def search_communities(query_text):
 
 if __name__ == "__main__":
     # Example usage: No manual vector handling required!
-    add_community_to_db("789", "A group for people who love retro pixel art.")
 
     results = search_communities("digital art and sprites")
     print(results)

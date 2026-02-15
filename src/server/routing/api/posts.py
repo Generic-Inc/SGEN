@@ -36,23 +36,8 @@ async def get_home_feed():
     limit = 10
     offset = (page - 1) * limit
 
-    # Updated to use pagination
     posts = await Post.get_user_feed(user.user_id, limit=limit, offset=offset)
     return {"posts": [p.public_json for p in posts]}
-
-@api.route("/senior-mode", methods=["POST"])
-async def toggle_senior_mode():
-    authorization = request.cookies.get('token')
-    if not authorization:
-        return {"error": "Unauthorized"}, 401
-
-    user = await User.get_user_by_token(authorization)
-    if not user:
-        return {"error": "Unauthorized"}, 401
-
-    is_senior = await user.toggle_senior_mode()
-
-    return {"isSenior": is_senior}, 200
 
 @community_blueprint.route("/<int:community_id>/posts", methods=["GET", "POST"])
 async def community_posts(community_id: int):

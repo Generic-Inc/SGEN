@@ -64,13 +64,14 @@ async def reset_db():
     await DATABASE.commit()
 
 
-async def create_user(username, email, name, password="Password123!", is_senior=0):
+async def create_user(username, email, name, password="Password123!"):
     salt_hash = SaltHash.create_salt_hash(password)
     avatar_url = f"https://api.dicebear.com/7.x/avataaars/svg?seed={username}"
 
+    # REMOVED is_senior
     await DATABASE.execute(
-        "INSERT INTO Profiles (username, _email, display_name, bio, avatar_url, is_senior) VALUES (?, ?, ?, ?, ?, ?)",
-        (username, email, name, "Generated User", avatar_url, is_senior)
+        "INSERT INTO Profiles (username, _email, display_name, bio, avatar_url) VALUES (?, ?, ?, ?, ?)",
+        (username, email, name, "Generated User", avatar_url)
     )
 
     user_row = await DATABASE.fetch_one("SELECT user_id FROM Profiles WHERE username = ?", (username,))
@@ -95,7 +96,7 @@ async def main():
     # 0. CREATE ADMIN USER
     print(f"\n--- 👑 Creating Admin User ({ADMIN_USERNAME}) ---")
     try:
-        admin_id = await create_user(ADMIN_USERNAME, ADMIN_EMAIL, ADMIN_NAME, ADMIN_PASSWORD, is_senior=0)
+        admin_id = await create_user(ADMIN_USERNAME, ADMIN_EMAIL, ADMIN_NAME, ADMIN_PASSWORD)
         user_ids.append(admin_id)
         print(f"  ✅ Admin Created: {ADMIN_USERNAME} (ID: {admin_id})")
     except Exception as e:
@@ -110,13 +111,10 @@ async def main():
         username = f"{adj}_{name}_{random.randint(10, 999)}".lower()
         email = f"{username}@example.com"
 
-        is_senior = 1 if random.random() < 0.3 else 0
-        senior_badge = "👴" if is_senior else "dev"
-
         try:
-            uid = await create_user(username, email, f"{adj} {name}", is_senior=is_senior)
+            uid = await create_user(username, email, f"{adj} {name}")
             user_ids.append(uid)
-            if i % 10 == 0: print(f"  Created {i} users... (Latest was {senior_badge})")
+            if i % 10 == 0: print(f"  Created {i} users...")
         except:
             pass
 
@@ -160,7 +158,7 @@ async def main():
         for _ in range(random.randint(1, POSTS_PER_USER)):
             cid = random.choice(community_ids)
             topic = random.choice(TOPICS)
-            slang = random.choice(SLANG_WORDS)  # Pick a random slang word
+            slang = random.choice(SLANG_WORDS)
 
             # Format content with topic and potentially a slang word
             template = random.choice(POST_TEMPLATES)
@@ -192,7 +190,7 @@ async def main():
             commentor = random.choice(user_ids)
             slang = random.choice(SLANG_WORDS)
             template = random.choice(COMMENT_TEMPLATES)
-            text = template.format(slang=slang)  # Inject slang into comments too
+            text = template.format(slang=slang)
 
             await DATABASE.execute("INSERT INTO Comments (content, post_id, author_id) VALUES (?, ?, ?)",
                                    (text, pid, commentor))

@@ -1,34 +1,27 @@
 import { useState, useEffect } from "react";
-import { postData } from "../../static/api";
 import "../../static/styles/senior.css";
 
-export default function AccessibilityWidget({ currentUser }) {
-    const [isSenior, setIsSenior] = useState(false);
+export default function AccessibilityWidget() {
+    // 1. Check browser storage for previous preference
+    const [isSenior, setIsSenior] = useState(() => {
+        return localStorage.getItem("sgen_senior_mode") === "true";
+    });
 
+    // 2. Sync with CSS class whenever state changes
     useEffect(() => {
-        if (currentUser?.isSenior) {
-            setIsSenior(true);
+        if (isSenior) {
             document.body.classList.add("senior-mode");
         } else {
-            setIsSenior(false);
             document.body.classList.remove("senior-mode");
         }
-    }, [currentUser]);
+    }, [isSenior]);
 
-    const toggleMode = async () => {
-        try {
-            const response = await postData("senior-mode", {});
-            setIsSenior(response.isSenior);
-
-            if (response.isSenior) {
-                document.body.classList.add("senior-mode");
-            } else {
-                document.body.classList.remove("senior-mode");
-            }
-            window.location.reload();
-        } catch (err) {
-            console.error("Failed to toggle senior mode:", err);
-        }
+    // 3. Toggle Handler (Pure Frontend)
+    const toggleMode = () => {
+        const newMode = !isSenior;
+        setIsSenior(newMode);
+        // Save to browser so it remembers after refresh
+        localStorage.setItem("sgen_senior_mode", String(newMode));
     };
 
     return (

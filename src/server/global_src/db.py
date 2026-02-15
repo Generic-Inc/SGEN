@@ -24,6 +24,8 @@ class Database:
         await con.commit()
 
     async def _get_con(self):
+        print("DB PATH =", self.path)
+        print("EXISTS?", Path(self.path).parent.exists())
         if not self.con:
             self.con = await aiosqlite.connect(self.path)
         return self.con

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { checkStatus } from "../static/api";
+import { checkStatus, fetchData } from "../static/api"; // ✅ Added fetchData
 import PostCard from "./sub components/post_card";
 import { useInfiniteFeed } from "../static/infinite_feed";
 import "../static/styles/feed.css";
@@ -15,7 +15,17 @@ export default function UserFeed() {
     const { posts, loading, hasMore, removePost } = useInfiniteFeed(apiEndpoint);
 
     useEffect(() => {
-        checkStatus().then(data => setCurrentUser(data.user)).catch(() => {});
+        async function loadUser() {
+            try {
+                const status = await checkStatus();
+                if (status.user) {
+                    // ✅ Fetch Age
+                    const ageData = await fetchData("my-age");
+                    setCurrentUser({ ...status.user, age: ageData.age });
+                }
+            } catch (e) { console.error(e); }
+        }
+        loadUser();
     }, []);
 
     if (!targetUserId) return <div style={{textAlign:'center', padding:'20px'}}>User ID not found</div>;

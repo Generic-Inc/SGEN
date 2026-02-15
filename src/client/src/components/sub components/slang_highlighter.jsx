@@ -2,7 +2,6 @@ import { useState } from "react";
 import { GEN_Z_SLANG } from "../../static/slang_dict";
 import "../../static/styles/slang.css";
 
-// 1. New Sub-Component to handle individual word clicks
 function SlangWord({ word, meaning }) {
     const [isClicked, setIsClicked] = useState(false);
 
@@ -11,8 +10,8 @@ function SlangWord({ word, meaning }) {
             className={`slang-term ${isClicked ? "clicked" : ""}`}
             data-meaning={meaning}
             onClick={(e) => {
-                e.stopPropagation(); // Stop the click from bubbling up
-                setIsClicked(!isClicked); // Toggle pinned state
+                e.stopPropagation();
+                setIsClicked(!isClicked);
             }}
         >
             {word}
@@ -20,12 +19,17 @@ function SlangWord({ word, meaning }) {
     );
 }
 
-// 2. Main Component
-export default function SlangHighlighter({ text }) {
+export default function SlangHighlighter({ text, userAge }) {
     if (!text) return null;
 
+    // --- CHECK AGE HERE ---
+    // If age is missing, or user is 60 or younger, render plain text.
+    if (!userAge || userAge <= 60) {
+        return <>{text}</>;
+    }
+
+    // Otherwise, render the highlighter
     const slangKeys = Object.keys(GEN_Z_SLANG);
-    // Regex to match whole words only (so "bet" doesn't match "better")
     const regex = new RegExp(`\\b(${slangKeys.join("|")})\\b`, "gi");
     const parts = text.split(regex);
 
@@ -34,7 +38,6 @@ export default function SlangHighlighter({ text }) {
             {parts.map((part, index) => {
                 const lowerPart = part.toLowerCase();
                 if (GEN_Z_SLANG[lowerPart]) {
-                    // Render the smart component for slang
                     return (
                         <SlangWord
                             key={index}
@@ -43,7 +46,6 @@ export default function SlangHighlighter({ text }) {
                         />
                     );
                 }
-                // Render plain text for everything else
                 return part;
             })}
         </span>

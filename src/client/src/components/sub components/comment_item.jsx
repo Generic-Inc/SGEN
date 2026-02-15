@@ -1,15 +1,16 @@
 import { useState } from "react";
 import { postData } from "../../static/api";
-import SlangHighlighter from "./slang_highlighter";
+import TranslatedText from "./translated_text"; // ✅ Import Translator
+import SlangHighlighter from "./slang_highlighter"; // ✅ Import Dictionary
 
-// Helper function (Same as PostCard)
+// Helper function
 function formatTimeAgo(dateString) {
     if (!dateString) return "";
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
 
-    if (diffInSeconds < 0) return "Just now"; // Handle slight clock skews
+    if (diffInSeconds < 0) return "Just now";
     if (diffInSeconds < 60) return "Just now";
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
@@ -42,7 +43,6 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
     const displayCreated = formatTimeAgo(comment.created);
     const displayEdited = formatTimeAgo(comment.modified);
 
-    // Check if edited (with 1-second buffer to ignore creation time differences)
     const isEdited = comment.modified && comment.created &&
                      (new Date(comment.modified).getTime() > new Date(comment.created).getTime() + 1000);
 
@@ -60,7 +60,6 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
             if (!response.ok) throw new Error("Failed");
 
             const updatedComment = await response.json();
-            // Update parent state so the change reflects immediately
             onUpdate(cId, updatedComment.content, updatedComment.modified);
             setIsEditing(false);
         } catch (e) {
@@ -127,12 +126,10 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
                             {cName}
                         </a>
 
-                        {/* Created Time */}
                         <span style={{ fontSize: "11px", color: "#65676B", marginLeft: "6px" }}>
                             {displayCreated}
                         </span>
 
-                        {/* Edited Time (e.g., "• Edited 5m ago") */}
                         {isEdited && (
                             <span style={{ marginLeft: "5px", fontStyle: "italic", fontSize: "11px", color: "#666" }}>
                                 • Edited {displayEdited}
@@ -158,7 +155,12 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
                         </div>
                     ) : (
                         <div style={{ marginTop: "0" }}>
-                            <SlangHighlighter text={comment.content} />
+                            {/* 🔥 THE LOGIC: If Senior, Dictionary. If not, Translation. */}
+                            {currentUser?.age && currentUser.age > 60 ? (
+                                <SlangHighlighter text={comment.content} userAge={currentUser.age} />
+                            ) : (
+                                <TranslatedText content={comment.content} />
+                            )}
                         </div>
                     )}
 
@@ -182,7 +184,7 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
                                     background: "white", boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
                                     borderRadius: "6px", overflow: "hidden", zIndex: 10, minWidth: "80px"
                                 }}>
-                                    <div onClick={() => { setIsEditing(true); setIsMenuOpen(false); }} style={{ padding: "8px 12px", cursor: "pointer", fontSize: "12px", ":hover": {background: "#eee"} }}>✏️ Edit</div>
+                                    <div onClick={() => { setIsEditing(true); setIsMenuOpen(false); }} style={{ padding: "8px 12px", cursor: "pointer", fontSize: "12px" }}>✏️ Edit</div>
                                     <div onClick={handleDelete} style={{ padding: "8px 12px", cursor: "pointer", fontSize: "12px", color: "red" }}>🗑️ Delete</div>
                                 </div>
                             )}

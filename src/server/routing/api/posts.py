@@ -3,9 +3,23 @@ from global_src.global_classes import Community, User, CommunityMember
 from modules.authentications import Permissions
 from modules.posts import Post, Comment, Like
 from global_src.db import DATABASE
+from modules.onboarding.Onboarding import Onboarding
 from . import community_blueprint
 from . import api
 from datetime import datetime
+
+
+@api.route("/my-age", methods=["GET"])
+async def get_my_age():
+    authorization = request.cookies.get('token')
+    if not authorization:
+        return {"error": "Unauthorized"}, 401
+    user = await User.get_user_by_token(authorization)
+    if not user:
+        return {"error": "Unauthorized"}, 401
+
+    onboarding = await Onboarding.get_onboarding(user.user_id)
+    return {"age": onboarding.age if onboarding else 0}
 
 
 @api.route("/my-communities", methods=["GET"])
@@ -38,6 +52,7 @@ async def get_home_feed():
 
     posts = await Post.get_user_feed(user.user_id, limit=limit, offset=offset)
     return {"posts": [p.public_json for p in posts]}
+
 
 @community_blueprint.route("/<int:community_id>/posts", methods=["GET", "POST"])
 async def community_posts(community_id: int):

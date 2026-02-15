@@ -1,4 +1,4 @@
-body.senior-mode .slang-term {
+.slang-term {
     border-bottom: 3px solid #1877F2;
     cursor: help;
     position: relative;
@@ -13,16 +13,14 @@ body.senior-mode .slang-term {
     transition: background-color 0.2s;
 }
 
-/* 2. When Clicked: Darker highlight to show selection */
-body.senior-mode .slang-term.clicked {
+.slang-term.clicked {
     background-color: rgba(24, 119, 242, 0.3);
     border-bottom-color: #000;
     color: #000;
 }
 
-/* 3. The Tooltip: Only show when Hovered OR Clicked */
-body.senior-mode .slang-term:hover::after,
-body.senior-mode .slang-term.clicked::after {
+.slang-term:hover::after,
+.slang-term.clicked::after {
     content: attr(data-meaning);
     position: absolute;
     bottom: 140%;
@@ -43,9 +41,9 @@ body.senior-mode .slang-term.clicked::after {
     text-align: center;
 }
 
-/* 4. The Arrow pointing down */
-body.senior-mode .slang-term:hover::before,
-body.senior-mode .slang-term.clicked::before {
+/* 4. The Arrow */
+.slang-term:hover::before,
+.slang-term.clicked::before {
     content: "";
     position: absolute;
     bottom: 110%;

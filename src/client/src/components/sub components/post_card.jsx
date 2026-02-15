@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { postData, fetchData } from "../../static/api";
 import CommentItem from "./comment_item";
-import TranslatedText from "./translated_text";
+import TranslatedText from "./translated_text"; // ✅ Kept your teammate's component
 import { useVoice } from "../../static/use_voice";
 import "../../static/styles/community.css";
 import SlangHighlighter from "./slang_highlighter";
 
-// ... (formatTimeAgo function remains the same) ...
 function formatTimeAgo(dateString) {
     if (!dateString) return "";
     const date = new Date(dateString);
@@ -22,7 +21,6 @@ function formatTimeAgo(dateString) {
 }
 
 export default function PostCard({ post, currentUser, onDelete, view }) {
-    // ... (Existing state hooks) ...
     const authorObj = post.author || {};
     const authorName = authorObj.displayName || authorObj.display_name || authorObj.name || post.author_name || "Unknown";
     const authorAvatar = authorObj.avatarUrl || authorObj.avatar_url || post.author_avatar || "https://placehold.co/40";
@@ -48,9 +46,8 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
     const [commentText, setCommentText] = useState("");
     const [commentsLoaded, setCommentsLoaded] = useState(false);
 
-    // --- VOICE HOOK FOR COMMENTS ---
     const { isListening, toggleListen, support, lang, setLang, interimTranscript } = useVoice((text) => {
-    setCommentText(prev => prev + (prev ? " " : "") + text);
+        setCommentText(prev => prev + (prev ? " " : "") + text);
     });
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -58,7 +55,6 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
     const [editContent, setEditContent] = useState(content);
     const [isSaving, setIsSaving] = useState(false);
 
-    // ... (Existing handlers: toggleComments, handleCommentDelete, handleLike, etc.) ...
     const toggleComments = async () => {
         const newShowState = !showComments;
         setShowComments(newShowState);
@@ -87,7 +83,6 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
         }
     };
 
-    // ... (Other handlers unchanged) ...
     const handleCommentDelete = (cId) => {
         setComments(prev => prev.filter(c => (c.commentId || c.comment_id) !== cId));
         setCommentCount(prev => prev - 1);
@@ -149,7 +144,6 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
 
     return (
         <div className="post-card" style={{ marginBottom: "20px", background: "#fff", borderRadius: "8px", padding: "15px", boxShadow: "0 1px 2px rgba(0,0,0,0.1)", position: "relative" }}>
-             {/* ... (Header Section same as before) ... */}
             <div className="post-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <a href={`/user/${postAuthorId}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: 'inherit' }}>
@@ -188,8 +182,15 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
                 ) : (
                     <>
                         <p className="post-text-body" style={{ fontSize: "15px", lineHeight: "1.5", color: "#050505", whiteSpace: "pre-wrap" }}>
-                            <SlangHighlighter text={content} />
+                            {/* 🔥 THE FIX: Check Age. If Senior (>60), use Dictionary. If not, use TranslatedText. */}
+                            {currentUser?.age && currentUser.age > 60 ? (
+                                <SlangHighlighter text={content} userAge={currentUser.age} />
+                            ) : (
+                                <TranslatedText content={content} translations={post.translations} />
+                            )}
                         </p>
+
+                        {postImage && <img src={postImage} alt="Post" style={{ width: '100%', borderRadius: '8px', marginTop: '10px' }} /> }
                     </>
                 )}
             </div>
@@ -207,7 +208,6 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
                         ))}
                     </div>
 
-                    {/* --- UPDATED COMMENT INPUT SECTION --- */}
                     <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
                         <img src={currentUser?.avatarUrl || currentUser?.avatar_url || "https://placehold.co/30"} style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit:"cover", marginTop: "4px" }} />
 
@@ -216,10 +216,7 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
                                 <input
                                     type="text"
                                     placeholder={isListening ? "Listening... 🎤" : "Write a comment..."}
-
-                                    // --- CHANGE THIS LINE ---
                                     value={isListening ? (commentText + " " + interimTranscript) : commentText}
-
                                     onChange={(e) => setCommentText(e.target.value)}
                                     onKeyDown={handlePostComment}
                                     style={{
@@ -228,7 +225,6 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
                                         background: "#f0f2f5", outline: "none"
                                     }}
                                 />
-                                {/* Mic Button */}
                                 {support && (
                                     <button
                                         onClick={toggleListen}
@@ -241,14 +237,10 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
                                         {isListening ? "⏹️" : "🎙️"}
                                     </button>
                                 )}
-
-                                {/* Send Button */}
                                 <button onClick={handlePostComment} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "#1877F2" }}>
                                     ➤
                                 </button>
                             </div>
-
-                            {/* Language Switcher for Comments (Small, optional) */}
                             {support && isListening && (
                                 <div style={{ fontSize: "10px", marginTop: "2px", marginLeft: "10px", color: "#888" }}>
                                     Language:

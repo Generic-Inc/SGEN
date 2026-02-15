@@ -21,7 +21,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                 <Route path="/community/:communityId/members" element={<MembersPage />} />
                 <Route path="/user/:userId" element={<User />} />
                 <Route path="/onboarding" element={<Onboarding />} />
-                <Route path="verify-email" element={<VerifyEmail />} />
+                <Route path="/verify-email" element={<VerifyEmail />} />
             </Routes>
         </BrowserRouter>
     </React.StrictMode>,

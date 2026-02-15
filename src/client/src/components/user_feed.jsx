@@ -3,7 +3,6 @@ import { checkStatus } from "../static/api";
 import PostCard from "./sub components/post_card";
 import { useInfiniteFeed } from "../static/infinite_feed";
 import "../static/styles/feed.css";
-import AccessibilityWidget from "./sub components/accessibility_widget";
 
 export default function UserFeed() {
     const [currentUser, setCurrentUser] = useState(null);
@@ -12,7 +11,6 @@ export default function UserFeed() {
     const userIndex = pathParts.indexOf('user');
     const targetUserId = (userIndex !== -1 && pathParts[userIndex + 1]) ? pathParts[userIndex + 1] : null;
 
-    // USE THE HOOK!
     const apiEndpoint = targetUserId ? `user/${targetUserId}/posts` : null;
     const { posts, loading, hasMore, removePost } = useInfiniteFeed(apiEndpoint);
 
@@ -24,7 +22,6 @@ export default function UserFeed() {
 
     return (
         <div className="feed-container">
-            <AccessibilityWidget currentUser={currentUser} />
             <div className="posts-list" style={{width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
                 {posts.length > 0 ? (
                     posts.map(post => (

@@ -3,12 +3,9 @@ import { checkStatus } from "../static/api";
 import PostCard from "./sub components/post_card";
 import { useInfiniteFeed } from "../static/infinite_feed";
 import "../static/styles/feed.css";
-import AccessibilityWidget from "./sub components/accessibility_widget";
 
 export default function HomeFeed() {
     const [currentUser, setCurrentUser] = useState(null);
-
-    // USE THE HOOK!
     const { posts, loading, hasMore, removePost } = useInfiniteFeed("feed");
 
     useEffect(() => {
@@ -17,7 +14,6 @@ export default function HomeFeed() {
 
     return (
         <div className="feed-container">
-            <AccessibilityWidget currentUser={currentUser} />
             <div className="posts-list" style={{width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
                 {posts.length > 0 ? (
                     posts.map(post => (

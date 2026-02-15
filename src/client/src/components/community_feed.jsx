@@ -3,13 +3,11 @@ import { checkStatus, getCommunityIdFromPage } from "../static/api";
 import PostCard from "./sub components/post_card";
 import { useInfiniteFeed } from "../static/infinite_feed";
 import "../static/styles/feed.css";
-import AccessibilityWidget from "./sub components/accessibility_widget";
 
 export default function CommunityFeed() {
     const [currentUser, setCurrentUser] = useState(null);
     const communityId = getCommunityIdFromPage();
 
-    // USE THE HOOK! (Pass null if no ID so it doesn't fetch garbage)
     const apiEndpoint = communityId ? `community/${communityId}/posts` : null;
     const { posts, loading, hasMore, removePost } = useInfiniteFeed(apiEndpoint);
 
@@ -21,7 +19,6 @@ export default function CommunityFeed() {
 
     return (
         <div className="feed-container">
-            <AccessibilityWidget currentUser={currentUser} />
             <div className="posts-list" style={{width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
                 {posts.length > 0 ? (
                     posts.map(post => (

@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import {fetchData} from "../static/api.js";
+import {fetchData, checkStatus} from "../static/api.js";
 import JoinLeaveCommunityButton from "./join_leave_community.jsx";
 import FeedRouter from "./feed_router.jsx";
 import EditCommunityModal from "./edit_community_modal.jsx";
@@ -58,6 +58,30 @@ export function CommunitySideInfo({communityInfo}) {
     const memberCount = communityInfo?.memberCount ?? 0;
     const offline = Math.max(0, memberCount - online);
 
+    const [canEditCommunity, setCanEditCommunity] = useState(false);
+
+    useEffect(() => {
+        const communityId = communityInfo?.communityId || communityInfo?.community_id;
+        if (!communityId) return;
+
+        const loadRole = async () => {
+            try {
+                const status = await checkStatus();
+                const userId = status?.user?.userId || status?.user?.user_id;
+                if (!userId) return;
+
+                const member = await fetchData(`community/${communityId}/members/${userId}`);
+                const role = member?.role;
+                setCanEditCommunity(role === "owner");
+            } catch {
+                // Not a member / unauthorized / etc => hide button
+                setCanEditCommunity(false);
+            }
+        };
+
+        loadRole();
+    }, [communityInfo?.communityId, communityInfo?.community_id]);
+
     return (
         <div className={"community-side-box"}>
             <div className={"community-side-section"}>
@@ -69,12 +93,13 @@ export function CommunitySideInfo({communityInfo}) {
                 </div>
             </div>
 
-            {/* Edit button: EditCommunityModal listens for this href and opens as an overlay */}
-            <div className={"community-side-section"}>
-                <a href="/edit/community" className={"community-side-edit-button"}>
-                    Edit community
-                </a>
-            </div>
+            {canEditCommunity && (
+                <div className={"community-side-section"}>
+                    <a href="/edit/community" className={"community-side-edit-button"}>
+                        Edit community
+                    </a>
+                </div>
+            )}
 
             <div className={"community-side-stats-row"}>
                 <div className={"community-side-stat"}>

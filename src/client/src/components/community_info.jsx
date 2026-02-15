@@ -29,6 +29,8 @@ export default function CommunityInfo() {
                         </div>
                         <div className={"community-second-row"}>
                             <h3>{communityInfo.communityName}</h3>
+                        </div>
+                        <div className={"community-joinleave-row"}>
                             <JoinLeaveCommunityButton />
                         </div>
 

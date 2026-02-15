@@ -191,7 +191,7 @@
     position: fixed;
     top: 5rem;
     left: 0;
-    width: 14rem;
+    width: 16rem;
     height: calc(100vh - 5rem);
     background-color: white;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
@@ -412,17 +412,9 @@
     flex: 0 0 1.4rem;
 }
 
-.side-bar {
-    position: fixed;
-    top: 5rem;
-    left: 0;
-    width: 14rem;
-    height: calc(100vh - 5rem);
-}
-
 main {
     height: calc(100vh - 5rem);
-    padding-left: 14rem;
+    padding-left: 16rem;
     box-sizing: border-box;
 }
 
@@ -432,3 +424,4 @@ main {
     box-sizing: border-box;
     padding: 1rem;
 }
+

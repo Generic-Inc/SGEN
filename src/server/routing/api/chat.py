@@ -1,10 +1,26 @@
 from flask import request
+
+from global_src.global_classes import User, Community, CommunityMember
+from modules.authentications import Permissions
 from . import chat_blueprint
 from modules.chat_model import ChatMessage
 
 # Called when the website wants to SEE the chat history.
 @chat_blueprint.route('/community/<int:community_id>/messages', methods=['GET'])
 async def get_messages(community_id):
+    authorization = request.cookies.get('token')
+    if not authorization:
+        return {"error": "Unauthorized"}, 401
+    user = await User.get_user_by_token(authorization)
+    if not user:
+        return {"error": "Unauthorized"}, 401
+    community_get = await Community.get_community(community_id)
+    if not community_get:
+        return {"error": "Community not found"}, 404
+    community_member = await CommunityMember.get_member(user.user_id, community_id)
+    if not community_member:
+        return {"error": "Forbidden"}, 403
+
     messages = await ChatMessage.get_messages(community_id)
 
     return {"messages": [msg.public_json for msg in messages]}
@@ -12,6 +28,24 @@ async def get_messages(community_id):
 # Called when a user clicks 'SEND' on the website.
 @chat_blueprint.route('/community/<int:community_id>/messages', methods=['POST'])
 async def create_message(community_id):
+    authorization = request.cookies.get('token')
+    if not authorization:
+        return {"error": "Unauthorized"}, 401
+    user = await User.get_user_by_token(authorization)
+    if not user:
+        return {"error": "Unauthorized"}, 401
+    community_get = await Community.get_community(community_id)
+    if not community_get:
+        return {"error": "Community not found"}, 404
+    community_member = await CommunityMember.get_member(user.user_id, community_id)
+    if not community_member:
+        return {"error": "Forbidden"}, 403
+
+    if not community_member.requires_permissions(
+        Permissions.CREATE_MESSAGES
+    ):
+        return {"error": "Forbidden"}, 403
+
     data = request.get_json()
 
     if not data or "userId" not in data or "content" not in data:
@@ -19,7 +53,7 @@ async def create_message(community_id):
 
     new_msg = await ChatMessage.create_message(
         community_id=community_id,
-        author_id=data["userId"],
+        author_id=user.user_id,
         content=data["content"])
 
     if new_msg:

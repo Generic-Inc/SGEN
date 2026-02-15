@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { fetchData, postData } from "../static/api";
+import { fetchData, postData } from "../static/api.js";
 import "../static/styles/community.css";
-import NavBar from "../components/nav_bar";
+import NavBar from "../components/nav_bar.jsx";
 
 export default function CreatePostPage() {
     const [searchParams] = useSearchParams();

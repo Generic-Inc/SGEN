@@ -1,8 +1,7 @@
-from flask import render_template, request, redirect, url_for
+'''from flask import render_template, request, redirect, url_for
 from . import pages_blueprint
 from global_src.global_classes import User
 from modules.posts import Post
-
 @pages_blueprint.route('/user<int:user_id>/communities')
 async def home_feed_page():
 
@@ -23,4 +22,4 @@ async def home_feed_page():
         user=user.public_json,
         posts=feed_posts,
         user_communities=[c.public_json for c in user_communities]
-    )
+    )'''

@@ -96,7 +96,7 @@ async def get_user_posts(user_id: int):
     posts = await Post.get_by_author(user_id, viewer_id=user.user_id, limit=limit, offset=offset)
     return {"posts": [p.public_json for p in posts]}
 
-@user_blueprint.route("/onboarding", methods=["POST"])
+@user_blueprint.route("/onboarding", methods=["GET", "POST"])
 async def onboarding():
     """Onboarding route to get initial user data after signup/login"""
     authorization = request.cookies.get('token')
@@ -106,21 +106,27 @@ async def onboarding():
     if not user:
         return {"error": "Unauthorized"}, 401
 
-    data = request.get_json()
-    if not data:
-        return {"error": "No data provided"}, 400
-    age = int(data.get("age"))
-    interest = data.get("interest")
-    pronouns = data.get("pronouns")
-    region = data.get("region")
+    if request.method == "GET":
+        onboarding = await Onboarding.get_onboarding(user.user_id)
+        if not onboarding:
+            return {"error": "Onboarding not found"}, 404
+        return onboarding.public_json
+    elif request.method == "POST":
+        data = request.get_json()
+        if not data:
+            return {"error": "No data provided"}, 400
+        age = int(data.get("age"))
+        interest = data.get("interest")
+        pronouns = data.get("pronouns")
+        region = data.get("region")
 
-    if age <= 0:
-        return {"error": "Invalid age"}, 400
+        if age <= 0:
+            return {"error": "Invalid age"}, 400
 
-    onboarding = await Onboarding.register_onboarding(user.user_id, age, interest, pronouns, region)
-    if not onboarding:
-        return {"error": "Failed to complete onboarding"}, 400
-    return {"success": "Onboarding completed successfully"}
+        onboarding = await Onboarding.register_onboarding(user.user_id, age, interest, pronouns, region)
+        if not onboarding:
+            return {"error": "Failed to complete onboarding"}, 400
+        return {"success": "Onboarding completed successfully"}
 
 @user_blueprint.route("/communities/recommendations")
 async def recommend_communities():

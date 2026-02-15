@@ -1,4 +1,4 @@
-const root_url = "sgen-production.up.railway.app";
+const root_url = "https://sgen-production.up.railway.app";
 
 async function parseResponseBody(response) {
     const contentType = response.headers.get("content-type") || "";

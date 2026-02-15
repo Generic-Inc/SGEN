@@ -1,4 +1,4 @@
-const root_url = window.location.href.split('/')[0];
+const root_url = "sgen-production.up.railway.app";
 
 async function parseResponseBody(response) {
     const contentType = response.headers.get("content-type") || "";

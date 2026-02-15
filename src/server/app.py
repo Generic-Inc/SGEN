@@ -41,6 +41,12 @@ async def startup():
 def main():
     asyncio.run(startup())
 
+from flask import jsonify
+
+@app.route("/health")
+def health():
+    return jsonify({"status": "ok"})
+
 
 if __name__ == '__main__':
     thread = threading.Thread(target=main, daemon=True)

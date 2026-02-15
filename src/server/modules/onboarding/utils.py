@@ -6,7 +6,7 @@ from pinecone import Pinecone
 load_dotenv()
 
 # 1. Initialize Pinecone
-pc = Pinecone(api_key="pcsk_7Et5V3_aPyqMCktVTbZxVeTssT9Lxt44K3BUqZdG2QMcxNp3w9whvgXKX1bhzzbjHUFkP")
+pc = Pinecone(api_key="YAY")
 
 INDEX_NAME = "auto-embed-communities"
 namespace="communities"

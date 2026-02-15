@@ -203,6 +203,18 @@ class User(BaseClass):
         role, = role_fetch
         return role
 
+    async def toggle_senior_mode(self):
+        """Toggles the senior mode and saves to database"""
+        new_value = 0 if self.is_senior else 1
+
+        await DATABASE.execute(
+            "UPDATE Profiles SET is_senior = ? WHERE user_id = ?",
+            (new_value, self.user_id)
+        )
+
+        self.is_senior = new_value
+        return bool(new_value)
+
     async def update_user(self,
                           display_name: str = None,
                           avatar_url: str = None,

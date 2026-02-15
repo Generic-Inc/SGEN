@@ -1,0 +1,32 @@
+/* Only applies when body has class "senior-mode" */
+body.senior-mode {
+    font-size: 22px !important;
+}
+
+body.senior-mode input,
+body.senior-mode textarea,
+body.senior-mode button {
+    font-size: 20px !important;
+    padding: 15px !important;
+}
+
+body.senior-mode p,
+body.senior-mode span,
+body.senior-mode div {
+    color: #000 !important;
+    line-height: 1.6 !important;
+}
+
+/* Hide complex sidebars */
+body.senior-mode .sidebar-container,
+body.senior-mode .left-sidebar,
+body.senior-mode aside {
+    display: none !important;
+}
+
+/* Center content */
+body.senior-mode .app-container {
+    display: block !important;
+    max-width: 800px;
+    margin: 0 auto;
+}

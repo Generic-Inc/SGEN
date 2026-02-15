@@ -2,6 +2,7 @@ import {useEffect, useState} from "react";
 import {fetchData} from "../static/api.js";
 import JoinLeaveCommunityButton from "./join_leave_community.jsx";
 import FeedRouter from "./feed_router.jsx";
+import EditCommunityModal from "./edit_community_modal.jsx";
 import "../static/styles/App.css"
 
 export default function CommunityInfo() {
@@ -22,6 +23,7 @@ export default function CommunityInfo() {
         }, [])
     return (
         <>
+            <EditCommunityModal />
             <div className={"community-page-row"}>
                 <div className={"community-main-container"}>
                     <div className={"community-info"}>
@@ -65,6 +67,13 @@ export function CommunitySideInfo({communityInfo}) {
                 <div className={"community-side-description"}>
                     {description || "No description"}
                 </div>
+            </div>
+
+            {/* Edit button: EditCommunityModal listens for this href and opens as an overlay */}
+            <div className={"community-side-section"}>
+                <a href="/edit/community" className={"community-side-edit-button"}>
+                    Edit community
+                </a>
             </div>
 
             <div className={"community-side-stats-row"}>

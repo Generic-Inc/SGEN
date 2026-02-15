@@ -76,7 +76,7 @@ export default function ChatPage() {
             <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
 
             {/* Main layout container with fixed positioning */}
-            <main style={{ position: 'fixed', top: '60px', bottom: 0, left: 0, right: 0, display: 'flex', overflow: 'hidden' }}>
+            <main style={{ position: 'fixed', top: '20px', bottom: 0, left: 0, right: 0, display: 'flex', overflow: 'hidden' }}>
                 <SideBar />
                 <div className="main-container">
                     <div className="chat-box">

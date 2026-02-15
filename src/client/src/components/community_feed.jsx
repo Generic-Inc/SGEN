@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { checkStatus, getCommunityIdFromPage } from "../static/api";
 import PostCard from "./sub components/post_card";
 import { useInfiniteFeed } from "../static/infinite_feed";
-import "../static/styles/feed_override.css";
+import "../static/styles/feed.css";
 
 export default function CommunityFeed() {
     const [currentUser, setCurrentUser] = useState(null);

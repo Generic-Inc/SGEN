@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { postData } from "../../static/api";
+import SlangHighlighter from "./slang_highlighter";
 
 // Helper function (Same as PostCard)
 function formatTimeAgo(dateString) {
@@ -156,7 +157,9 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
                             </div>
                         </div>
                     ) : (
-                        <div style={{ marginTop: "0" }}>{comment.content}</div>
+                        <div style={{ marginTop: "0" }}>
+                            <SlangHighlighter text={comment.content} />
+                        </div>
                     )}
 
                     {/* MENU (Edit/Delete) */}

@@ -26,6 +26,7 @@ class BaseClass(ABC):
 
 class User(BaseClass):
     """A class representing a user"""
+
     def __init__(self,
                  created: datetime,
                  user_id: int,
@@ -33,8 +34,9 @@ class User(BaseClass):
                  display_name: str,
                  email: str,
                  language: str,
-                 avatar_url: str=None,
-                 bio: str=None
+                 avatar_url: str = None,
+                 bio: str = None,
+                 is_senior: int = 0
                  ):
         self.created = created
 
@@ -45,6 +47,7 @@ class User(BaseClass):
         self.bio = bio
         self.language = language
         self._email = email
+        self.is_senior = is_senior
 
     @property
     def public_json(self) -> dict[str, Any]:
@@ -57,48 +60,49 @@ class User(BaseClass):
             "avatarUrl": self.avatar_url,
             "bio": self.bio.replace('{display_name}', self.display_name) if self.bio else None,
             "created": self.created,
+            "isSenior": bool(self.is_senior)
         }
         return base_json
 
     @classmethod
     async def create_user(cls,
-                            username: str,
-                            display_name: str,
-                            email: str,
-                            language: str="en",
-                            avatar_url: str=None,
-                            bio: str=None
-                            ) -> Union["User"]:
-        check = await DATABASE.execute("""SELECT * FROM Profiles WHERE username=? OR _email=?""", (username, email))
+                          username: str,
+                          display_name: str,
+                          email: str,
+                          language: str = "en",
+                          avatar_url: str = None,
+                          bio: str = None
+                          ) -> Union["User"]:
+        check = await DATABASE.execute("""SELECT *
+                                          FROM Profiles
+                                          WHERE username = ?
+                                             OR _email = ?""", (username, email))
         if check:
             return False
         if not language:
             language = "en"
         avatar_url = random.choice(CONFIG.default_user["avatar_url"]) if not avatar_url else avatar_url
         bio = random.choice(CONFIG.default_user["bio"]) if not bio else bio
+
         await DATABASE.execute("""
-        INSERT INTO Profiles (username, display_name, _email, language, avatar_url, bio)
-                               VALUES(?,?,?,?,?,?)""",
+                               INSERT INTO Profiles (username, display_name, _email, language, avatar_url, bio)
+                               VALUES (?, ?, ?, ?, ?, ?)""",
                                (username, display_name, email, language, avatar_url, bio))
         return await cls.get_user_by_username(username)
 
     @classmethod
     async def get_user(cls, user_id: int) -> "User":
         """Form a user obj after fetching a user from the user id"""
+        # Updated Query to fetch is_senior
         profile = await DATABASE.fetch_one("""
-SELECT 
-      username, 
-      display_name, 
-      _email, 
-      language, 
-      avatar_url, 
-      bio, 
-    created
-FROM Profiles
-    WHERE user_id=?
-""", (user_id,))
+                                           SELECT username,
+                                                  display_name,
+                                                  _email, language, avatar_url, bio, created, is_senior
+                                           FROM Profiles
+                                           WHERE user_id=?
+                                           """, (user_id,))
         if not profile: return None
-        username, display_name, email, language, avatar_url, bio, created = profile
+        username, display_name, email, language, avatar_url, bio, created, is_senior = profile
         return cls(
             user_id=user_id,
             username=username,
@@ -107,7 +111,8 @@ FROM Profiles
             language=language,
             avatar_url=avatar_url,
             bio=bio,
-            created=created
+            created=created,
+            is_senior=is_senior  # <--- ADDED
         )
 
     @classmethod
@@ -115,11 +120,10 @@ FROM Profiles
         """Form a user obj after fetching a user from the auth token"""
         token_hash = sha256(token.encode('utf-8')).hexdigest()
         token_fetch = await DATABASE.fetch_one("""
-        SELECT 
-            user_id
-        FROM AuthTokens
-            WHERE token_hash=?
-        """, (token_hash,))
+                                               SELECT user_id
+                                               FROM AuthTokens
+                                               WHERE token_hash = ?
+                                               """, (token_hash,))
         if not token_fetch:
             return None
         await DATABASE.execute("UPDATE AuthTokens SET last_used=? WHERE token_hash=?", (datetime.now(), token_hash))
@@ -129,20 +133,16 @@ FROM Profiles
     @classmethod
     async def get_user_by_username(cls, username: str) -> "User":
         """Form a user obj after fetching a user from the username"""
+        # Updated Query to fetch is_senior
         profile = await DATABASE.fetch_one("""
-SELECT 
-      user_id, 
-      display_name, 
-      _email, 
-      language, 
-      avatar_url, 
-      bio, 
-    created
-FROM Profiles
-    WHERE username=?
-""", (username,))
+                                           SELECT user_id,
+                                                  display_name,
+                                                  _email, language, avatar_url, bio, created, is_senior
+                                           FROM Profiles
+                                           WHERE username=?
+                                           """, (username,))
         if not profile: return None
-        user_id, display_name, email, language, avatar_url, bio, created = profile
+        user_id, display_name, email, language, avatar_url, bio, created, is_senior = profile
         return cls(
             user_id=user_id,
             username=username,
@@ -151,26 +151,22 @@ FROM Profiles
             language=language,
             avatar_url=avatar_url,
             bio=bio,
-            created=created
+            created=created,
+            is_senior=is_senior  # <--- ADDED
         )
 
     @classmethod
     async def get_user_by_email(cls, email: str) -> "User":
         """Form a user obj after fetching a user from the email"""
         profile = await DATABASE.fetch_one("""
-SELECT 
-      user_id, 
-      username, 
-      display_name, 
-      language, 
-      avatar_url, 
-      bio, 
-    created
-FROM Profiles
-    WHERE _email=?
-""", (email,))
+                                           SELECT user_id,
+                                                  username,
+                                                  display_name, language, avatar_url, bio, created, is_senior
+                                           FROM Profiles
+                                           WHERE _email=?
+                                           """, (email,))
         if not profile: return None
-        user_id, username, display_name, language, avatar_url, bio, created = profile
+        user_id, username, display_name, language, avatar_url, bio, created, is_senior = profile
         return cls(
             user_id=user_id,
             username=username,
@@ -179,17 +175,16 @@ FROM Profiles
             language=language,
             avatar_url=avatar_url,
             bio=bio,
-            created=created
+            created=created,
+            is_senior=is_senior
         )
 
     async def get_communities(self, limit=25) -> list["Community"]:
         community_fetch = await DATABASE.fetch_all("""
-        SELECT 
-            community_id
-        FROM Memberships
-            WHERE member_id=?
-        LIMIT ?
-        """, (self.user_id, limit))
+                                                   SELECT community_id
+                                                   FROM Memberships
+                                                   WHERE member_id = ? LIMIT ?
+                                                   """, (self.user_id, limit))
         if not community_fetch:
             return []
         community_ids = [row[0] for row in community_fetch]
@@ -198,22 +193,22 @@ FROM Profiles
 
     async def get_member(self, community_id: int):
         role_fetch = await DATABASE.fetch_one("""
-        SELECT 
-            role
-        FROM Memberships
-            WHERE member_id=? AND community_id=?
-        """, (self.user_id, community_id))
+                                              SELECT role
+                                              FROM Memberships
+                                              WHERE member_id = ?
+                                                AND community_id = ?
+                                              """, (self.user_id, community_id))
         if not role_fetch:
             return None
         role, = role_fetch
         return role
 
     async def update_user(self,
-                          display_name: str=None,
-                          avatar_url: str=None,
-                          bio: str=None,
-                          language: str=None,
-                          email: str=None
+                          display_name: str = None,
+                          avatar_url: str = None,
+                          bio: str = None,
+                          language: str = None,
+                          email: str = None
                           ):
         fields = []
         values = []
@@ -240,8 +235,10 @@ FROM Profiles
 
     async def delete_user(self):
         await DATABASE.execute("""
-        UPDATE Profiles SET active=0 WHERE user_id=?
-        """, (self.user_id,))
+                               UPDATE Profiles
+                               SET active=0
+                               WHERE user_id = ?
+                               """, (self.user_id,))
         check = await DATABASE.fetch_one("SELECT active FROM Profiles WHERE user_id=?", (self.user_id,))
         if check[0] == 0:
             return True
@@ -249,11 +246,10 @@ FROM Profiles
 
     async def get_communities_owned(self):
         community_fetch = await DATABASE.fetch_all("""
-        SELECT 
-            community_id
-        FROM Communities
-            WHERE owner_id=?
-        """, (self.user_id,))
+                                                   SELECT community_id
+                                                   FROM Communities
+                                                   WHERE owner_id = ?
+                                                   """, (self.user_id,))
         if not community_fetch:
             return []
         community_ids = [row[0] for row in community_fetch]
@@ -500,8 +496,8 @@ FROM Communities
             member_id,
             role
         FROM Memberships
-            WHERE community_id=?
-            AND active=1
+        WHERE community_id=?
+          AND active=1
         """, (self.community_id,))
         if not member_fetch:
             return []

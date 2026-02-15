@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { checkStatus } from "../static/api";
 import PostCard from "./sub components/post_card";
 import { useInfiniteFeed } from "../static/infinite_feed";
-import "../static/styles/feed_override.css";
+import "../static/styles/feed.css";
 
 export default function UserFeed() {
     const [currentUser, setCurrentUser] = useState(null);

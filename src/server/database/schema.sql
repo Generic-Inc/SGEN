@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS Profiles (
     language VARCHAR(32) NOT NULL DEFAULT 'en',
     avatar_url VARCHAR(2048),
     bio VARCHAR(1024),
+    is_senior TINYINT DEFAULT 0 CHECK(is_senior IN (0, 1)),
 
     created DATETIME DEFAULT (DATETIME('now', 'localtime')),
     modified DATETIME DEFAULT (DATETIME('now', 'localtime')),

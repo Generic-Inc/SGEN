@@ -1,0 +1,40 @@
+/* Slang Highlight Style */
+.slang-term {
+    border-bottom: 2px dashed #1877F2;
+    cursor: help;
+    position: relative;
+    font-weight: 600;
+    color: #1877F2;
+    display: inline-block;
+}
+
+/* Tooltip Container */
+.slang-term:hover::after {
+    content: attr(data-meaning);
+    position: absolute;
+    bottom: 120%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    pointer-events: none;
+}
+
+/* Tooltip Arrow */
+.slang-term:hover::before {
+    content: "";
+    position: absolute;
+    bottom: 90%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: #333 transparent transparent transparent;
+    z-index: 1000;
+}

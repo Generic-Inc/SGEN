@@ -4,7 +4,7 @@ import os
 # Use the absolute path of the current working directory (which is /app on Railway)
 SRC_PATH = Path(os.getcwd())
 
-SERVER_PATH = SRC_PATH / "server"
+SERVER_PATH = SRC_PATH
 CLIENT_PATH = SRC_PATH / "client"
 
 # Ensure the database folder actually exists before SQLite tries to write to it

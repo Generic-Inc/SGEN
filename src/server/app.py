@@ -28,9 +28,6 @@ async def startup():
 
 def main():
     asyncio.run(startup())
-@app.route('/')
-async def index():
-    return render_template('index.html')
 
 if __name__ == '__main__':
     thread = threading.Thread(target=main, daemon=True)

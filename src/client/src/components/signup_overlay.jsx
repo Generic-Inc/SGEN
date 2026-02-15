@@ -41,7 +41,7 @@ export default function SignupOverlay() {
     }
     return (
         <>
-            <div className="main-login-box">
+            <div className="main-login-box">x
                 <form onSubmit={handleSubmit}>
                     <img src="https://i.ibb.co/YKjk4w4/SGEN-Logo.png" alt="Logo" className="logo-image"/>
                     <h2>Sign up</h2>

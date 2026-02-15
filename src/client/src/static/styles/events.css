@@ -1,3 +1,4 @@
+/* Calendar Widget Styles */
 .calendar-widget {
     background: white;
     border-radius: 12px;
@@ -5,7 +6,8 @@
     padding: 20px;
     border: 2px solid #2196F3;
     width: 100%;
-    max-width: 500px;
+    max-width: 450px;
+    box-sizing: border-box;
 }
 
 .calendar-header {
@@ -51,7 +53,7 @@
 
 .calendar-weekday {
     text-align: center;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 600;
     color: #65676B;
     padding: 8px 0;
@@ -104,26 +106,37 @@
     border-radius: 50%;
 }
 
-/* If selected day has events, show orange dot on blue background */
 .calendar-day.selected.has-events::after {
     background-color: #FFD700;
+}
+
+/* Events Container - Main Layout Fix */
+.main-content {
+    margin-left: 16rem;
+    min-height: calc(100vh - 5rem);
+    padding: calc(5rem + 20px) 20px 20px;
+    box-sizing: border-box;
 }
 
 .events-container {
     display: flex;
     gap: 30px;
     width: 100%;
-    max-width: 1400px;
+    box-sizing: border-box;
+    align-items: flex-start;
 }
 
 .calendar-section {
     flex-shrink: 0;
-    width: 500px;
+    width: 450px;
 }
 
 .events-list-section {
     flex: 1;
     min-width: 0;
+    max-width: 700px;
+    padding-left: 12px;
+    box-sizing: border-box;
 }
 
 .events-list-header {
@@ -163,11 +176,12 @@
 }
 
 .events-scroll {
-    max-height: calc(100vh - 200px);
+    max-height: calc(100vh - 250px);
     overflow-y: auto;
     padding-right: 10px;
 }
 
+/* Event Card Styles */
 .event-card {
     background: white;
     border-radius: 12px;
@@ -175,6 +189,10 @@
     padding: 20px;
     margin-bottom: 20px;
     position: relative;
+}
+
+.event-card-clickable {
+    cursor: pointer;
 }
 
 .event-header {
@@ -341,6 +359,15 @@
     margin-bottom: 15px;
 }
 
+.event-detail-wrapper {
+    max-width: 900px;
+}
+
+.event-detail-back-btn {
+    margin-bottom: 16px;
+}
+
+/* Modal Styles */
 .modal {
     display: flex;
     position: fixed;
@@ -409,6 +436,7 @@
     border-radius: 8px;
     font-size: 14px;
     font-family: inherit;
+    box-sizing: border-box;
 }
 
 .form-input:focus,
@@ -437,7 +465,8 @@
     background-color: #f8f9fa;
 }
 
-.image-upload-zone .material-icons {
+.image-upload-zone .material-icons,
+.image-upload-zone .material-symbols-outlined {
     font-size: 48px;
     color: #666;
     display: block;
@@ -483,4 +512,25 @@
 
 .btn-secondary:hover {
     background-color: #e0e0e0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .main-content {
+        margin-left: 16rem;
+        padding: calc(5rem + 20px) 20px 20px;
+    }
+
+    .events-container {
+        flex-direction: column;
+    }
+
+    .calendar-section {
+        width: 100%;
+        max-width: 450px;
+    }
+
+    .events-list-section {
+        max-width: 100%;
+    }
 }

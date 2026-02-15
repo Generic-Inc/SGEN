@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import NavBar from '../components/nav_bar.jsx';
 import SideBar from '../components/side_bar.jsx';
+import CreateEventsModal from '../components/create_events_modal.jsx';
 import Calendar from '../components/sub components/calendar.jsx';
 import EventCard from '../components/sub components/event_card.jsx';
 import EventModal from '../components/sub components/event_modal.jsx';
-import { fetchData } from '../static/api.js';
 import '../static/styles/events.css';
 
 export default function Events() {
     const { communityId } = useParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [events, setEvents] = useState([]);
     const [community, setCommunity] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -20,14 +21,24 @@ export default function Events() {
     useEffect(() => {
         const loadData = async () => {
             try {
-                const [communityData, eventsData] = await Promise.all([
-                    fetchData(`pages/community/${communityId}`),
-                    fetchData(`pages/community/${communityId}/events`)
+                const apiBase = `/api/community/${communityId}`;
+                const [communityResponse, eventsResponse] = await Promise.all([
+                    fetch(apiBase, { credentials: 'include' }),
+                    fetch(`${apiBase}/events`, { credentials: 'include' })
                 ]);
+
+                if (!communityResponse.ok || !eventsResponse.ok) {
+                    throw new Error(`Failed to load data (${communityResponse.status}/${eventsResponse.status})`);
+                }
+
+                const communityData = await communityResponse.json();
+                const eventsData = await eventsResponse.json();
 
                 setCommunity(communityData);
 
-                const formattedEvents = eventsData.events.map(event => {
+                const eventsList = Array.isArray(eventsData?.events) ? eventsData.events : [];
+
+                const formattedEvents = eventsList.map(event => {
                     const scheduledDate = new Date(event.scheduledDate);
                     const now = new Date();
                     const daysUntil = Math.ceil((scheduledDate - now) / (1000 * 60 * 60 * 24));
@@ -69,13 +80,13 @@ export default function Events() {
         if (!confirm('Are you sure you want to delete this event?')) return;
 
         try {
-            const response = await fetch(`/pages/community/${communityId}/events/${eventId}`, {
+            const response = await fetch(`/api/community/${communityId}/events/${eventId}`, {
                 method: 'DELETE',
                 credentials: 'include'
             });
 
             if (response.ok) {
-                setEvents(events.filter(e => e.eventId !== eventId));
+                setEvents(prevEvents => prevEvents.filter(e => e.eventId !== eventId));
             } else {
                 alert('Failed to delete event');
             }
@@ -87,23 +98,27 @@ export default function Events() {
 
     const handleToggleInterest = async (eventId) => {
         try {
-            const response = await fetch(`/pages/community/${communityId}/events/${eventId}/interest`, {
+            const response = await fetch(`/api/community/${communityId}/events/${eventId}/attendance`, {
                 method: 'PUT',
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({})
+                body: JSON.stringify({ status: 'interested' })
             });
+
+            if (!response.ok) {
+                throw new Error('Failed to toggle interest');
+            }
 
             const data = await response.json();
 
-            setEvents(events.map(event =>
+            setEvents(prevEvents => prevEvents.map(event =>
                 event.eventId === eventId
                     ? {
                         ...event,
-                        userIsInterested: data.isInterested,
-                        interestedCount: data.interestedCount
+                        userIsInterested: !event.userIsInterested,
+                        interestedCount: data.counts?.interested || 0
                       }
                     : event
             ));
@@ -115,8 +130,8 @@ export default function Events() {
     const handleModalSave = async (eventData) => {
         try {
             const url = editingEvent
-                ? `/pages/community/${communityId}/events/${editingEvent.eventId}`
-                : `/pages/community/${communityId}/events`;
+                ? `/api/community/${communityId}/events/${editingEvent.eventId}`
+                : `/api/community/${communityId}/events`;
 
             const method = editingEvent ? 'PATCH' : 'POST';
 
@@ -133,7 +148,7 @@ export default function Events() {
                 const savedEvent = await response.json();
 
                 if (editingEvent) {
-                    setEvents(events.map(e =>
+                    setEvents(prevEvents => prevEvents.map(e =>
                         e.eventId === savedEvent.eventId ? savedEvent : e
                     ));
                 } else {
@@ -141,7 +156,7 @@ export default function Events() {
                     const scheduledDate = new Date(savedEvent.scheduledDate);
                     const daysUntil = Math.ceil((scheduledDate - now) / (1000 * 60 * 60 * 24));
 
-                    setEvents([...events, { ...savedEvent, daysUntil: daysUntil > 0 ? daysUntil : 0 }]);
+                    setEvents(prevEvents => [...prevEvents, { ...savedEvent, daysUntil: daysUntil > 0 ? daysUntil : 0 }]);
                 }
 
                 setShowModal(false);
@@ -161,6 +176,20 @@ export default function Events() {
 
     const showAllEvents = () => {
         setSelectedDate(null);
+    };
+
+    const isCreateModalOpen = searchParams.get('createEvent') === '1';
+
+    const closeCreateModal = () => {
+        const nextParams = new URLSearchParams(searchParams);
+        nextParams.delete('createEvent');
+        setSearchParams(nextParams, { replace: true });
+    };
+
+    const appendCreatedEvent = (newEvent) => {
+        setEvents(prevEvents => [...prevEvents, newEvent].sort((a, b) =>
+            new Date(a.scheduledDate) - new Date(b.scheduledDate)
+        ));
     };
 
     if (isLoading) {
@@ -234,6 +263,13 @@ export default function Events() {
                     onSave={handleModalSave}
                 />
             )}
+
+            <CreateEventsModal
+                isOpen={isCreateModalOpen}
+                communityId={communityId}
+                onClose={closeCreateModal}
+                onCreatedEvent={appendCreatedEvent}
+            />
         </>
     );
 }

@@ -70,8 +70,8 @@ class Event(BaseClass):
                        u.language,
                        u.avatar_url,
                        u.bio,
-                       CASE WHEN ea.attendance_id IS NOT NULL THEN 1 ELSE 0 END as is_interested,
-                       (SELECT COUNT(*) FROM EventAttendance WHERE event_id = e.event_id) as interested_count
+                       CASE WHEN ea.attendance_id IS NOT NULL AND ea.status = 'interested' THEN 1 ELSE 0 END as is_interested,
+                       (SELECT COUNT(*) FROM EventAttendance WHERE event_id = e.event_id AND status = 'interested') as interested_count
                 FROM Events e
                 JOIN Profiles u ON e.creator_id = u.user_id
                 LEFT JOIN EventAttendance ea ON e.event_id = ea.event_id AND ea.user_id = ?
@@ -141,8 +141,8 @@ class Event(BaseClass):
                        u.language,
                        u.avatar_url,
                        u.bio,
-                       CASE WHEN ea.attendance_id IS NOT NULL THEN 1 ELSE 0 END as is_interested,
-                       (SELECT COUNT(*) FROM EventAttendance WHERE event_id = e.event_id) as interested_count
+                       CASE WHEN ea.attendance_id IS NOT NULL AND ea.status = 'interested' THEN 1 ELSE 0 END as is_interested,
+                       (SELECT COUNT(*) FROM EventAttendance WHERE event_id = e.event_id AND status = 'interested') as interested_count
                 FROM Events e
                 JOIN Profiles u ON e.creator_id = u.user_id
                 LEFT JOIN EventAttendance ea ON e.event_id = ea.event_id AND ea.user_id = ?
@@ -165,7 +165,8 @@ class Event(BaseClass):
                     event_description: Optional[str] = None,
                     scheduled_date: Optional[str] = None,
                     event_location: Optional[str] = None,
-                    image_url: Optional[str] = None):
+                    image_url: Optional[str] = None,
+                    active: Optional[int] = None):
         """Update event details"""
         updates = []
         params = []
@@ -195,6 +196,11 @@ class Event(BaseClass):
             params.append(image_url)
             self.image_url = image_url
         
+        if active is not None:
+            updates.append("active = ?")
+            params.append(active)
+            self.active = active
+        
         if updates:
             params.append(self.event_id)
             query = f"UPDATE Events SET {', '.join(updates)} WHERE event_id = ?"
@@ -203,15 +209,113 @@ class Event(BaseClass):
 
 class EventAttendance:
     @staticmethod
+    async def set_attendance(event_id: int, user_id: int, status: str = 'going') -> bool:
+        """
+        Set or update user's attendance status for an event
+        Returns True if successful
+        """
+        # Check if attendance record exists
+        check_query = "SELECT attendance_id, status FROM EventAttendance WHERE event_id = ? AND user_id = ?"
+        existing = await DATABASE.fetch_one(check_query, (event_id, user_id))
+
+        if existing:
+            existing_status = existing[1]
+            # If user already has this status, remove it (toggle off)
+            if existing_status == status:
+                await DATABASE.execute(
+                    "DELETE FROM EventAttendance WHERE attendance_id = ?",
+                    (existing[0],)
+                )
+                return False  # Toggled off
+            else:
+                # Update to new status
+                await DATABASE.execute(
+                    "UPDATE EventAttendance SET status = ? WHERE attendance_id = ?",
+                    (status, existing[0])
+                )
+                return True  # Updated
+        else:
+            # Create new record
+            await DATABASE.execute(
+                "INSERT INTO EventAttendance (event_id, user_id, status) VALUES (?, ?, ?)",
+                (event_id, user_id, status)
+            )
+            return True  # Created
+
+    @staticmethod
+    async def remove_attendance(event_id: int, user_id: int) -> bool:
+        """Remove user's attendance record"""
+        query = "DELETE FROM EventAttendance WHERE event_id = ? AND user_id = ?"
+        result = await DATABASE.execute(query, (event_id, user_id))
+        return result > 0
+
+    @staticmethod
+    async def get_user_status(event_id: int, user_id: int) -> Optional[str]:
+        """Get user's current attendance status for an event"""
+        query = "SELECT status FROM EventAttendance WHERE event_id = ? AND user_id = ?"
+        result = await DATABASE.fetch_one(query, (event_id, user_id))
+        return result[0] if result else None
+
+    @staticmethod
+    async def get_attendance_counts(event_id: int) -> dict:
+        """Get count of users by attendance status"""
+        query = """
+                SELECT status, COUNT(*) 
+                FROM EventAttendance 
+                WHERE event_id = ? 
+                GROUP BY status
+                """
+        rows = await DATABASE.fetch_all(query, (event_id,))
+        
+        counts = {
+            "going": 0,
+            "interested": 0,
+            "not_going": 0
+        }
+        
+        for row in rows:
+            status, count = row
+            if status in counts:
+                counts[status] = count
+        
+        return counts
+
+    @staticmethod
+    async def get_attendees(event_id: int, status: Optional[str] = None) -> list[User]:
+        """Get users attending an event, optionally filtered by status"""
+        if status:
+            query = """
+                    SELECT u.user_id, u.username, u.display_name, u._email, 
+                           u.language, u.avatar_url, u.bio
+                    FROM EventAttendance ea
+                    JOIN Profiles u ON ea.user_id = u.user_id
+                    WHERE ea.event_id = ? AND ea.status = ?
+                    ORDER BY ea.created DESC
+                    """
+            rows = await DATABASE.fetch_all(query, (event_id, status))
+        else:
+            query = """
+                    SELECT u.user_id, u.username, u.display_name, u._email, 
+                           u.language, u.avatar_url, u.bio
+                    FROM EventAttendance ea
+                    JOIN Profiles u ON ea.user_id = u.user_id
+                    WHERE ea.event_id = ?
+                    ORDER BY ea.created DESC
+                    """
+            rows = await DATABASE.fetch_all(query, (event_id,))
+        
+        return [User(row[0], row[1], row[2], row[3], row[4], row[5], row[6]) for row in rows]
+
+    @staticmethod
     async def toggle_interest(event_id: int, user_id: int) -> bool:
         """
         Toggle user's interest in an event (like/unlike)
         Returns True if now interested, False if no longer interested
         """
-        check_query = "SELECT attendance_id FROM EventAttendance WHERE event_id = ? AND user_id = ?"
+        check_query = "SELECT attendance_id, status FROM EventAttendance WHERE event_id = ? AND user_id = ?"
         existing = await DATABASE.fetch_one(check_query, (event_id, user_id))
 
-        if existing:
+        if existing and existing[1] == 'interested':
             # User is already interested - remove interest
             await DATABASE.execute(
                 "DELETE FROM EventAttendance WHERE attendance_id = ?",
@@ -220,36 +324,31 @@ class EventAttendance:
             return False
         else:
             # User is not interested - add interest
-            await DATABASE.execute(
-                "INSERT INTO EventAttendance (event_id, user_id) VALUES (?, ?)",
-                (event_id, user_id)
-            )
+            if existing:
+                await DATABASE.execute(
+                    "UPDATE EventAttendance SET status = 'interested' WHERE attendance_id = ?",
+                    (existing[0],)
+                )
+            else:
+                await DATABASE.execute(
+                    "INSERT INTO EventAttendance (event_id, user_id, status) VALUES (?, ?, 'interested')",
+                    (event_id, user_id)
+                )
             return True
 
     @staticmethod
     async def get_interested_users(event_id: int) -> list[User]:
         """Get all users interested in an event"""
-        query = """
-                SELECT u.user_id, u.username, u.display_name, u._email, 
-                       u.language, u.avatar_url, u.bio
-                FROM EventAttendance ea
-                JOIN Profiles u ON ea.user_id = u.user_id
-                WHERE ea.event_id = ?
-                ORDER BY ea.created DESC
-                """
-        rows = await DATABASE.fetch_all(query, (event_id,))
-        return [User(row[0], row[1], row[2], row[3], row[4], row[5], row[6]) for row in rows]
+        return await EventAttendance.get_attendees(event_id, 'interested')
 
     @staticmethod
     async def get_interested_count(event_id: int) -> int:
         """Get count of interested users"""
-        query = "SELECT COUNT(*) FROM EventAttendance WHERE event_id = ?"
-        result = await DATABASE.fetch_one(query, (event_id,))
-        return result[0] if result else 0
+        counts = await EventAttendance.get_attendance_counts(event_id)
+        return counts.get('interested', 0)
 
     @staticmethod
     async def is_user_interested(event_id: int, user_id: int) -> bool:
         """Check if a user is interested in an event"""
-        query = "SELECT attendance_id FROM EventAttendance WHERE event_id = ? AND user_id = ?"
-        result = await DATABASE.fetch_one(query, (event_id, user_id))
-        return result is not None
+        status = await EventAttendance.get_user_status(event_id, user_id)
+        return status == 'interested'

@@ -77,14 +77,14 @@ const Calendar = ({ events = [], onDateSelect }) => {
           className="calendar-nav-btn"
           onClick={previousMonth}
           aria-label="Previous month">
-          <span className="material-icons">chevron_left</span>
+          <span className="material-symbols-outlined">chevron_left</span>
         </button>
         <h3 className="calendar-month">{monthName}</h3>
         <button
           className="calendar-nav-btn"
           onClick={nextMonth}
           aria-label="Next month">
-          <span className="material-icons">chevron_right</span>
+          <span className="material-symbols-outlined">chevron_right</span>
         </button>
       </div>
 

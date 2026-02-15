@@ -69,7 +69,7 @@ export default function EventModal({ event, onClose, onSave }) {
                             className="image-upload-zone"
                             onClick={() => document.getElementById('eventImageInput').click()}
                         >
-                            <span className="material-icons">add_photo_alternate</span>
+                            <span className="material-symbols-outlined">add_photo_alternate</span>
                             <span>Add an image</span>
                             <input
                                 type="file"

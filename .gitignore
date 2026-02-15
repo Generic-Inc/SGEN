@@ -2,6 +2,7 @@
 .vsc
 *.db
 ignore/
+.vite/
 
 
 # Byte-compiled / optimized / DLL files

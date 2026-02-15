@@ -1,4 +1,5 @@
 import {useEffect, useRef, useState} from "react";
+import {DropdownElement, DropdownWrapper} from "./dropdowns.jsx";
 
 export function CreateButton() {
     const [isOpen, setIsOpen] = useState(false);
@@ -23,25 +24,15 @@ export function CreateButton() {
                 Create
             </button>
 
-            <ul className={`dropdown-list ${isOpen ? 'shown' : ''}`} id="create-overlay">
-                <DropdownElement icon="group" text="New Group" link="/create/group"/>
-                <DropdownElement icon="event" text="New Event" link="/create/event"/>
+            <DropdownWrapper id="create-dropdown" isOpen={isOpen}>
                 <DropdownElement icon="article" text="New Post" link="/create/post"/>
-            </ul>
+                <DropdownElement icon="event" text="New Event" link="/create/event"/>
+                <DropdownElement icon="group" text="New Community" link="/create/community"/>
+            </DropdownWrapper>
         </div>
     );
 }
 
-export function DropdownElement({ icon, text, link }) {
-    return(
-        <li className="dropdown-list-element">
-            <a href={link}>
-                <span className="material-symbols-outlined">{icon}</span>
-                <span className="text">{text}</span>
-            </a>
-        </li>
-    )
-}
 
 export function CreateOverlay() {
     function onClick(e) {
@@ -75,4 +66,3 @@ export function ListElement({ icon, text, link }) {
         </li>
     )
 }
-

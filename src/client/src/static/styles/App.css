@@ -6,3 +6,159 @@
     height: 100%;
     width: 100%;
 }
+
+.community-main-container {
+    display: flex;
+    width: 60%;
+    flex-direction: column;
+}
+
+.community-info h2 {
+    width: fit-content;
+    font-size: 2rem;
+}
+
+.community-info h3 {
+    width: fit-content;
+    font-size: 1rem;
+    color: gray;
+}
+
+.community-info {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 1rem;
+    justify-content: center;
+    align-items: center;
+}
+
+.community-info img {
+    width: 5rem;
+    height: 5rem;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 1rem;
+    border: 1px solid black;
+}
+
+hr {
+    width: 100%
+}
+
+.online-offline {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+    gap: 5rem;
+}
+
+.community-side-box {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    background: #ffffff;
+}
+
+/* community_info.jsx extracted inline styles */
+.community-page-row {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.community-header-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.community-side-section {
+    margin-bottom: 12px;
+}
+
+.community-side-label {
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0.8;
+}
+
+.community-side-label--spaced {
+    margin-bottom: 6px;
+}
+
+.community-side-description {
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.community-side-stats-row {
+    display: flex;
+    gap: 12px;
+}
+
+.community-side-stat {
+    flex: 1;
+}
+
+.community-side-stat-value {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.community-joinleave-container {
+    margin-top: 12px;
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.community-joinleave {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    transform: translateX(-80%);
+}
+
+.community-joinleave-button {
+    border: 1px solid #111827;
+    background: #111827;
+    color: #ffffff;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: 0;
+}
+
+.community-joinleave-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.community-joinleave-button.is-member {
+    background: #ffffff;
+    color: #111827;
+}
+
+.community-joinleave-error {
+    font-size: 12px;
+    color: #b91c1c;
+}
+
+.community-second-row {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+    transform: translateX(-10%) translateY(-100%);
+    margin-bottom: 0.5rem;
+}
+
+.community-joinleave-row {
+    margin-bottom: 1rem;
+}
+
+.community-side-container {
+
+}

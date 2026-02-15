@@ -1,4 +1,4 @@
-const root_url = "http://localhost:5000";
+const root_url = window.location.href.split('/')[0];
 
 async function parseResponseBody(response) {
     const contentType = response.headers.get("content-type") || "";
@@ -53,6 +53,32 @@ export async function postData(route, data) {
         const err = new Error(message);
         err.status = response.status;
         err.payload = payload; // <- access this in catch
+        throw err;
+    }
+
+    return payload;
+}
+
+export async function deleteData(route, data = null) {
+    const response = await fetch(`${root_url}/api/${route}`, {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: data === null ? null : JSON.stringify(data),
+        credentials: "include"
+    });
+
+    const payload = await parseResponseBody(response);
+    if (!response.ok) {
+        const message =
+            (payload && typeof payload === "object" && (payload.error || payload.message)) ||
+            (typeof payload === "string" && payload) ||
+            `${response.status} ${response.statusText}`;
+
+        const err = new Error(message);
+        err.status = response.status;
+        err.payload = payload;
         throw err;
     }
 

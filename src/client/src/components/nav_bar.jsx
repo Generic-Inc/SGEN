@@ -28,7 +28,6 @@ export default function NavBar() {
                         <CreateButton />
                         <Profile className="nav-avatar" avatarUrl={user.avatarUrl} hrefUrl={`/user/${user?.userId}`}/>
                     </div>
-
                 </nav>
             < />
         )

@@ -1,0 +1,48 @@
+body, html {
+    overflow-x: hidden;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+main {
+    height: auto !important;
+    min-height: 100vh;
+
+    padding-top: 6rem !important;
+    padding-left: 14rem !important;
+
+    display: flex;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.nav-bar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.side-bar {
+    position: fixed !important;
+    top: 5rem !important;
+    left: 0;
+    height: 100vh !important;
+    z-index: 900;
+}
+
+.post-card {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto 20px auto;
+    display: block;
+}
+
+.feed-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}

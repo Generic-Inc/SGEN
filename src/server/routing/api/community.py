@@ -137,8 +137,6 @@ async def get_community_members(community_id: int):
 
 
     if request.method == "GET":
-        if not community_member:
-            return {"error": "Unauthorized"}, 403
 
         members = await community_get.get_members()
         return {"members": [i.public_json for i in members]}
@@ -157,14 +155,15 @@ async def get_community_members(community_id: int):
             members = await community_get.get_members()
             return {"members": [i.public_json for i in members]}
         except Exception as e:
-            return {"error": e}, 500
+            return {"error": str(e)}, 500
 
     elif request.method == "DELETE":
         try:
-            members = await community_get.delete_member(user.user_id)
+            await community_get.delete_member(user.user_id)
+            members = await community_get.get_members()
             return {"members": [i.public_json for i in members]}
         except Exception as e:
-            return {"error": e}, 500
+            return {"error": str(e)}, 500
 
 @community_blueprint.route("/<int:community_id>/members/<int:user_id>", methods=["GET", "PATCH", "DELETE"])
 async def get_community_member(community_id: int, user_id: int):

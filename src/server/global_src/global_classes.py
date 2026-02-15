@@ -3,7 +3,7 @@ import asyncio
 import random
 from datetime import datetime
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Union, Literal
+from typing import Any, Optional, Union
 from hashlib import sha256
 from typing import TYPE_CHECKING
 
@@ -96,6 +96,7 @@ SELECT
     created
 FROM Profiles
     WHERE user_id=?
+    AND active=1
 """, (user_id,))
         if not profile: return None
         username, display_name, email, language, avatar_url, bio, created = profile
@@ -140,6 +141,7 @@ SELECT
     created
 FROM Profiles
     WHERE username=?
+    AND active=1
 """, (username,))
         if not profile: return None
         user_id, display_name, email, language, avatar_url, bio, created = profile
@@ -168,6 +170,7 @@ SELECT
     created
 FROM Profiles
     WHERE _email=?
+    AND active=1
 """, (email,))
         if not profile: return None
         user_id, username, display_name, language, avatar_url, bio, created = profile
@@ -188,6 +191,7 @@ FROM Profiles
             community_id
         FROM Memberships
             WHERE member_id=?
+            AND active=1
         LIMIT ?
         """, (self.user_id, limit))
         if not community_fetch:
@@ -202,6 +206,7 @@ FROM Profiles
             role
         FROM Memberships
             WHERE member_id=? AND community_id=?
+            AND active=1
         """, (self.user_id, community_id))
         if not role_fetch:
             return None
@@ -253,6 +258,7 @@ FROM Profiles
             community_id
         FROM Communities
             WHERE owner_id=?
+            AND active=1
         """, (self.user_id,))
         if not community_fetch:
             return []
@@ -382,20 +388,21 @@ FROM Communities
 
     @classmethod
     async def create_community(cls,
-                               community_name: str,
-                               display_name: str,
-                               owner: User,
-                               description: str = None,
-                               icon_url: str = None,
-                               post_guidelines: str = None,
-                               messages_guidelines: str = None,
-                               offline_text: str = None,
-                               online_text: str = None) -> Union["Community", bool]:
+                              community_name: str,
+                              display_name: str,
+                              owner: User,
+                              description: str = None,
+                              icon_url: str = None,
+                              post_guidelines: str = None,
+                              messages_guidelines: str = None,
+                              offline_text: str = None,
+                              online_text: str = None) -> Union["Community", bool]:
         community_name = slugify(community_name)
 
         check = await DATABASE.fetch_one("""SELECT community_id
                                             FROM Communities
-                                            WHERE community_name = ?""", (community_name,))
+                                            WHERE community_name = ?
+                                            AND active=1""", (community_name,))
         if check:
             print(f"Community creation failed: '{community_name}' already exists.")
             return await cls.get_community(check[0])
@@ -416,7 +423,8 @@ FROM Communities
 
         community_id_row = await DATABASE.fetch_one("""SELECT community_id
                                                        FROM Communities
-                                                       WHERE community_name = ?""", (community_name,))
+                                                       WHERE community_name = ?
+                                                       AND active=1""", (community_name,))
 
         if not community_id_row:
             print(f"Community creation failed: Database insert failed for '{community_name}'")
@@ -542,7 +550,7 @@ class CommunityMember(BaseClass):
             role,
             created
         FROM Memberships
-            WHERE member_id=? AND community_id=?
+            WHERE member_id=? AND community_id=? AND active=1
         """, (user_id, community_id))
         user_fetch = User.get_user(user_id)
         role_fetch, user_fetch = await asyncio.gather(role_fetch, user_fetch)

@@ -18,7 +18,9 @@ import socket_events  # Import the events file so the handlers are registered
 app = Flask(__name__,
             template_folder=TEMPLATES_PATH,
             static_folder=STATIC_PATH)
-CORS(app, supports_credentials=True, )
+CORS(app,
+     origins=["https://nurturing-peace-production.up.railway.app"],
+     supports_credentials=True)
 
 app.json.sort_keys = False
 app.register_blueprint(api, url_prefix='/api')

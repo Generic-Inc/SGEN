@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from "react";
 import "../static/styles/user_styles.css"
+import FeedRouter from "./feed_router.jsx";
 
 export default function UserComponent() {
     const [user, setUser] = useState({ name: "Loading..." });
@@ -41,6 +42,10 @@ export default function UserComponent() {
         fetchUser();
     }, [userId]);
 
+    if (!userId) {
+        return <div style={{textAlign: 'center', padding: '20px'}}>User ID not found</div>;
+    }
+
     return (
         <>
             <div style={{display: "flex", flexDirection: "row", width: "100%"}}>
@@ -52,10 +57,9 @@ export default function UserComponent() {
                 </div>
             </div>
 
-
-
+            <FeedRouter />
         </>
-        )
+    )
 
 }
 
@@ -63,7 +67,7 @@ function MainCard({user}) {
  return (
      <div className={"user-main-card"}>
          <div className={"user-section"}>
-             <img src={user.avatarUrl} className={"user-avatar"} />
+             <img src={user.avatarUrl || "/vite.svg"} className={"user-avatar"} alt="User avatar" />
              <h1 className={"user-displayName"}>{user.displayName}</h1>
              <h2 className={"user-userName"}>{user.username} - {user.language}</h2>
          </div>
@@ -93,7 +97,7 @@ function UserCommunities({communities}) {
 function CommunityCard({community}) {
     return (
         <div className={"user-community-card"}>
-            <img src={community.iconUrl} className={"user-community-icon"} />
+            <img src={community.iconUrl || "/vite.svg"} className={"user-community-icon"} alt="Community icon" />
             <div className={"user-community-info"}>
                 <h3 className={"user-community-name"}>{community.displayName}</h3>
             </div>

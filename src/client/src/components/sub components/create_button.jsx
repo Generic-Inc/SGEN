@@ -25,9 +25,9 @@ export function CreateButton() {
             </button>
 
             <DropdownWrapper id="create-dropdown" isOpen={isOpen}>
-                <DropdownElement icon="group" text="New Group" link="/create/group"/>
-                <DropdownElement icon="event" text="New Event" link="/create/event"/>
                 <DropdownElement icon="article" text="New Post" link="/create/post"/>
+                <DropdownElement icon="event" text="New Event" link="/create/event"/>
+                <DropdownElement icon="group" text="New Community" link="/create/community"/>
             </DropdownWrapper>
         </div>
     );

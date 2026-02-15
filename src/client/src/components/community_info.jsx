@@ -29,18 +29,17 @@ export default function CommunityInfo() {
                     <div className={"community-info"}>
                         <div className={"community-header-row"}>
                             <img src={communityInfo.iconUrl} alt={communityInfo.displayName ? `${communityInfo.displayName} icon` : "Community icon"} />
-                            <h2>{communityInfo.displayName}</h2>
-                        </div>
-                        <div style={{display: "flex", flexDirection: "column"}}>
-                            <div className={"community-second-row"}>
-                                <h3>{communityInfo.communityName}</h3>
+                            <div style={{display: "flex", flexDirection: "column"}}>
+                                <h2>{communityInfo.displayName}</h2>
+                                <div style={{marginLeft: "0.5rem"}}>
+                                    <h3>{communityInfo.communityName}</h3>
+                                    <JoinLeaveCommunityButton />
+                                </div>
                             </div>
-                            <div className={"community-joinleave-row"}>
-                                <JoinLeaveCommunityButton />
-                            </div>
+
                         </div>
 
-                        <div style={{translateX: "10%"}}>
+                        <div style={{translateX: "10%", marginTop: "1rem"}}>
                             <FeedRouter />
                         </div>
 

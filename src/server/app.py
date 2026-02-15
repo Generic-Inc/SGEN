@@ -18,15 +18,18 @@ import socket_events  # Import the events file so the handlers are registered
 app = Flask(__name__,
             template_folder=TEMPLATES_PATH,
             static_folder=STATIC_PATH)
-CORS(app,
-     origins=["https://nurturing-peace-production.up.railway.app"],
-     supports_credentials=True)
+allowed_origins = [
+    "http://localhost:5173",
+    "https://nurturing-peace-production.up.railway.app"
+]
 
-app.json.sort_keys = False
-app.register_blueprint(api, url_prefix='/api')
+CORS(app, origins=allowed_origins, supports_credentials=True)
 
-# --- 2. INITIALIZE SOCKETIO WITH APP ---
-socketio.init_app(app)
+socketio.init_app(
+    app,
+    cors_allowed_origins=allowed_origins
+)
+
 
 
 @app.before_request

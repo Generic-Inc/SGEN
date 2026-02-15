@@ -1,6 +1,8 @@
 import {useEffect, useState} from "react";
 import {fetchData} from "../static/api.js";
 import {addListeners, isInCommunity, openAsideBar} from "../static/aside-bar.js";
+import Error404 from "../pages/404.jsx";
+import "../static/styles/nav.css"
 
 export default function SideBar() {
     const [community, setCommunity] = useState(null);
@@ -30,6 +32,8 @@ export default function SideBar() {
                 const data = await fetchData(`community/${communityId}`);
                 setCommunity(data);
             } catch (error) {
+                const errorMessage = `Community with ID ${communityId} not found`;
+                return <Error404 error={errorMessage} />
                 console.error("Error fetching community data:", error);
             }
             setIsLoading(false);
@@ -48,7 +52,7 @@ export default function SideBar() {
                         </li>
                         <li className="aside-category open" id="communities-test">
                             <h3 className="side-bar-title category-title">Recommended Communities</h3>
-                            <CommunityList />
+                            <CommunityList apiPath={"user/communities/recommendations"}/>
                         </li>
                     </ul>
                 </nav>
@@ -85,7 +89,7 @@ export default function SideBar() {
                         </li>
                         <li className="aside-category" id="communities-test">
                             <h3 className="side-bar-title category-title">Recommended Communities</h3>
-                            <CommunityList />
+                            <CommunityList apiPath={"user/communities/recommendations"}/>
                         </li>
                     </ul>
                 </nav>
@@ -105,7 +109,7 @@ function CommunityList({apiPath = "user/communities"}) {
                 setCommunities(await fetchData(apiPath));
             } catch (error) {
                 console.error("Error fetching communities:", error);
-                return <p>Error Fetching Communities</p>
+                return <Error404 error="Community not found" />
             } finally {
                 setLoading(false);
             }
@@ -128,22 +132,21 @@ function CommunityList({apiPath = "user/communities"}) {
 
 function CommunityItem({community}) {
     return (
-        <li>
-            <a href={`/community/${community.communityId}`}>
+        <>
+            <li>
+
                 <div className="side-bar-item">
-                    <img
-                        src={community.iconUrl || "https://placehold.co/40?text=C"}
-                        alt="Icon"
-                        className="side-bar-community-icon"
-                        onError={(e) => {e.target.src = "https://placehold.co/40?text=?"}}
-                    />
+                    <a href={`/community/${community.communityId}`}>
+                    <img src={community.iconUrl} alt="Community Icon" className="side-bar-community-icon"/>
                     <div className="side-bar-community-text">
                         <h4 className="side-bar-community-title">{community.displayName}</h4>
                         <span className="side-bar-community-subtitle">{community.communityName}</span>
                     </div>
+                    </a>
+
                 </div>
-            </a>
-        </li>
+            </li>
+        </>
     )
 }
 

@@ -44,7 +44,7 @@ export default function MemberCard({ member }) {
 
     return (
         <>
-            <a href={`/users/${user.userId}`}>
+            <a href={`/user/${user.userId}`}>
                 <div className="member-card"
                      onMouseEnter={handleEnter}
                      onMouseMove={handleMouseMove}

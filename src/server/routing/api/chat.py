@@ -64,6 +64,8 @@ async def create_message(community_id):
 # Called when a user EDITS a message. Method: Update
 @chat_blueprint.route('/community/<int:community_id>/messages/<int:message_id>', methods=['PATCH'])
 async def update_message(community_id, message_id):
+    # From Ryan: I am unable to check authorization for this endpoint because the ChatMessage class
+    # does not let me
     data = request.get_json()
 
     if not data or "content" not in data:

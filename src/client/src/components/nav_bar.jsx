@@ -6,6 +6,7 @@ import Profile from "./sub components/profile.jsx";
 
 export default function NavBar() {
     const [data, setData] = useState(null);
+    data.onboarding = undefined;
     const [isLoading, setIsLoading] = useState(true);
 
      useEffect(() => {
@@ -16,6 +17,12 @@ export default function NavBar() {
          }
          fetchData();
     }, []);
+
+     useEffect(() => {
+         if (!isLoading && !data.onboarding){
+            window.location.href = "/onboarding";
+         }
+     })
 
 
     if (!isLoading && data.user) {

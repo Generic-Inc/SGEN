@@ -4,6 +4,7 @@ import traceback
 from global_src.db import DATABASE
 from global_src.global_classes import User
 from modules.authentications.utils import insert_email
+from modules.onboarding.Onboarding import Onboarding
 from . import auth_blueprint
 from flask import request, make_response, redirect, url_for
 
@@ -150,4 +151,8 @@ async def check_status():
     user = await User.get_user_by_token(token)
     if not user:
         return {"authenticated": False}, 200
-    return {"authenticated": True, "user": user.public_json}, 200
+
+    onboarding = await Onboarding.get_onboarding(user.user_id)
+    if not onboarding:
+        return {"authenticated": True, "onboarding": False}, 200
+    return {"authenticated": True, "onboarding": True, "user": user.public_json}, 200

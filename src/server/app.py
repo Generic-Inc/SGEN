@@ -19,7 +19,6 @@ CORS(app, supports_credentials=True,)
 
 app.json.sort_keys = False
 app.register_blueprint(api, url_prefix='/api')
-app.register_blueprint(pages_blueprint)
 
 @app.before_request
 async def startup():
@@ -28,9 +27,6 @@ async def startup():
 
 def main():
     asyncio.run(startup())
-@app.route('/')
-async def index():
-    return render_template('index.html')
 
 if __name__ == '__main__':
     thread = threading.Thread(target=main, daemon=True)

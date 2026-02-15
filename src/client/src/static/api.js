@@ -59,6 +59,32 @@ export async function postData(route, data) {
     return payload;
 }
 
+export async function deleteData(route, data = null) {
+    const response = await fetch(`${root_url}/api/${route}`, {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: data === null ? null : JSON.stringify(data),
+        credentials: "include"
+    });
+
+    const payload = await parseResponseBody(response);
+    if (!response.ok) {
+        const message =
+            (payload && typeof payload === "object" && (payload.error || payload.message)) ||
+            (typeof payload === "string" && payload) ||
+            `${response.status} ${response.statusText}`;
+
+        const err = new Error(message);
+        err.status = response.status;
+        err.payload = payload;
+        throw err;
+    }
+
+    return payload;
+}
+
 export async function checkStatus() {
     const response = await fetch(`${root_url}/api/auth/check-status`, {
         credentials: "include",
@@ -80,8 +106,15 @@ export async function checkStatus() {
         throw new Error("Invalid response from /api/auth/check-status");
     }
 
-    if (!parsed.authenticated) {
+    const currentPath = window.location.pathname;
+    const isLoginRoute = currentPath === "/login";
+    const isOnboardingRoute = currentPath === "/onboarding";
+
+    if (!parsed.authenticated && !isLoginRoute) {
         window.location.href = "/login";
+    }
+    if (!parsed.onboarding && !isOnboardingRoute) {
+        window.location.href = "/onboarding";
     }
 
     return parsed;

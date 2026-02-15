@@ -83,6 +83,19 @@ async def get_user_posts(user_id: int):
     user = await User.get_user_by_token(authorization)
     if not user:
         return {"error": "Unauthorized"}, 401
+    target_user = await User.get_user(user_id)
+    if not target_user:
+         return {"error": "User not found"}, 404
+    try:
+        page = int(request.args.get('page', 1))
+    except:
+        page = 1
+    limit = 10
+    offset = (page - 1) * limit
+
+    posts = await Post.get_by_author(user_id, viewer_id=user.user_id, limit=limit, offset=offset)
+    return {"posts": [p.public_json for p in posts]}
+
 @user_blueprint.route("/onboarding", methods=["POST"])
 async def onboarding():
     """Onboarding route to get initial user data after signup/login"""
@@ -127,15 +140,3 @@ async def recommend_communities():
         return {"communities": []}
 
 
-    target_user = await User.get_user(user_id)
-    if not target_user:
-         return {"error": "User not found"}, 404
-    try:
-        page = int(request.args.get('page', 1))
-    except:
-        page = 1
-    limit = 10
-    offset = (page - 1) * limit
-
-    posts = await Post.get_by_author(user_id, viewer_id=user.user_id, limit=limit, offset=offset)
-    return {"posts": [p.public_json for p in posts]}

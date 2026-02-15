@@ -76,7 +76,7 @@ body,
 
 .input-box > span {
     position: absolute;
-    transform: scale(1.2) translateX(690%) translateY(50%) ;
+    transform: scale(1.2) translateX(10.5rem) translateY(0.75rem);
     color: gray;
     pointer-events: none;
 

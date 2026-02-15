@@ -12,6 +12,8 @@ import EventDetail from "./pages/event-detail.jsx";
 import Onboarding from "./pages/onboarding.jsx";
 import VerifyEmail from "./pages/verify-email.jsx";
 import CreatePostPage from "./pages/create_post.jsx";
+import ChatPageElder from "./pages/Chat_elder.jsx";
+import ChatPageYouth from "./pages/Chat_youth.jsx";
 import CreateEventEntryPage from "./pages/create-event.jsx";
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -22,6 +24,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/community/:communityId/*" element={<App />} />
+                <Route path="/community/:communityId/messages" element={<ChatPageElder />} />
+                <Route path="/community/:communityId/messages/Youth" element={<ChatPageYouth />} />
+                <Route path="/community/:communityName/*" element={<App />} />
                 <Route path="/community/:communityId/members" element={<MembersPage />} />
                 <Route path="/user/:userId" element={<User />} />
                 <Route path="/onboarding" element={<Onboarding />} />

@@ -6,7 +6,7 @@ from . import community_blueprint
 
 @community_blueprint.route("/<int:community_id>/events", methods=["GET", "POST"])
 async def community_events(community_id: int):
-    """Get all events for a community or create a new event"""
+    #Get all events for a community or create a new event
 
     authorization = request.cookies.get('token')
     if not authorization:
@@ -72,10 +72,10 @@ async def single_event(community_id: int, event_id: int):
 
         if not community_member: # Potentially need to be member to view
             return {"error": "You must first join this community to view event details"}, 403
-        if community_member.requires_permissions(
-            Permissions.MANAGE_EVENTS
-        ):
-            return {"error": "Forbidden"}, 403
+
+        perms_check = community_member.requires_permissions(Permissions.MANAGE_EVENTS)
+        if not perms_check[0]:
+            return {"error": perms_check[1]}, 403
         
         await event.update(
             event_name=data.get("eventName"),
@@ -87,10 +87,12 @@ async def single_event(community_id: int, event_id: int):
         return event.public_json
 
     elif request.method == "DELETE":
-        if community_member.requires_permissions(
-            Permissions.MANAGE_EVENTS
-        ):
-            return {"error": "Forbidden"}, 403
+        if not community_member:
+            return {"error": "You must first join this community to delete events"}, 403
+
+        perms_check = community_member.requires_permissions(Permissions.MANAGE_EVENTS)
+        if not perms_check[0]:
+            return {"error": perms_check[1]}, 403
 
         await event.update(active=0)
         return {"message": "Event deleted successfully"}, 200
@@ -146,10 +148,12 @@ async def event_attendance(community_id: int, event_id: int):
     elif request.method == "DELETE":
         data = request.get_json() or {}
         user_id = data.get("userId", user.user_id)
-        if not community_member.requires_permissions(
-            Permissions.MANAGE_EVENTS
-        ) and user_id != user.user_id:
+
+        perms_check = community_member.requires_permissions(Permissions.MANAGE_EVENTS)
+        can_manage_events = perms_check[0]
+        if not can_manage_events and user_id != user.user_id:
             return {"error": "Forbidden"}, 403
+
         removed = await EventAttendance.remove_attendance(event_id, user_id)
         
         if removed:

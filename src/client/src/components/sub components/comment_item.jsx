@@ -1,6 +1,21 @@
 import { useState } from "react";
 import { postData } from "../../static/api";
 
+// Helper function (Same as PostCard)
+function formatTimeAgo(dateString) {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+
+    if (diffInSeconds < 0) return "Just now"; // Handle slight clock skews
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d`;
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
 export default function CommentItem({ comment, currentUser, communityId, postId, onDelete, onUpdate }) {
     const cAuthor = comment.author || {};
     const cName = cAuthor.displayName || cAuthor.display_name || cAuthor.username || "User";
@@ -10,7 +25,7 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
     // Permissions
     const currentUserId = currentUser?.userId || currentUser?.user_id;
     const commentAuthorId = cAuthor.userId || cAuthor.user_id;
-    const canManageComment = currentUserId && commentAuthorId && (currentUserId == commentAuthorId);
+    const canManageComment = currentUserId && commentAuthorId && (String(currentUserId) === String(commentAuthorId));
 
     // State
     const [isEditing, setIsEditing] = useState(false);
@@ -22,8 +37,13 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
     const [cLikeCount, setCLikeCount] = useState(comment.likeCount || comment.like_count || 0);
     const [cIsLiked, setCIsLiked] = useState(comment.isLiked || comment.is_liked || false);
 
-    // Edited Check
-    const isEdited = comment.modified && comment.created && (comment.modified !== comment.created);
+    // Time & Edited Logic
+    const displayCreated = formatTimeAgo(comment.created);
+    const displayEdited = formatTimeAgo(comment.modified);
+
+    // Check if edited (with 1-second buffer to ignore creation time differences)
+    const isEdited = comment.modified && comment.created &&
+                     (new Date(comment.modified).getTime() > new Date(comment.created).getTime() + 1000);
 
     // Handlers
     const handleSave = async () => {
@@ -39,6 +59,7 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
             if (!response.ok) throw new Error("Failed");
 
             const updatedComment = await response.json();
+            // Update parent state so the change reflects immediately
             onUpdate(cId, updatedComment.content, updatedComment.modified);
             setIsEditing(false);
         } catch (e) {
@@ -70,7 +91,6 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
         try {
             await postData(`community/${communityId}/posts/${postId}/comments/${cId}/likes`, {});
         } catch (error) {
-            // Revert on error
             setCIsLiked(!newLikedState);
             setCLikeCount(prev => newLikedState ? prev - 1 : prev + 1);
         }
@@ -78,7 +98,7 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
 
     return (
         <div style={{ display: "flex", gap: "8px" }}>
-            {/* LINK TO PROFILE */}
+            {/* AVATAR */}
             <a href={`/user/${commentAuthorId}`} style={{ textDecoration: "none" }}>
                 <img src={cAvatar} style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit:"cover", marginTop: "4px" }} />
             </a>
@@ -100,15 +120,26 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
                     onMouseLeave={() => setIsMenuOpen(false)}
                 >
 
-                    {/* Header */}
-                    <div style={{ fontWeight: "600", fontSize: "13px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <a href={`/user/${commentAuthorId}`} style={{ textDecoration: "none", color: "inherit" }}>
+                    {/* Header: Name + Time + Edited Time */}
+                    <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", marginBottom: "2px" }}>
+                        <a href={`/user/${commentAuthorId}`} style={{ textDecoration: "none", color: "inherit", fontWeight: "600", fontSize: "13px" }}>
                             {cName}
                         </a>
-                        {isEdited && <span style={{marginLeft: "5px", fontWeight: "normal", fontStyle: "italic", fontSize: "11px", color: "#666"}}>• Edited</span>}
+
+                        {/* Created Time */}
+                        <span style={{ fontSize: "11px", color: "#65676B", marginLeft: "6px" }}>
+                            {displayCreated}
+                        </span>
+
+                        {/* Edited Time (e.g., "• Edited 5m ago") */}
+                        {isEdited && (
+                            <span style={{ marginLeft: "5px", fontStyle: "italic", fontSize: "11px", color: "#666" }}>
+                                • Edited {displayEdited}
+                            </span>
+                        )}
                     </div>
 
-                    {/* Content: View vs Edit Mode */}
+                    {/* Content Area */}
                     {isEditing ? (
                         <div style={{ marginTop: "5px" }}>
                             <textarea
@@ -125,10 +156,10 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
                             </div>
                         </div>
                     ) : (
-                        <div style={{ marginTop: "2px" }}>{comment.content}</div>
+                        <div style={{ marginTop: "0" }}>{comment.content}</div>
                     )}
 
-                    {/* INTERNAL MENU */}
+                    {/* MENU (Edit/Delete) */}
                     {canManageComment && !isEditing && (
                         <div style={{ position: "absolute", top: "8px", right: "8px" }}>
                             <button

@@ -106,8 +106,15 @@ export async function checkStatus() {
         throw new Error("Invalid response from /api/auth/check-status");
     }
 
-    if (!parsed.authenticated) {
+    const currentPath = window.location.pathname;
+    const isLoginRoute = currentPath === "/login";
+    const isOnboardingRoute = currentPath === "/onboarding";
+
+    if (!parsed.authenticated && !isLoginRoute) {
         window.location.href = "/login";
+    }
+    if (!parsed.onboarding && !isOnboardingRoute) {
+        window.location.href = "/onboarding";
     }
 
     return parsed;

@@ -45,7 +45,9 @@ export default function SideBar() {
             <div className="side-bar">
                 <nav>
                     <ul className="aside-container">
-                        <AsideItem symbol="home" text="Home" />
+                        <AsideItem symbol="home" text="Home" href="/"
+                                   material_style={{ fontSize: "1.6rem"}}
+                        />
                         <li className="aside-category open" id="your-communities">
                             <h3 className="side-bar-title category-title">Your Communities</h3>
                             <CommunityList />

@@ -19,3 +19,5 @@ pinecone
 google-genai >=1.63.0
 flask_socketio
 
+gunicorn
+

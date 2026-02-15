@@ -1,0 +1,123 @@
+.recommended-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 3rem;
+    color: #111827;
+}
+
+.recommended-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.recommended-header h2 {
+    margin: 0 0 0.4rem 0;
+    font-size: 1.9rem;
+}
+
+.recommended-header p {
+    margin: 0;
+    color: #4b5563;
+}
+
+.recommended-home-button {
+    padding: 0.6rem 1rem;
+    border-radius: 999px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+.recommended-home-button:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+    transform: translateY(-1px);
+}
+
+.recommended-content {
+    padding-top: 1.5rem;
+}
+
+.recommended-status {
+    color: #4b5563;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+}
+
+.recommended-error {
+    color: #b91c1c;
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+.recommended-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+}
+
+.recommended-card {
+    border: 1px solid #e5e7eb;
+    background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+    box-shadow: 0 10px 20px -15px rgba(15, 23, 42, 0.4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    min-height: 17rem;
+    height: auto;
+    width: 100%;
+    padding: 1.25rem;
+    align-items: flex-start;
+}
+
+.recommended-card:hover {
+    transform: translateY(-4px);
+    border-color: #93c5fd;
+    box-shadow: 0 18px 30px -18px rgba(15, 23, 42, 0.45);
+}
+
+.recommended-card:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+.recommended-icon {
+    border-radius: 1rem;
+    background: #eef2ff;
+}
+
+.recommended-info {
+    width: 100%;
+    text-align: left;
+}
+
+.recommended-description {
+    margin: 0.4rem 0 0.6rem 0;
+    color: #4b5563;
+    font-size: 0.95rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.recommended-members {
+    margin: 0;
+    color: #6b7280;
+    font-size: 0.85rem;
+}
+
+@media (max-width: 640px) {
+    .recommended-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .recommended-home-button {
+        width: 100%;
+        justify-content: center;
+    }
+}

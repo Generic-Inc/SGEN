@@ -45,7 +45,7 @@ export default function OnboardingOverlay() {
             }
 
             console.log("Onboarding complete:", res);
-            const targetPath = `/`;
+            const targetPath = `/recommended-communities`;
 
             navigate(targetPath, { replace: true });
 

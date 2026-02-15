@@ -17,6 +17,7 @@ import ChatPageYouth from "./pages/Chat_youth.jsx";
 import CreateEventEntryPage from "./pages/create-event.jsx";
 import CreateCommunity from "./components/create_community.jsx";
 import EditUserPage from "./pages/edit_user.jsx";
+import RecommendedCommunities from "./pages/recommended-communities.jsx";
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
@@ -38,6 +39,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                 <Route path="/community/:communityId/events/:eventId" element={<EventDetail />} />
                 <Route path="/create/event" element={<CreateEventEntryPage />} />
                 <Route path="/create/post" element={<CreatePostPage />} />
+                <Route path="/recommended-communities" element={<RecommendedCommunities />} />
                 <Route path="create/community" element={<CreateCommunity/>} />
             </Routes>
         </BrowserRouter>

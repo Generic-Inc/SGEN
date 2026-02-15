@@ -15,6 +15,8 @@ import CreatePostPage from "./pages/create_post.jsx";
 import ChatPageElder from "./pages/Chat_elder.jsx";
 import ChatPageYouth from "./pages/Chat_youth.jsx";
 import CreateEventEntryPage from "./pages/create-event.jsx";
+import CreateCommunity from "./components/create_community.jsx";
+import EditUserPage from "./pages/edit_user.jsx";
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
@@ -29,12 +31,14 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                 <Route path="/community/:communityName/*" element={<App />} />
                 <Route path="/community/:communityId/members" element={<MembersPage />} />
                 <Route path="/user/:userId" element={<User />} />
+                <Route path="/user/:userId/edit" element={<EditUserPage />} />
                 <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="verify-email" element={<VerifyEmail />} />
                 <Route path="/community/:communityId/events" element={<Events />} />
                 <Route path="/community/:communityId/events/:eventId" element={<EventDetail />} />
                 <Route path="/create/event" element={<CreateEventEntryPage />} />
                 <Route path="/create/post" element={<CreatePostPage />} />
+                <Route path="create/community" element={<CreateCommunity/>} />
             </Routes>
         </BrowserRouter>
     </React.StrictMode>,

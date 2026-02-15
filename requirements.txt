@@ -17,4 +17,5 @@ flask_cors>=4.1.2
 
 pinecone
 google-genai >=1.63.0
+flask_socketio
 

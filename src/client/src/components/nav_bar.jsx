@@ -25,7 +25,9 @@ export default function NavBar() {
         return (
                 <>
                 <nav className="nav-bar">
-                    <img src="https://i.ibb.co/YKjk4w4/SGEN-Logo.png" className="nav-icon" alt="SGEN" />
+                    <a href={"/"}>
+                        <img src="https://i.ibb.co/YKjk4w4/SGEN-Logo.png" className="nav-icon" alt="SGEN" />
+                    </a>
                     <div className="right-container">
                         <CreateButton />
                         <Profile className="nav-avatar" avatarUrl={user.avatarUrl} hrefUrl={`/user/${user?.userId}`}/>

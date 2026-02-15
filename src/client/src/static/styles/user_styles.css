@@ -58,7 +58,112 @@
 .user-bio {
     max-width: 20rem;
     min-width: 10rem
+}
 
+.user-edit-actions {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.75rem;
+}
+
+.user-edit-button {
+    border: 1px solid var(--action-primary-background-colour);
+    background: var(--action-primary-background-colour);
+    color: var(--action-primary-text-colour);
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.user-edit-button:hover {
+    filter: brightness(0.95);
+}
+
+.edit-user-card {
+    border: 1px solid black;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 600px;
+    background: var(--primary-background-colour);
+}
+
+.edit-user-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    border: 1px solid black;
+    border-radius: 0.75rem;
+    padding: 1rem;
+}
+
+.edit-user-form > .edit-user-label {
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid black;
+}
+
+.edit-user-form > .edit-user-label:last-of-type {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.edit-user-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-weight: 600;
+}
+
+.edit-user-input,
+.edit-user-textarea {
+    border: 1px solid black;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font: inherit;
+}
+
+.edit-user-textarea {
+    min-height: 110px;
+    resize: vertical;
+}
+
+.edit-user-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.edit-user-cancel {
+    border: 1px solid black;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+}
+
+.edit-user-submit {
+    border: 1px solid black;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.9rem;
+    cursor: pointer;
+}
+
+.edit-user-submit:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.edit-user-error {
+    color: red;
+    margin-top: 0.5rem;
+}
+
+.edit-user-warning {
+    color: var(--hovered-text-colour);
+    margin-top: 0.25rem;
 }
 
 .user-communities-side {

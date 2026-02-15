@@ -5,6 +5,7 @@ import NavBar from "../components/nav_bar.jsx";
 import SideBar from "../components/side_bar.jsx";
 import {isInCommunity} from "../static/aside-bar.js";
 import CommunityInfo from "../components/community_info.jsx";
+import FeedRouter from "../components/feed_router.jsx";
 
 function App() {
     if (!isInCommunity()) {
@@ -13,7 +14,9 @@ function App() {
                 <NavBar />
                 <main>
                     <SideBar />
-                    <div className="main-container"></div>
+                    <div className="main-container">
+                        <FeedRouter />
+                    </div>
                 </main>
             </>
         )

@@ -35,7 +35,10 @@ export default function CommunityInfo() {
                         <div className={"community-joinleave-row"}>
                             <JoinLeaveCommunityButton />
                         </div>
-                        <FeedRouter />
+                        <div style={{translateX: "10%"}}>
+                            <FeedRouter />
+                        </div>
+
                     </div>
                 </div>
                 <div className={"community-side-container"}>

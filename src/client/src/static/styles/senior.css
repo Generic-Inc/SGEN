@@ -1,32 +1,58 @@
+/* src/static/styles/senior.css */
+
 /* Only applies when body has class "senior-mode" */
+
 body.senior-mode {
-    font-size: 22px !important;
+    font-size: 20px !important;
+    line-height: 1.5 !important;
 }
 
+/* Headers */
+body.senior-mode h1,
+body.senior-mode h2,
+body.senior-mode h3,
+body.senior-mode h4,
+body.senior-mode .side-bar-title,
+body.senior-mode .category-title,
+body.senior-mode a {
+    font-size: 1.3em !important;
+    font-weight: 800 !important;
+    color: #000 !important;
+}
+
+/* Inputs */
 body.senior-mode input,
 body.senior-mode textarea,
 body.senior-mode button {
-    font-size: 20px !important;
+    font-size: 18px !important;
     padding: 15px !important;
+    border: 3px solid #000 !important;
 }
 
-body.senior-mode p,
-body.senior-mode span,
-body.senior-mode div {
-    color: #000 !important;
-    line-height: 1.6 !important;
-}
-
-/* Hide complex sidebars */
-body.senior-mode .sidebar-container,
-body.senior-mode .left-sidebar,
-body.senior-mode aside {
+/* HIDE THE SIDEBAR */
+body.senior-mode .side-bar {
     display: none !important;
 }
 
-/* Center content */
-body.senior-mode .app-container {
+/* FIX LAYOUT OVERLAP
+   1. Switch to block layout (removes sidebar gap)
+   2. Add massive padding to top so it clears the NavBar
+*/
+body.senior-mode .main-layout {
     display: block !important;
-    max-width: 800px;
-    margin: 0 auto;
+    width: 100% !important;
+    padding-top: 100px !important; /* <--- THIS FIXES THE OVERLAP */
+}
+
+body.senior-mode .content-area,
+body.senior-mode .app-container {
+    width: 95% !important;
+    max-width: 900px !important;
+    margin: 0 auto !important;
+    padding: 0 20px !important;
+}
+
+/* Ensure the Nav Bar text is also readable in Senior Mode */
+body.senior-mode .nav-bar {
+    border-bottom: 4px solid #000 !important;
 }

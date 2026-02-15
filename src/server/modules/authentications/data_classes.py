@@ -27,9 +27,9 @@ class AuthKeys:
 
 class AuthenticationsUser(User):
     def __init__(self, user_id: int, username: str, email: str, display_name: str,
-                 bio: str, avatar_url: str, language: str, created: str):
+                 bio: str, avatar_url: str, language: str, created: str, is_senior: int=0):
         super().__init__(user_id=user_id, username=username, email=email, display_name=display_name,
-                         bio=bio, avatar_url=avatar_url, language=language, created=created)
+                         bio=bio, avatar_url=avatar_url, language=language, created=created, is_senior=is_senior)
 
     async def _clean_devices(self):
         tokens = await DATABASE.fetch_all("""SELECT * FROM AuthTokens WHERE user_id = ?""", (self.user_id,))

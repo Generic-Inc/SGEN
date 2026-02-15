@@ -1,11 +1,14 @@
-from flask import Flask, jsonify
-from flask_cors import CORS
-from flask_socketio import SocketIO
+from flask import Flask
+import traceback
 
 app = Flask(__name__)
-CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
 
-@app.route("/health")
-def health():
-    return jsonify({"status": "ok"})
+@app.route("/")
+def home():
+    try:
+        print("ROUTE HIT")
+        return "HELLO WORLD"
+    except Exception as e:
+        print("ERROR:", e)
+        traceback.print_exc()
+        return "error", 500

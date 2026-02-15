@@ -8,13 +8,12 @@ export default function CreatePostModal() {
     const [imageUrl, setImageUrl] = useState("");
 
     const [communities, setCommunities] = useState([]);
-    const [selectedCommunity, setSelectedCommunity] = useState(""); // Default to empty
+    const [selectedCommunity, setSelectedCommunity] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
     const currentCommunityId = getCommunityIdFromPage();
 
-    // --- THE MAGIC INTERCEPTOR (Kept this from before) ---
     useEffect(() => {
         const handleLinkClick = (e) => {
             const anchor = e.target.closest('a');
@@ -61,7 +60,7 @@ export default function CreatePostModal() {
         setError(null);
         setContent("");
         setImageUrl("");
-        setSelectedCommunity(""); // Reset selection on close
+        setSelectedCommunity("");
     };
 
     const handleSubmit = async (e) => {

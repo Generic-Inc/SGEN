@@ -132,7 +132,7 @@
 /* Limits chat image size and rounds corners */
 .chat-image {
     max-width: 100%;
-    max-height: 350px;
+    max-height: 300px;
     width: auto;
     height: auto;
     border-radius: 8px;
@@ -145,6 +145,7 @@
 .discord-input-area {
     padding: 0 16px 24px 16px;
     background-color: #313338;
+    flex-shrink: 0;
 }
 
 /* Darker rounded box containing text input and buttons */

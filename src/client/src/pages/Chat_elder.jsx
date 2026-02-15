@@ -9,6 +9,7 @@ import '../static/styles/App.css';
 import NavBar from "../components/nav_bar.jsx";
 import SideBar from "../components/side_bar.jsx";
 import { ExpandableText } from "../components/ChatUtils.jsx";
+// Ensure this matches your file structure
 import { isImage, formatTime, useChatLogic } from "../components/ChatLogic.jsx";
 
 /* Define server address and current user ID */
@@ -24,7 +25,8 @@ export default function ChatPage() {
     const messagesEndRef = useRef(null);
 
     /* Use shared custom hook for chat operations */
-    const { community, messages, loading, sendMessage, fetchMessages } = useChatLogic(API_URL, communityId, CURRENT_USER_ID);
+    // The WebSocket connection happens automatically inside here now
+    const { community, messages, loading, sendMessage, onlineCount } = useChatLogic(API_URL, communityId, CURRENT_USER_ID);
 
     /* Function to handle sending messages and clearing input */
     const handleSend = async (textToSend = inputText) => {
@@ -41,24 +43,23 @@ export default function ChatPage() {
         if (url) handleSend(url);
     };
 
-    /* Set up automatic message refreshing every 3 seconds */
-    useEffect(() => {
-        const interval = setInterval(fetchMessages, 3000);
-        return () => clearInterval(interval);
-    }, [fetchMessages]);
+    // --- DELETED: The setInterval (polling) useEffect was removed here ---
+    // The WebSocket inside useChatLogic now handles updates automatically.
 
     /* Initial scroll to bottom on page reload */
     useEffect(() => {
         if (!loading && messages.length > 0) {
             messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
         }
-    }, [loading]);
+    }, [loading]); // Removed messages.length dep to prevent annoying auto-scroll when reading history
 
     /* Conditional smooth scroll for new incoming messages */
     useEffect(() => {
         const container = messagesEndRef.current?.parentElement;
         if (container) {
+            // Check if user is near the bottom
             const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
+            // Only auto-scroll if they are already looking at the newest messages
             if (isAtBottom) {
                 messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
             }
@@ -66,7 +67,7 @@ export default function ChatPage() {
     }, [messages]);
 
     /* Prepare community display details */
-    const displayName = community?.display_name || "Loading...";
+    const displayName = community?.display_name || "Community";
     const iconUrl = community?.icon_url || community?.iconUrl;
 
     return (
@@ -76,17 +77,24 @@ export default function ChatPage() {
             <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
 
             {/* Main layout container with fixed positioning */}
-            <main style={{ position: 'fixed', top: '20px', bottom: 0, left: 0, right: 0, display: 'flex', overflow: 'hidden' }}>
+            <main style={{position: 'fixed', top: '-50px', bottom: 0, left: 0, right: 0, display: 'flex'}}>
                 <SideBar />
                 <div className="main-container">
                     <div className="chat-box">
-                        {/* Header bar that toggles community profile */}
-                        <div className="chat-header" onClick={() => setShowProfile(true)}>
-                            <div className="header-icon-circle">
-                                {iconUrl ? <img src={iconUrl} alt="Icon" className="header-icon-img"/> : <span>#</span>}
-                            </div>
-                            <strong>{displayName} Chat</strong>
-                        </div>
+{/* Header bar that toggles community profile */}
+<div className="chat-header" onClick={() => setShowProfile(true)}>
+    <div className="header-icon-circle">
+        {iconUrl ? <img src={iconUrl} alt="Icon" className="header-icon-img"/> : <span>#</span>}
+    </div>
+
+    {/* Update this section */}
+    <div style={{display:'flex', flexDirection:'column'}}>
+        <strong>{displayName} Chat</strong>
+        <span style={{fontSize:'14px', color: '#4caf50', fontWeight:'normal'}}>
+            ● {onlineCount} Online
+        </span>
+    </div>
+</div>
 
                         {/* Scrollable message area with conditional bubble alignment */}
                         <div className="chat-messages-area">

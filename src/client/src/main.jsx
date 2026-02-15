@@ -7,6 +7,8 @@ import Signup from "./pages/signup.jsx";
 import MembersPage from "./pages/members.jsx";
 import User from "./pages/user.jsx";
 import Events from "./pages/events.jsx";
+import Onboarding from "./pages/onboarding.jsx";
+import VerifyEmail from "./pages/verify-email.jsx";
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
@@ -18,6 +20,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                 <Route path="/community/:communityId/*" element={<App />} />
                 <Route path="/community/:communityId/members" element={<MembersPage />} />
                 <Route path="/user/:userId" element={<User />} />
+                <Route path="/onboarding" element={<Onboarding />} />
+                <Route path="verify-email" element={<VerifyEmail />} />
                 <Route path="/community/:communityId/events" element={<Events />} />
             </Routes>
         </BrowserRouter>

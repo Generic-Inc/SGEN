@@ -25,6 +25,8 @@ async def insert_email(email: str,
     try:
         password_obj = SaltHash.create_salt_hash(password)
         verification_code = "".join(str(random.randint(0, 9)) for _ in range(6))
+        if not display_name:
+            display_name = username
 
         await DATABASE.execute(
             """INSERT INTO EmailVerifications 

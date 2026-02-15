@@ -66,4 +66,3 @@ export function ListElement({ icon, text, link }) {
         </li>
     )
 }
-

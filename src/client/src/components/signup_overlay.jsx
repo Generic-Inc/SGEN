@@ -1,8 +1,11 @@
 import "../static/styles/login_signup.css"
 import InputBox from "./sub components/input_box.jsx";
 import {postData} from "../static/api.js";
+import { useNavigate } from "react-router-dom";
 
 export default function SignupOverlay() {
+    const navigate = useNavigate();
+
     async function handleSubmit(event) {
         event.preventDefault();
         const errorEl = document.getElementById("error-message");
@@ -12,7 +15,7 @@ export default function SignupOverlay() {
         let password = formData.get("password").trim();
 
         if (password !== formData.get("confirmPassword").trim()) {
-            alert("Passwords do not match!");
+            if (errorEl) errorEl.textContent = "Passwords do not match!";
             return;
         }
         const dataObj = Object.fromEntries(formData.entries())
@@ -25,7 +28,11 @@ export default function SignupOverlay() {
                 return;
             }
 
-            console.log(res);
+            console.log("Signup success, redirecting...");
+
+            const targetPath = `/verify-email?email=${encodeURIComponent(dataObj.email)}`;
+
+            navigate(targetPath, { replace: true });
         } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
             if (errorEl) errorEl.textContent = message;

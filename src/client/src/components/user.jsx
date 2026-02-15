@@ -65,7 +65,7 @@ function MainCard({user}) {
          <div className={"user-section"}>
              <img src={user.avatarUrl} className={"user-avatar"} />
              <h1 className={"user-displayName"}>{user.displayName}</h1>
-             <h2 className={"user-userName"}>{user.username}</h2>
+             <h2 className={"user-userName"}>{user.username} - {user.language}</h2>
          </div>
          <div className={"user-section"}>
              <p className={"user-bio"}>{user.bio}</p>
@@ -96,7 +96,6 @@ function CommunityCard({community}) {
             <img src={community.iconUrl} className={"user-community-icon"} />
             <div className={"user-community-info"}>
                 <h3 className={"user-community-name"}>{community.displayName}</h3>
-                <p className={"user-community-description"}>{community.description}</p>
             </div>
         </div>
     )

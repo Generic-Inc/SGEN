@@ -48,8 +48,7 @@
     color: darkslategrey;
 }
 
-.user-avatar,
-.user-community-icon{
+.user-avatar{
     width: 5rem;
     height: 5rem;
     border-radius: 50%;
@@ -82,11 +81,15 @@
 }
 
 .user-communities-container {
-    width: 100%;
+    max-width: 100%;
+    min-width: 50%;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
     justify-items: center;
+    max-height: 30rem;
+    overflow-x: auto;
+    padding-right: 0.5rem;
 }
 
 .user-community-card {
@@ -97,8 +100,17 @@
     flex-direction: column;
     align-items: center;
     gap: 0.5rem;
-    width: 100%;
+    width: 12rem;
+    height: 12rem;
     text-align: center;
     box-sizing: border-box;
     word-break: break-word;
+}
+
+.user-community-icon {
+    width: 5rem;
+    height: 5rem;
+    border-radius: 1rem;
+    object-fit: cover;
+    margin-bottom: 1rem;
 }

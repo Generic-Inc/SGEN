@@ -1,6 +1,8 @@
 import {useEffect, useState} from "react";
 import {fetchData} from "../static/api.js";
 import JoinLeaveCommunityButton from "./join_leave_community.jsx";
+import FeedRouter from "./feed_router.jsx";
+import "../static/styles/App.css"
 
 export default function CommunityInfo() {
     const [communityInfo, setCommunityInfo] = useState({})
@@ -33,8 +35,7 @@ export default function CommunityInfo() {
                         <div className={"community-joinleave-row"}>
                             <JoinLeaveCommunityButton />
                         </div>
-
-
+                        <FeedRouter />
                     </div>
                 </div>
                 <div className={"community-side-container"}>

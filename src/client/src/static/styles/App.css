@@ -7,8 +7,6 @@
     width: 100%;
 }
 
-
-
 .community-main-container {
     display: flex;
     width: 60%;
@@ -155,4 +153,12 @@ hr {
     gap: 16px;
     transform: translateX(-10%) translateY(-100%);
     margin-bottom: 0.5rem;
+}
+
+.community-joinleave-row {
+    margin-bottom: 1rem;
+}
+
+.community-side-container {
+
 }

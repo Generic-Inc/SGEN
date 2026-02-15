@@ -17,12 +17,6 @@ main {
     box-sizing: border-box;
 }
 
-.main-container {
-    max-width: 800px;
-    width: 100%;
-    min-width: 0;
-    padding: 0 20px 20px 20px !important;
-}
 
 .nav-bar {
     position: fixed !important;
@@ -52,4 +46,5 @@ main {
     flex-direction: column;
     align-items: center;
     width: 100%;
+    transform: translateX(10%)
 }

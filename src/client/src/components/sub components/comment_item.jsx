@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { postData } from "../../static/api";
-import TranslatedText from "./translated_text"; // ✅ Import Translator
-import SlangHighlighter from "./slang_highlighter"; // ✅ Import Dictionary
+import TranslatedText from "./translated_text";
+import SlangHighlighter from "./slang_highlighter";
 
 // Helper function
 function formatTimeAgo(dateString) {
@@ -35,6 +35,9 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
+    // --- NEW: TTS State ---
+    const [isSpeaking, setIsSpeaking] = useState(false);
+
     // Like State
     const [cLikeCount, setCLikeCount] = useState(comment.likeCount || comment.like_count || 0);
     const [cIsLiked, setCIsLiked] = useState(comment.isLiked || comment.is_liked || false);
@@ -45,6 +48,9 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
 
     const isEdited = comment.modified && comment.created &&
                      (new Date(comment.modified).getTime() > new Date(comment.created).getTime() + 1000);
+
+    // Check Age
+    const isSenior = currentUser?.age && currentUser.age > 60;
 
     // Handlers
     const handleSave = async () => {
@@ -93,6 +99,19 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
         } catch (error) {
             setCIsLiked(!newLikedState);
             setCLikeCount(prev => newLikedState ? prev - 1 : prev + 1);
+        }
+    };
+
+    // --- NEW: Speak Handler ---
+    const handleSpeak = () => {
+        if (isSpeaking) {
+            window.speechSynthesis.cancel();
+            setIsSpeaking(false);
+        } else {
+            const utterance = new SpeechSynthesisUtterance(comment.content);
+            utterance.onend = () => setIsSpeaking(false);
+            window.speechSynthesis.speak(utterance);
+            setIsSpeaking(true);
         }
     };
 
@@ -154,12 +173,34 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
                             </div>
                         </div>
                     ) : (
-                        <div style={{ marginTop: "0" }}>
-                            {/* 🔥 THE LOGIC: If Senior, Dictionary. If not, Translation. */}
-                            {currentUser?.age && currentUser.age > 60 ? (
-                                <SlangHighlighter text={comment.content} userAge={currentUser.age} />
-                            ) : (
-                                <TranslatedText content={comment.content} />
+                        // --- UPDATED: Flex container for Text + Speaker ---
+                        <div style={{ marginTop: "0", display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                            <div style={{flex: 1}}>
+                                {isSenior ? (
+                                    <SlangHighlighter text={comment.content} userAge={currentUser.age} />
+                                ) : (
+                                    <TranslatedText content={comment.content} />
+                                )}
+                            </div>
+
+                            {/* TTS Button (Only for Seniors) */}
+                            {isSenior && (
+                                <button
+                                    onClick={handleSpeak}
+                                    style={{
+                                        background: "none",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        fontSize: "14px",
+                                        opacity: 0.7,
+                                        padding: "0",
+                                        minWidth: "20px",
+                                        marginTop: "2px"
+                                    }}
+                                    title={isSpeaking ? "Stop" : "Read"}
+                                >
+                                    {isSpeaking ? "🔇" : "🔊"}
+                                </button>
                             )}
                         </div>
                     )}

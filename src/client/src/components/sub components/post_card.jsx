@@ -1,10 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { postData, fetchData } from "../../static/api";
 import CommentItem from "./comment_item";
-import TranslatedText from "./translated_text"; // ✅ Kept your teammate's component
+import TranslatedText from "./translated_text";
 import { useVoice } from "../../static/use_voice";
 import "../../static/styles/community.css";
 import SlangHighlighter from "./slang_highlighter";
+
+const SMART_REPLIES = [
+    "This is wonderful! 👏",
+    "Thanks for sharing!",
+    "I totally agree.",
+    "Could you explain more?",
+    "Sending love ❤️",
+    "Very interesting point.",
+    "Keep it up!",
+    "Wow, I didn't know that!",
+    "Great post! 👍"
+];
 
 function formatTimeAgo(dateString) {
     if (!dateString) return "";
@@ -46,6 +58,8 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
     const [commentText, setCommentText] = useState("");
     const [commentsLoaded, setCommentsLoaded] = useState(false);
 
+    const [suggestions, setSuggestions] = useState([]);
+
     const { isListening, toggleListen, support, lang, setLang, interimTranscript } = useVoice((text) => {
         setCommentText(prev => prev + (prev ? " " : "") + text);
     });
@@ -54,6 +68,13 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
     const [isEditing, setIsEditing] = useState(false);
     const [editContent, setEditContent] = useState(content);
     const [isSaving, setIsSaving] = useState(false);
+
+    const [isSpeaking, setIsSpeaking] = useState(false);
+
+    useEffect(() => {
+        const shuffled = [...SMART_REPLIES].sort(() => 0.5 - Math.random());
+        setSuggestions(shuffled.slice(0, 3));
+    }, []);
 
     const toggleComments = async () => {
         const newShowState = !showComments;
@@ -69,12 +90,16 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
     };
 
     const handlePostComment = async (e) => {
-        if ((e.key === 'Enter' || e.type === 'click') && commentText.trim()) {
+        const textToPost = typeof e === 'string' ? e : commentText;
+
+        if (typeof e !== 'string' && e?.preventDefault) e.preventDefault();
+
+        if ((typeof e === 'string' || e.key === 'Enter' || e.type === 'click') && textToPost.trim()) {
             try {
                 const route = `community/${communityId}/posts/${postId}/comments`;
-                const newCommentReal = await postData(route, { content: commentText });
+                const newCommentReal = await postData(route, { content: textToPost });
                 setComments([...comments, newCommentReal]);
-                setCommentText("");
+                setCommentText(""); // Clear input
                 setCommentCount(prev => prev + 1);
             } catch (err) {
                 console.error(err);
@@ -138,12 +163,27 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
         } catch (err) { console.error(err); alert("Failed to save edits."); } finally { setIsSaving(false); }
     };
 
+    const handleSpeak = () => {
+        if (isSpeaking) {
+            window.speechSynthesis.cancel();
+            setIsSpeaking(false);
+        } else {
+            const utterance = new SpeechSynthesisUtterance(content);
+            utterance.onend = () => setIsSpeaking(false);
+            window.speechSynthesis.speak(utterance);
+            setIsSpeaking(true);
+        }
+    };
+
     const canManagePost = currentUserId && postAuthorId && (String(currentUserId) === String(postAuthorId));
     const showCommunityLabel = communityName && (!view || view.type !== "community");
     const isPostEdited = modifiedAt && createdAt && (new Date(modifiedAt).getTime() > new Date(createdAt).getTime() + 1000);
 
+    const isSenior = currentUser?.age && currentUser.age > 60;
+
     return (
         <div className="post-card" style={{ marginBottom: "20px", background: "#fff", borderRadius: "8px", padding: "15px", boxShadow: "0 1px 2px rgba(0,0,0,0.1)", position: "relative" }}>
+
             <div className="post-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <a href={`/user/${postAuthorId}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: 'inherit' }}>
@@ -181,14 +221,39 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
                     </div>
                 ) : (
                     <>
-                        <p className="post-text-body" style={{ fontSize: "15px", lineHeight: "1.5", color: "#050505", whiteSpace: "pre-wrap" }}>
-                            {/* 🔥 THE FIX: Check Age. If Senior (>60), use Dictionary. If not, use TranslatedText. */}
-                            {currentUser?.age && currentUser.age > 60 ? (
-                                <SlangHighlighter text={content} userAge={currentUser.age} />
-                            ) : (
-                                <TranslatedText content={content} translations={post.translations} />
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                            <p className="post-text-body" style={{ fontSize: "15px", lineHeight: "1.5", color: "#050505", whiteSpace: "pre-wrap", flex: 1 }}>
+                                {isSenior ? (
+                                    <SlangHighlighter text={content} userAge={currentUser.age} />
+                                ) : (
+                                    <TranslatedText content={content} translations={post.translations} />
+                                )}
+                            </p>
+
+                            {isSenior && (
+                                <button
+                                    onClick={handleSpeak}
+                                    title={isSpeaking ? "Stop Reading" : "Read Aloud"}
+                                    style={{
+                                        background: isSpeaking ? "#e0245e" : "#f0f2f5",
+                                        color: isSpeaking ? "white" : "#65676B",
+                                        border: "none",
+                                        borderRadius: "50%",
+                                        width: "36px",
+                                        height: "36px",
+                                        cursor: "pointer",
+                                        fontSize: "18px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        marginTop: "-5px",
+                                        transition: "background 0.2s"
+                                    }}
+                                >
+                                    {isSpeaking ? "🔇" : "🔊"}
+                                </button>
                             )}
-                        </p>
+                        </div>
 
                         {postImage && <img src={postImage} alt="Post" style={{ width: '100%', borderRadius: '8px', marginTop: '10px' }} /> }
                     </>
@@ -202,6 +267,34 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
 
             {showComments && (
                 <div style={{ marginTop: "15px", paddingTop: "15px", borderTop: "1px dashed #eee" }}>
+
+                    {isSenior && (
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '12px', color: '#888', width: '100%', marginBottom: '2px' }}>Quick Reply:</span>
+                            {suggestions.map((reply, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => handlePostComment(reply)}
+                                    style={{
+                                        background: "white",
+                                        border: "1px solid #1877F2",
+                                        color: "#1877F2",
+                                        padding: "6px 12px",
+                                        borderRadius: "20px",
+                                        cursor: "pointer",
+                                        fontSize: "13px",
+                                        fontWeight: "500",
+                                        transition: "all 0.2s"
+                                    }}
+                                    onMouseOver={(e) => {e.target.style.background = "#1877F2"; e.target.style.color="white";}}
+                                    onMouseOut={(e) => {e.target.style.background = "white"; e.target.style.color="#1877F2";}}
+                                >
+                                    {reply}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                     <div style={{ marginBottom: "15px", display: "flex", flexDirection: "column", gap: "10px" }}>
                         {comments.length === 0 ? <p style={{ fontSize: "13px", color: "#888", textAlign: "center" }}>No comments yet.</p> : comments.map((c, idx) => (
                             <CommentItem key={c.commentId || c.comment_id || idx} comment={c} currentUser={currentUser} communityId={communityId} postId={postId} onDelete={handleCommentDelete} onUpdate={handleCommentUpdate} />

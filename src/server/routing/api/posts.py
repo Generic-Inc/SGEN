@@ -8,20 +8,6 @@ from . import community_blueprint
 from . import api
 from datetime import datetime
 
-
-@api.route("/my-age", methods=["GET"])
-async def get_my_age():
-    authorization = request.cookies.get('token')
-    if not authorization:
-        return {"error": "Unauthorized"}, 401
-    user = await User.get_user_by_token(authorization)
-    if not user:
-        return {"error": "Unauthorized"}, 401
-
-    onboarding = await Onboarding.get_onboarding(user.user_id)
-    return {"age": onboarding.age if onboarding else 0}
-
-
 @api.route("/my-communities", methods=["GET"])
 async def get_my_communities():
     authorization = request.cookies.get('token')

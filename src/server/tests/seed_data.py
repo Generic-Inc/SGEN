@@ -1,223 +1,289 @@
 import asyncio
 import random
+from datetime import datetime, timedelta
+
+# Import your actual classes
 from config.config import CONFIG
 from global_src.db import DATABASE
-from modules.authentications import SaltHash
+from global_src.global_classes import User, Community
+from modules.authentications.data_classes import AuthenticationsUser, SaltHash
+from modules.posts import Post, Comment
+from modules.events import Event, EventAttendance
+from modules.onboarding.Onboarding import Onboarding
+from modules.chat_model import ChatMessage
 
-# --- CONFIGURATION ---
-NUM_USERS = 50
-NUM_COMMUNITIES = 5
-POSTS_PER_USER = 5
-COMMENTS_PER_POST = 3
+# --- 🛠️ CONFIGURATION ---
+NUM_USERS = 30
+NUM_POSTS = 120
+NUM_EVENTS = 15
+NUM_CHATS = 50
+PROB_SENIOR = 0.3
 
-# --- 👑 ADMIN 1: THE SPEEDY NINJA (Young) ---
-ADMIN1_USERNAME = "cyber_ninja"
-ADMIN1_EMAIL = "ninja@example.com"
-ADMIN1_NAME = "Ninja Coder"
-ADMIN1_AGE = 25
+# --- 🎭 DATA POOLS ---
+USER_NAMES = ["Alex", "Jordan", "Taylor", "Morgan", "Casey", "Riley", "Jamie", "Robin", "Drew", "Cameron", "Sam",
+              "Quinn", "Avery", "Dakota", "Reese"]
+SURNAMES = ["Lee", "Tan", "Wong", "Smith", "Chen", "Lim", "Raju", "Koh", "Teo", "Ng", "Yap", "Chua"]
+REGIONS = ["North", "South", "East", "West", "Central"]
+PRONOUNS = ["he/him", "she/her", "they/them", "she/they", "he/they"]
+INTERESTS_LIST = ["Coding", "Knitting", "Gaming", "Hiking", "Cooking", "Tai Chi", "Photography", "K-Pop", "History",
+                  "Tech", "Investing", "Gardening"]
 
-# --- 👴 ADMIN 2: THE SENIOR NINJA (Senior) ---
-ADMIN2_USERNAME = "senior_ninja"
-ADMIN2_EMAIL = "senior@example.com"
-ADMIN2_NAME = "Elder Sage"
-ADMIN2_AGE = 72
-
-ADMIN_PASSWORD = "Password123!"
-
-# --- DATA POOLS ---
-USER_NAMES = ["Alex", "Jordan", "Taylor", "Morgan", "Casey", "Riley", "Jamie", "Robin", "Drew", "Cameron"]
-ADJECTIVES = ["Happy", "Grumpy", "Sleepy", "Hyper", "Chill", "Crazy", "Silent", "Loud", "Mega", "Ultra"]
-TOPICS = ["Tech", "Art", "Gym", "Food", "Travel", "Gaming", "Music", "Movie", "Book", "Code"]
-
-# --- 🆕 GEN Z SLANG POOL ---
+# --- 🗣️ SLANG & CONTENT ---
 SLANG_WORDS = [
     "no cap", "fr", "slay", "bet", "bop", "mood", "salty", "flex", "tea",
     "shook", "simp", "ghost", "vibe", "goat", "extra", "stan", "low-key",
-    "high-key", "sus", "rizz", "delulu", "ate", "finna"
+    "high-key", "sus", "rizz", "delulu", "ate", "finna", "gyatt"
 ]
 
-POST_TEMPLATES = [
-    "Just discovered {topic}! It's amazing.",
-    "Why is {topic} so hard to master? 😭",
-    "Unpopular opinion: {topic} is overrated.",
-    "Anyone want to collab on a {topic} project?",
-    "Finally hit my goals in {topic} today! 🚀",
-    "Spending my whole weekend doing {topic}.",
-    "What is the best resource for learning {topic}?",
-    "I can't believe what happened in the {topic} world today.",
+TOPICS = {
+    "General": "Just hanging out.",
+    "Tech": "Talking about the latest gadgets and code.",
+    "Food": "Best hawker spots in SG.",
+    "Wellness": "Mental health and physical fitness.",
+    "Retro": "Remembering the good old days."
+}
+
+POST_TEMPLATES_YOUNG = [
     "Honestly, {topic} is a whole {slang}.",
     "The way I love {topic} is {slang} fr.",
     "{topic} just makes me feel so {slang}.",
     "Anyone else think {topic} is kinda {slang}?",
+    "Just dropped a new project on {topic}. It {slang}.",
+    "Current mood: {slang}.",
+    "Can't believe {topic} exists. {slang} behavior.",
+    "Woke up and chose {topic}. No regrets."
 ]
 
-COMMENT_TEMPLATES = [
-    "Totally agree!", "No way, really?", "This is fire 🔥", "Can you explain more?",
-    "Sent you a DM.", "LMAO 😂", "Big if true.", "Keep grinding!", "Nice work.", "Idk about that chief.",
-    "That's {slang}!", "No cap, this is {slang}.", "You really {slang} with this one.",
-    "Wait, are you being {slang}?", "Major {slang} vibes.", "Bro has {slang}."
+POST_TEMPLATES_SENIOR = [
+    "I really enjoyed the {topic} session today.",
+    "Does anyone know where to find good {topic} classes?",
+    "Back in my day, {topic} was very different.",
+    "Sharing a photo from my morning walk. Lovely weather.",
+    "How do I use this feature? Still learning.",
+    "Wonderful to see so many young people interested in {topic}.",
+    "Looking for recommendations for {topic}. Thank you!",
+    "Had a lovely tea time discussing {topic}."
+]
+
+# --- 📅 SLANG EVENT TEMPLATES (NEW!) ---
+EVENT_NAMES_SLANG = [
+    "{topic} Vibe Check Session",
+    "The Ultimate {topic} Slay",
+    "High-Key {topic} Workshop",
+    "{topic} Rizz Party",
+    "No Cap: Best {topic} Meetup",
+    "{topic} & Chill",
+    "The {topic} Flex-Off"
+]
+
+EVENT_DESC_SLANG = [
+    "Come through if you're not basic. It's gonna be {slang}.",
+    "We finna discuss everything about {topic}. Don't ghost us!",
+    "If you miss this, you're honestly {slang}.",
+    "Big vibes only. Join us for a {slang} time.",
+    "Strictly for the {slang} ones. Haters stay home."
 ]
 
 
-async def reset_db():
-    print("🗑️  Wiping Database...")
-    await DATABASE.execute("DELETE FROM PostLikes")
-    await DATABASE.execute("DELETE FROM Comments")
-    await DATABASE.execute("DELETE FROM Posts")
-    await DATABASE.execute("DELETE FROM Events")
-    await DATABASE.execute("DELETE FROM Memberships")
-    await DATABASE.execute("DELETE FROM Communities")
-    await DATABASE.execute("DELETE FROM UserAuthentication")
-    await DATABASE.execute("DELETE FROM OnboardingInformation")  # Clear onboarding
-    await DATABASE.execute("DELETE FROM Profiles")
+async def clean_db():
+    print("🗑️  Cleaning Database...")
+    tables = [
+        "EventAttendance", "Events", "CommentLikes", "PostLikes", "Comments",
+        "Posts", "ChatMessage", "Memberships", "Communities",
+        "OnboardingInformation", "UserAuthentication", "Profiles", "AuthTokens"
+    ]
+    for table in tables:
+        await DATABASE.execute(f"DELETE FROM {table}")
+        await DATABASE.execute(f"DELETE FROM sqlite_sequence WHERE name='{table}'")
     await DATABASE.commit()
 
 
-async def create_user(username, email, name, age, password="Password123!"):
-    salt_hash = SaltHash.create_salt_hash(password)
-    avatar_url = f"https://api.dicebear.com/7.x/avataaars/svg?seed={username}"
+async def create_full_user(username, display_name, age, bio, interests, email=None):
+    """Helper to create Profile + Auth + Onboarding using Class Methods."""
+    if not email:
+        email = f"{username}@example.com"
 
-    # 1. Create Profile
-    await DATABASE.execute(
-        "INSERT INTO Profiles (username, _email, display_name, bio, avatar_url) VALUES (?, ?, ?, ?, ?)",
-        (username, email, name, "Generated User", avatar_url)
-    )
+    password = "Password123!"
 
-    user_row = await DATABASE.fetch_one("SELECT user_id FROM Profiles WHERE username = ?", (username,))
-    user_id = user_row[0]
+    try:
+        # 1. Create Profile
+        user_obj = await AuthenticationsUser.create_user(
+            username=username,
+            display_name=display_name,
+            email=email,
+            bio=bio,
+            avatar_url=f"https://api.dicebear.com/7.x/avataaars/svg?seed={username}"
+        )
 
-    # 2. Create Auth
-    await DATABASE.execute(
-        "INSERT INTO UserAuthentication (user_id, salt, password_hash) VALUES (?, ?, ?)",
-        (user_id, salt_hash.salt, salt_hash.hash_value)
-    )
+        # 2. Create Auth (Manual insert required as per your sample code)
+        salt_hash = SaltHash.create_salt_hash(password)
+        await DATABASE.execute(
+            "INSERT INTO UserAuthentication (user_id, salt, password_hash) VALUES (?, ?, ?)",
+            (user_obj.user_id, salt_hash.salt, salt_hash.hash_value)
+        )
 
-    # 3. Create Onboarding Entry (This is what your frontend checks!)
-    await DATABASE.execute(
-        "INSERT INTO OnboardingInformation (user_id, age) VALUES (?, ?)",
-        (user_id, age)
-    )
+        # 3. Register Onboarding
+        region = random.choice(REGIONS)
+        pronoun = random.choice(PRONOUNS)
 
-    return user_id
+        await Onboarding.register_onboarding(
+            user_id=user_obj.user_id,
+            age=age,
+            interests=interests,
+            pronouns=pronoun,
+            region=region
+        )
+
+        return await AuthenticationsUser.get_user(user_obj.user_id)
+
+    except Exception as e:
+        print(f"❌ Error creating user {username}: {e}")
+        return None
 
 
 async def main():
-    print("--- 🚀 STARTING MASSIVE SEED ---")
+    print("🚀 STARTING SEED PROCESS...")
     await DATABASE.initialize()
     await CONFIG.load_config()
 
-    await reset_db()
+    await clean_db()
 
-    user_ids = []
+    # --- 1. CREATE ADMINS ---
+    print("\n👑 Creating Admins...")
+    admin_young = await create_full_user(
+        "cyber_ninja", "Ninja Coder", 22,
+        "Full stack dev. I love caffeine and code.", "Coding, Gaming"
+    )
+    admin_senior = await create_full_user(
+        "senior_sage", "Madam Mary", 72,
+        "Retired teacher. Loving this new app!", "History, Knitting"
+    )
 
-    # 0. CREATE ADMIN USERS
-    print(f"\n--- 👑 Creating Admins ---")
-    try:
-        ninja_id = await create_user(ADMIN1_USERNAME, ADMIN1_EMAIL, ADMIN1_NAME, ADMIN1_AGE, ADMIN_PASSWORD)
-        senior_id = await create_user(ADMIN2_USERNAME, ADMIN2_EMAIL, ADMIN2_NAME, ADMIN2_AGE, ADMIN_PASSWORD)
-        user_ids.extend([ninja_id, senior_id])
-        print(f"  ✅ Ninja Admin Created: {ADMIN1_USERNAME} (Age: {ADMIN1_AGE})")
-        print(f"  ✅ Senior Admin Created: {ADMIN2_USERNAME} (Age: {ADMIN2_AGE})")
-    except Exception as e:
-        print(f"  ❌ Failed to create admins: {e}")
-        return
+    # --- 2. CREATE RANDOM USERS ---
+    print(f"\n👥 Creating {NUM_USERS} Users...")
+    all_users = [admin_young, admin_senior]
 
-    # 1. GENERATE RANDOM USERS
-    print(f"\n--- 👤 Generating {NUM_USERS} Random Users ---")
     for i in range(NUM_USERS):
-        adj = random.choice(ADJECTIVES)
-        name = random.choice(USER_NAMES)
-        username = f"{adj}_{name}_{random.randint(10, 999)}".lower()
-        email = f"{username}@example.com"
-        age = random.randint(18, 85)  # Random ages for the crowd
+        is_senior = random.random() < PROB_SENIOR
+        age = random.randint(65, 85) if is_senior else random.randint(18, 28)
+        fname = random.choice(USER_NAMES)
+        lname = random.choice(SURNAMES)
+        username = f"{fname}{lname}{random.randint(10, 99)}".lower()
 
-        try:
-            uid = await create_user(username, email, f"{adj} {name}", age)
-            user_ids.append(uid)
-            if i % 10 == 0: print(f"  Created {i} users...")
-        except:
-            pass
-
-    # 2. GENERATE COMMUNITIES
-    print(f"\n--- 🏘️ Generating {NUM_COMMUNITIES} Communities ---")
-    community_ids = []
-    for i in range(NUM_COMMUNITIES):
-        topic = TOPICS[i]
-        c_name = f"{topic}_Lounge_{random.randint(100, 999)}"
-        c_desc = f"The place to discuss all things {topic}."
-
-        await DATABASE.execute(
-            "INSERT INTO Communities (community_name, display_name, description, owner_id) VALUES (?, ?, ?, ?)",
-            (c_name.lower(), f"{topic} Lounge", c_desc, ninja_id)
+        u = await create_full_user(
+            username,
+            f"{fname} {lname}",
+            age,
+            f"Just a {'retired' if is_senior else 'student'} living in {random.choice(REGIONS)}.",
+            ", ".join(random.sample(INTERESTS_LIST, 2))
         )
-        row = await DATABASE.fetch_one("SELECT community_id FROM Communities WHERE community_name = ?",
-                                       (c_name.lower(),))
-        cid = row[0]
-        community_ids.append(cid)
-        print(f"  Created Community: {topic} Lounge")
+        if u: all_users.append(u)
 
-    # 3. JOIN USERS TO COMMUNITIES
-    print("\n--- 🤝 Joining Users to Communities ---")
-    # Join BOTH Admins to ALL communities
-    for cid in community_ids:
-        await DATABASE.execute(
-            "INSERT OR IGNORE INTO Memberships (community_id, member_id, role) VALUES (?, ?, 'admin')", (cid, ninja_id))
-        await DATABASE.execute(
-            "INSERT OR IGNORE INTO Memberships (community_id, member_id, role) VALUES (?, ?, 'admin')",
-            (cid, senior_id))
+    # --- 3. CREATE COMMUNITIES ---
+    print("\n🏘️ Creating Communities...")
+    communities = []
 
-    # Join random users to random communities
-    for uid in user_ids:
-        if uid in [ninja_id, senior_id]: continue
-        joined = random.sample(community_ids, k=2)
-        for cid in joined:
-            await DATABASE.execute("INSERT OR IGNORE INTO Memberships (community_id, member_id) VALUES (?, ?)",
-                                   (cid, uid))
+    for name, desc in TOPICS.items():
+        comm_name = name.lower().replace(" ", "") + "hub"
+        comm = await Community.create_community(
+            community_name=comm_name,
+            display_name=f"{name} Lounge",
+            owner=admin_young,
+            description=desc,
+            icon_url=f"https://api.dicebear.com/7.x/identicon/svg?seed={comm_name}",
+            post_guidelines="1. Be nice.\n2. No spam.",
+            messages_guidelines="Respect everyone.",
+            offline_text="Offline",
+            online_text="Online"
+        )
+        communities.append(comm)
 
-    # 4. GENERATE POSTS
-    print(f"\n--- 📝 Generating Posts ---")
-    total_posts = 0
-    post_ids = []
+        # Add members
+        await comm.add_member(admin_young.user_id, role="admin")
+        await comm.add_member(admin_senior.user_id, role="admin")
+        for u in all_users[2:]:
+            if random.random() > 0.3:
+                await comm.add_member(u.user_id, role="member")
 
-    for uid in user_ids:
-        for _ in range(random.randint(1, POSTS_PER_USER)):
-            cid = random.choice(community_ids)
-            topic = random.choice(TOPICS)
+    # --- 4. CREATE POSTS ---
+    print(f"\n📝 Generating {NUM_POSTS} Posts...")
+    all_posts = []
+
+    for i in range(NUM_POSTS):
+        u = random.choice(all_users)
+        c = random.choice(communities)
+
+        # Check Age for Content Style
+        onboarding = await Onboarding.get_onboarding(u.user_id)
+        is_senior_user = onboarding.age >= 60 if onboarding else False
+        topic = random.choice(list(TOPICS.keys()))
+
+        if is_senior_user:
+            content = random.choice(POST_TEMPLATES_SENIOR).format(topic=topic)
+        else:
+            slang = random.choice(SLANG_WORDS)
+            content = random.choice(POST_TEMPLATES_YOUNG).format(topic=topic, slang=slang)
+
+        img_url = f"https://picsum.photos/seed/{i}/500/300" if random.random() < 0.25 else None
+
+        post = await Post.create(content=content, community_id=c.community_id, author_id=u.user_id, image_url=img_url)
+        if post: all_posts.append(post)
+
+    # --- 5. CREATE COMMENTS ---
+    print("\n💬 Generating Comments...")
+    for post in all_posts:
+        for _ in range(random.randint(0, 4)):
+            u = random.choice(all_users)
+            slang = random.choice(SLANG_WORDS)
+            text = f"That's {slang}!" if random.random() > 0.5 else "Great post! Thanks for sharing."
+            await Comment.create(content=text, post_id=post.post_id, author_id=u.user_id)
+
+    # --- 6. CREATE EVENTS (WITH SLANG!) ---
+    print("\n📅 Creating Events...")
+    for c in communities:
+        for i in range(2):
+            creator = random.choice(all_users)
+
+            # Identify the topic string (e.g. "Tech" from "Tech Lounge")
+            topic_key = c.display_name.split(" ")[0]
             slang = random.choice(SLANG_WORDS)
 
-            template = random.choice(POST_TEMPLATES)
-            content = template.format(topic=topic, slang=slang)
+            # 60% chance of SLANG EVENT
+            if random.random() > 0.4:
+                evt_name = random.choice(EVENT_NAMES_SLANG).format(topic=topic_key, slang=slang)
+                evt_desc = random.choice(EVENT_DESC_SLANG).format(topic=topic_key, slang=slang)
+            else:
+                evt_name = f"{c.display_name} Monthly Meetup"
+                evt_desc = "Join us for a friendly gathering."
 
-            image_url = f"https://picsum.photos/seed/{random.randint(1, 1000)}/400/300" if random.random() > 0.7 else None
-
-            await DATABASE.execute(
-                "INSERT INTO Posts (content, community_id, author_id, image_url) VALUES (?, ?, ?, ?)",
-                (content, cid, uid, image_url)
+            event = await Event.create(
+                event_name=evt_name,
+                event_description=evt_desc,
+                scheduled_date=(datetime.now() + timedelta(days=random.randint(1, 30))).strftime('%Y-%m-%d %H:%M:%S'),
+                event_location="Community Hub Lvl 2",
+                community_id=c.community_id,
+                creator_id=creator.user_id,
+                image_url=f"https://picsum.photos/seed/evt{c.community_id}{i}/600/400"
             )
-            total_posts += 1
-            row = await DATABASE.fetch_one("SELECT last_insert_rowid()")
-            post_ids.append(row[0])
 
-    await DATABASE.commit()
-    print(f"  ✅ Created {total_posts} total posts.")
+            # Attendance
+            attendees = random.sample(all_users, k=random.randint(3, 8))
+            for attendee in attendees:
+                await EventAttendance.toggle_interest(event.event_id, attendee.user_id)
 
-    # 5. GENERATE COMMENTS
-    print(f"\n--- 💬 Generating Interactions ---")
-    for pid in post_ids:
-        num_comments = random.randint(0, COMMENTS_PER_POST)
-        for _ in range(num_comments):
-            commentor = random.choice(user_ids)
-            slang = random.choice(SLANG_WORDS)
-            template = random.choice(COMMENT_TEMPLATES)
-            text = template.format(slang=slang)
+    # --- 7. CREATE CHATS ---
+    print("\n💭 Filling Chat Logs...")
+    for _ in range(NUM_CHATS):
+        c = random.choice(communities)
+        u = random.choice(all_users)
+        slang = random.choice(SLANG_WORDS)
+        msg = f"Yo, this community is {slang}." if random.random() > 0.5 else "Good morning everyone!"
 
-            await DATABASE.execute("INSERT INTO Comments (content, post_id, author_id) VALUES (?, ?, ?)",
-                                   (text, pid, commentor))
+        await ChatMessage.create_message(community_id=c.community_id, author_id=u.user_id, content=msg)
 
-    await DATABASE.commit()
-    print("\n--- 🎉 MASSIVE SEED COMPLETE! ---")
-    print(f"Option 1 (Young): {ADMIN1_USERNAME} / {ADMIN_PASSWORD}")
-    print(f"Option 2 (Senior): {ADMIN2_USERNAME} / {ADMIN_PASSWORD}")
+    print("\n✅ SEED COMPLETE!")
+    print(f"🔹 Young Admin: cyber_ninja / Password123!")
+    print(f"🔹 Senior Admin: senior_sage / Password123!")
 
 
 if __name__ == "__main__":

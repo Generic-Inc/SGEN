@@ -6,6 +6,7 @@ import CreateEventsModal from '../components/create_events_modal.jsx';
 import Calendar from '../components/sub components/calendar.jsx';
 import EventCard from '../components/sub components/event_card.jsx';
 import EventModal from '../components/sub components/event_modal.jsx';
+import { fetchData } from '../static/api';
 import '../static/styles/events.css';
 
 export default function Events() {
@@ -18,13 +19,17 @@ export default function Events() {
     const [showModal, setShowModal] = useState(false);
     const [editingEvent, setEditingEvent] = useState(null);
 
+    const [userAge, setUserAge] = useState(null);
+
     useEffect(() => {
         const loadData = async () => {
             try {
                 const apiBase = `/api/community/${communityId}`;
-                const [communityResponse, eventsResponse] = await Promise.all([
+
+                const [communityResponse, eventsResponse, onboardingData] = await Promise.all([
                     fetch(apiBase, { credentials: 'include' }),
-                    fetch(`${apiBase}/events`, { credentials: 'include' })
+                    fetch(`${apiBase}/events`, { credentials: 'include' }),
+                    fetchData('user/onboarding')
                 ]);
 
                 if (!communityResponse.ok || !eventsResponse.ok) {
@@ -35,6 +40,10 @@ export default function Events() {
                 const eventsData = await eventsResponse.json();
 
                 setCommunity(communityData);
+
+                if (onboardingData && onboardingData.age) {
+                    setUserAge(onboardingData.age);
+                }
 
                 const eventsList = Array.isArray(eventsData?.events) ? eventsData.events : [];
 
@@ -247,6 +256,7 @@ export default function Events() {
                                             onEdit={handleEditEvent}
                                             onDelete={handleDeleteEvent}
                                             onToggleInterest={handleToggleInterest}
+                                            userAge={userAge}
                                         />
                                     ))
                                 )}

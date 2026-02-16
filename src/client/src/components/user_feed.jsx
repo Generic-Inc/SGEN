@@ -19,11 +19,10 @@ export default function UserFeed() {
             try {
                 const status = await checkStatus();
                 if (status.user) {
-                    // ✅ Fetch Age
-                    const ageData = await fetchData("my-age");
-                    setCurrentUser({ ...status.user, age: ageData.age });
+                    const onboardingData = await fetchData("user/onboarding");
+                    setCurrentUser({ ...status.user, age: onboardingData.age });
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { console.log("Standard mode active."); }
         }
         loadUser();
     }, []);

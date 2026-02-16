@@ -6,12 +6,13 @@ import "../static/styles/feed.css";
 
 export default function CommunityFeed() {
     const [currentUser, setCurrentUser] = useState(null);
-    const [communityData, setCommunityData] = useState(null); // To store role
+    const [myRole, setMyRole] = useState(null); // <--- Store ONLY the role
     const communityId = getCommunityIdFromPage();
 
     const apiEndpoint = communityId ? `community/${communityId}/posts` : null;
     const { posts, loading, hasMore, removePost } = useInfiniteFeed(apiEndpoint);
 
+    // 1. Load Current User
     useEffect(() => {
         async function loadUser() {
             try {
@@ -25,14 +26,25 @@ export default function CommunityFeed() {
         loadUser();
     }, []);
 
-    // NEW: Fetch Community Data to get the User's Role
+    // 2. Load MY Role in this Community (The Missing Link!)
     useEffect(() => {
-        if (communityId) {
-            fetchData(`community/${communityId}`).then(data => {
-                setCommunityData(data);
-            }).catch(console.error);
+        async function fetchMyRole() {
+            if (communityId && currentUser?.user_id) {
+                try {
+                    // We specifically ask: "Get member info for ME in THIS community"
+                    const memberData = await fetchData(`community/${communityId}/members/${currentUser.user_id}`);
+                    if (memberData && memberData.role) {
+                        console.log("My Role in this community:", memberData.role);
+                        setMyRole(memberData.role);
+                    }
+                } catch (err) {
+                    console.log("Not a member or failed to fetch role");
+                    setMyRole(null);
+                }
+            }
         }
-    }, [communityId]);
+        fetchMyRole();
+    }, [communityId, currentUser]); // Runs once user is loaded
 
     if (!communityId) return null;
 
@@ -48,8 +60,8 @@ export default function CommunityFeed() {
                             onDelete={removePost}
                             view={{ type: "community", id: communityId }}
 
-                            // ✅ PASS ROLE HERE
-                            communityRole={communityData?.role}
+                            // ✅ PASS THE FETCHED ROLE CORRECTLY
+                            communityRole={myRole}
                         />
                     ))
                 ) : (

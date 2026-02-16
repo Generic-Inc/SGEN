@@ -1,19 +1,28 @@
 import { useState, useEffect } from "react";
-import { checkStatus, getCommunityIdFromPage } from "../static/api";
+import { checkStatus, getCommunityIdFromPage, fetchData } from "../static/api"; // ✅ Added fetchData
 import PostCard from "./sub components/post_card";
 import { useInfiniteFeed } from "../static/infinite_feed";
-import "../static/styles/feed_override.css";
+import "../static/styles/feed.css";
 
 export default function CommunityFeed() {
     const [currentUser, setCurrentUser] = useState(null);
     const communityId = getCommunityIdFromPage();
 
-    // USE THE HOOK! (Pass null if no ID so it doesn't fetch garbage)
     const apiEndpoint = communityId ? `community/${communityId}/posts` : null;
     const { posts, loading, hasMore, removePost } = useInfiniteFeed(apiEndpoint);
 
     useEffect(() => {
-        checkStatus().then(data => setCurrentUser(data.user)).catch(() => {});
+        async function loadUser() {
+            try {
+                const status = await checkStatus();
+                if (status.user) {
+                    // ✅ Fetch Age here too!
+                    const ageData = await fetchData("my-age");
+                    setCurrentUser({ ...status.user, age: ageData.age });
+                }
+            } catch (e) { console.error(e); }
+        }
+        loadUser();
     }, []);
 
     if (!communityId) return null;

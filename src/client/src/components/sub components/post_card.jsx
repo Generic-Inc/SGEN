@@ -1,52 +1,50 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { postData, fetchData } from "../../static/api";
 import CommentItem from "./comment_item";
+import TranslatedText from "./translated_text";
+import { useVoice } from "../../static/use_voice";
 import "../../static/styles/community.css";
+import SlangHighlighter from "./slang_highlighter";
+
+const SMART_REPLIES = [
+    "This is wonderful! 👏",
+    "Thanks for sharing!",
+    "I totally agree.",
+    "Could you explain more?",
+    "Sending love ❤️",
+    "Very interesting point.",
+    "Keep it up!",
+    "Wow, I didn't know that!",
+    "Great post! 👍"
+];
 
 function formatTimeAgo(dateString) {
     if (!dateString) return "";
-
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
 
     if (diffInSeconds < 0) return "Just now";
-
-    if (diffInSeconds < 60) {
-        return "Just now";
-    }
-    if (diffInSeconds < 3600) {
-        return `${Math.floor(diffInSeconds / 60)}m ago`;
-    }
-    if (diffInSeconds < 86400) {
-        return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    }
-    if (diffInSeconds < 2592000) {
-        return `${Math.floor(diffInSeconds / 86400)}d ago`;
-    }
-    if (diffInSeconds < 31536000) {
-        return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-    }
-    return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 }
 
 export default function PostCard({ post, currentUser, onDelete, view }) {
     const authorObj = post.author || {};
     const authorName = authorObj.displayName || authorObj.display_name || authorObj.name || post.author_name || "Unknown";
     const authorAvatar = authorObj.avatarUrl || authorObj.avatar_url || post.author_avatar || "https://placehold.co/40";
-
     const currentUserId = currentUser?.userId || currentUser?.user_id;
     const postAuthorId = authorObj.userId || authorObj.user_id || post.author_id;
 
     const [content, setContent] = useState(post.content || post.description || "");
     const [modifiedAt, setModifiedAt] = useState(post.modified || post.created);
     const createdAt = post.created;
-
     const postImage = post.image_url || post.imageUrl || null;
-
     const displayCreated = formatTimeAgo(createdAt);
     const displayEdited = formatTimeAgo(modifiedAt);
-
     const communityId = post.communityId || post.community_id;
     const postId = post.postId || post.post_id;
     const communityName = post.communityName || post.community_name || null;
@@ -60,10 +58,23 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
     const [commentText, setCommentText] = useState("");
     const [commentsLoaded, setCommentsLoaded] = useState(false);
 
+    const [suggestions, setSuggestions] = useState([]);
+
+    const { isListening, toggleListen, support, lang, setLang, interimTranscript } = useVoice((text) => {
+        setCommentText(prev => prev + (prev ? " " : "") + text);
+    });
+
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editContent, setEditContent] = useState(content);
     const [isSaving, setIsSaving] = useState(false);
+
+    const [isSpeaking, setIsSpeaking] = useState(false);
+
+    useEffect(() => {
+        const shuffled = [...SMART_REPLIES].sort(() => 0.5 - Math.random());
+        setSuggestions(shuffled.slice(0, 3));
+    }, []);
 
     const toggleComments = async () => {
         const newShowState = !showComments;
@@ -79,13 +90,16 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
     };
 
     const handlePostComment = async (e) => {
-        if (e.key === 'Enter' && commentText.trim()) {
+        const textToPost = typeof e === 'string' ? e : commentText;
+
+        if (typeof e !== 'string' && e?.preventDefault) e.preventDefault();
+
+        if ((typeof e === 'string' || e.key === 'Enter' || e.type === 'click') && textToPost.trim()) {
             try {
                 const route = `community/${communityId}/posts/${postId}/comments`;
-                const newCommentReal = await postData(route, { content: commentText });
+                const newCommentReal = await postData(route, { content: textToPost });
                 setComments([...comments, newCommentReal]);
-
-                setCommentText("");
+                setCommentText(""); // Clear input
                 setCommentCount(prev => prev + 1);
             } catch (err) {
                 console.error(err);
@@ -102,9 +116,7 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
     const handleCommentUpdate = (cId, newContent, newModified) => {
         setComments(prev => prev.map(c => {
             const currentId = c.commentId || c.comment_id;
-            if (currentId === cId) {
-                return { ...c, content: newContent, modified: newModified };
-            }
+            if (currentId === cId) return { ...c, content: newContent, modified: newModified };
             return c;
         }));
     };
@@ -143,67 +155,54 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
                 credentials: "include"
             });
             if (!response.ok) throw new Error("Failed to update");
-
             const updatedPost = await response.json();
-
             setContent(updatedPost.content);
             setModifiedAt(updatedPost.modified);
-
             setIsEditing(false);
             setIsMenuOpen(false);
-        } catch (err) {
-            console.error(err);
-            alert("Failed to save edits.");
-        } finally {
-            setIsSaving(false);
+        } catch (err) { console.error(err); alert("Failed to save edits."); } finally { setIsSaving(false); }
+    };
+
+    const handleSpeak = () => {
+        if (isSpeaking) {
+            window.speechSynthesis.cancel();
+            setIsSpeaking(false);
+        } else {
+            const utterance = new SpeechSynthesisUtterance(content);
+            utterance.onend = () => setIsSpeaking(false);
+            window.speechSynthesis.speak(utterance);
+            setIsSpeaking(true);
         }
     };
 
     const canManagePost = currentUserId && postAuthorId && (String(currentUserId) === String(postAuthorId));
     const showCommunityLabel = communityName && (!view || view.type !== "community");
+    const isPostEdited = modifiedAt && createdAt && (new Date(modifiedAt).getTime() > new Date(createdAt).getTime() + 1000);
 
-    const isPostEdited = modifiedAt && createdAt &&
-        (new Date(modifiedAt).getTime() > new Date(createdAt).getTime() + 1000);
+    const isSenior = currentUser?.age && currentUser.age > 60;
 
     return (
         <div className="post-card" style={{ marginBottom: "20px", background: "#fff", borderRadius: "8px", padding: "15px", boxShadow: "0 1px 2px rgba(0,0,0,0.1)", position: "relative" }}>
+
             <div className="post-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <a href={`/user/${postAuthorId}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: 'inherit' }}>
-                        <img
-                            src={authorAvatar}
-                            alt={authorName}
-                            style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover", border: "1px solid #eee" }}
-                            onError={(e) => {e.target.src = "https://placehold.co/40?text=?"}}
-                        />
+                        <img src={authorAvatar} alt={authorName} style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover", border: "1px solid #eee" }} onError={(e) => {e.target.src = "https://placehold.co/40?text=?"}} />
                         <div>
                             <h4 style={{ margin: 0, fontSize: "15px", fontWeight: "600", color: "#050505" }}>{authorName}</h4>
-                            <span style={{ fontSize: '12px', color: '#65676B' }}>
-                                {displayCreated}
-
-                                {isPostEdited && (
-                                    <span style={{ marginLeft: "5px", fontStyle: "italic", color: "#888" }}>
-                                        • Edited {displayEdited}
-                                    </span>
-                                )}
-                            </span>
+                            <span style={{ fontSize: '12px', color: '#65676B' }}>{displayCreated} {isPostEdited && <span style={{ marginLeft: "5px", fontStyle: "italic", color: "#888" }}>• Edited {displayEdited}</span>}</span>
                         </div>
                     </a>
                 </div>
-
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    {showCommunityLabel && (
-                        <a href={`/community/${communityId}`} style={{ fontSize: "12px", color: "#65676B", textDecoration: "none", fontWeight: "500" }}>
-                            Posted in <span style={{ color: "#1877F2" }}>{communityName}</span>
-                        </a>
-                    )}
+                    {showCommunityLabel && <a href={`/community/${communityId}`} style={{ fontSize: "12px", color: "#65676B", textDecoration: "none", fontWeight: "500" }}>Posted in <span style={{ color: "#1877F2" }}>{communityName}</span></a>}
                     {canManagePost && (
                         <div style={{ position: "relative" }}>
                             <button onClick={() => setIsMenuOpen(!isMenuOpen)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px', padding: "0 5px", color: "#606770", fontWeight: "bold" }}>&#x22EF;</button>
                             {isMenuOpen && (
                                 <div style={{ position: "absolute", right: 0, top: "25px", background: "white", boxShadow: "0 2px 8px rgba(0,0,0,0.2)", borderRadius: "8px", overflow: "hidden", zIndex: 10, minWidth: "120px" }}>
-                                    <button onClick={() => { setIsMenuOpen(false); setIsEditing(true); }} style={{ display: "block", width: "100%", padding: "10px 15px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: "14px", color: "#333" }} onMouseOver={(e) => e.target.style.background = "#f5f5f5"} onMouseOut={(e) => e.target.style.background = "none"}>✏️ Edit</button>
-                                    <button onClick={() => { setIsMenuOpen(false); handleDelete(); }} style={{ display: "block", width: "100%", padding: "10px 15px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: "14px", color: "#dc3545" }} onMouseOver={(e) => e.target.style.background = "#f5f5f5"} onMouseOut={(e) => e.target.style.background = "none"}>🗑️ Delete</button>
+                                    <button onClick={() => { setIsMenuOpen(false); setIsEditing(true); }} style={{ display: "block", width: "100%", padding: "10px 15px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: "14px", color: "#333" }}>✏️ Edit</button>
+                                    <button onClick={() => { setIsMenuOpen(false); handleDelete(); }} style={{ display: "block", width: "100%", padding: "10px 15px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: "14px", color: "#dc3545" }}>🗑️ Delete</button>
                                 </div>
                             )}
                         </div>
@@ -222,31 +221,135 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
                     </div>
                 ) : (
                     <>
-                        <p style={{ fontSize: "15px", lineHeight: "1.5", color: "#050505", whiteSpace: "pre-wrap" }}>{content}</p>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                            <p className="post-text-body" style={{ fontSize: "15px", lineHeight: "1.5", color: "#050505", whiteSpace: "pre-wrap", flex: 1 }}>
+                                {isSenior ? (
+                                    <SlangHighlighter text={content} userAge={currentUser.age} />
+                                ) : (
+                                    <TranslatedText content={content} translations={post.translations} />
+                                )}
+                            </p>
+
+                            {isSenior && (
+                                <button
+                                    onClick={handleSpeak}
+                                    title={isSpeaking ? "Stop Reading" : "Read Aloud"}
+                                    style={{
+                                        background: isSpeaking ? "#e0245e" : "#f0f2f5",
+                                        color: isSpeaking ? "white" : "#65676B",
+                                        border: "none",
+                                        borderRadius: "50%",
+                                        width: "36px",
+                                        height: "36px",
+                                        cursor: "pointer",
+                                        fontSize: "18px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        marginTop: "-5px",
+                                        transition: "background 0.2s"
+                                    }}
+                                >
+                                    {isSpeaking ? "🔇" : "🔊"}
+                                </button>
+                            )}
+                        </div>
+
                         {postImage && <img src={postImage} alt="Post" style={{ width: '100%', borderRadius: '8px', marginTop: '10px' }} /> }
                     </>
                 )}
             </div>
 
             <div className="post-footer" style={{ marginTop: '10px', borderTop: '1px solid #eee', paddingTop: '10px', display: 'flex', gap: '20px' }}>
-                <button onClick={handleLike} style={{ background: 'none', border: 'none', cursor: 'pointer', color: isLiked ? "#e0245e" : "#65676B", fontSize:'14px', display:'flex', alignItems:'center', gap:'5px' }}>
-                    {isLiked ? "❤️" : "🤍"} {likeCount} Likes
-                </button>
-                <button onClick={toggleComments} style={{ background: 'none', border: 'none', cursor: 'pointer', color: "#65676B", fontSize:'14px', display:'flex', alignItems:'center', gap:'5px' }}>
-                    💬 {commentCount} Comments
-                </button>
+                <button onClick={handleLike} style={{ background: 'none', border: 'none', cursor: 'pointer', color: isLiked ? "#e0245e" : "#65676B", fontSize:'14px', display:'flex', alignItems:'center', gap:'5px' }}>{isLiked ? "❤️" : "🤍"} {likeCount} Likes</button>
+                <button onClick={toggleComments} style={{ background: 'none', border: 'none', cursor: 'pointer', color: "#65676B", fontSize:'14px', display:'flex', alignItems:'center', gap:'5px' }}>💬 {commentCount} Comments</button>
             </div>
 
             {showComments && (
                 <div style={{ marginTop: "15px", paddingTop: "15px", borderTop: "1px dashed #eee" }}>
+
+                    {isSenior && (
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '12px', color: '#888', width: '100%', marginBottom: '2px' }}>Quick Reply:</span>
+                            {suggestions.map((reply, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => handlePostComment(reply)}
+                                    style={{
+                                        background: "white",
+                                        border: "1px solid #1877F2",
+                                        color: "#1877F2",
+                                        padding: "6px 12px",
+                                        borderRadius: "20px",
+                                        cursor: "pointer",
+                                        fontSize: "13px",
+                                        fontWeight: "500",
+                                        transition: "all 0.2s"
+                                    }}
+                                    onMouseOver={(e) => {e.target.style.background = "#1877F2"; e.target.style.color="white";}}
+                                    onMouseOut={(e) => {e.target.style.background = "white"; e.target.style.color="#1877F2";}}
+                                >
+                                    {reply}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                     <div style={{ marginBottom: "15px", display: "flex", flexDirection: "column", gap: "10px" }}>
                         {comments.length === 0 ? <p style={{ fontSize: "13px", color: "#888", textAlign: "center" }}>No comments yet.</p> : comments.map((c, idx) => (
                             <CommentItem key={c.commentId || c.comment_id || idx} comment={c} currentUser={currentUser} communityId={communityId} postId={postId} onDelete={handleCommentDelete} onUpdate={handleCommentUpdate} />
                         ))}
                     </div>
-                    <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                        <img src={currentUser?.avatarUrl || currentUser?.avatar_url || "https://placehold.co/30"} style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit:"cover" }} />
-                        <input type="text" placeholder="Write a comment..." value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={handlePostComment} style={{ flex: 1, padding: "8px 12px", borderRadius: "20px", border: "1px solid #ddd", background: "#f0f2f5", outline: "none" }} />
+
+                    <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                        <img src={currentUser?.avatarUrl || currentUser?.avatar_url || "https://placehold.co/30"} style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit:"cover", marginTop: "4px" }} />
+
+                        <div style={{ flex: 1, position: "relative" }}>
+                            <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+                                <input
+                                    type="text"
+                                    placeholder={isListening ? "Listening... 🎤" : "Write a comment..."}
+                                    value={isListening ? (commentText + " " + interimTranscript) : commentText}
+                                    onChange={(e) => setCommentText(e.target.value)}
+                                    onKeyDown={handlePostComment}
+                                    style={{
+                                        flex: 1, padding: "8px 12px", paddingRight: "40px",
+                                        borderRadius: "20px", border: isListening ? "2px solid #ff4444" : "1px solid #ddd",
+                                        background: "#f0f2f5", outline: "none"
+                                    }}
+                                />
+                                {support && (
+                                    <button
+                                        onClick={toggleListen}
+                                        style={{
+                                            background: "none", border: "none", cursor: "pointer", fontSize: "18px",
+                                            color: isListening ? "#ff4444" : "#65676B"
+                                        }}
+                                        title="Voice to Text"
+                                    >
+                                        {isListening ? "⏹️" : "🎙️"}
+                                    </button>
+                                )}
+                                <button onClick={handlePostComment} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "#1877F2" }}>
+                                    ➤
+                                </button>
+                            </div>
+                            {support && isListening && (
+                                <div style={{ fontSize: "10px", marginTop: "2px", marginLeft: "10px", color: "#888" }}>
+                                    Language:
+                                    <select
+                                        value={lang}
+                                        onChange={(e) => setLang(e.target.value)}
+                                        style={{ border: "none", background: "none", fontSize: "10px", color: "#1877F2", cursor: "pointer", marginLeft: "2px" }}
+                                    >
+                                        <option value="en-US">English</option>
+                                        <option value="zh-CN">Chinese</option>
+                                        <option value="ms-MY">Malay</option>
+                                        <option value="ta-IN">Tamil</option>
+                                    </select>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}

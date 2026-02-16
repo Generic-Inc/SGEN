@@ -1,19 +1,27 @@
 import { useState, useEffect } from "react";
-import { checkStatus } from "../static/api";
+import { checkStatus, fetchData } from "../static/api"; // ✅ Imported fetchData
 import PostCard from "./sub components/post_card";
 import { useInfiniteFeed } from "../static/infinite_feed";
-import "../static/styles/feed_override.css";
+import "../static/styles/feed.css";
 
 export default function HomeFeed() {
     const [currentUser, setCurrentUser] = useState(null);
-
-    // USE THE HOOK!
     const { posts, loading, hasMore, removePost } = useInfiniteFeed("feed");
 
     useEffect(() => {
-        checkStatus().then(data => setCurrentUser(data.user)).catch(() => {});
+        async function loadUser() {
+            try {
+                const status = await checkStatus();
+                if (status.user) {
+                    const onboardingData = await fetchData("user/onboarding");
+                    setCurrentUser({ ...status.user, age: onboardingData.age });
+                }
+            } catch (e) {
+                console.log("Age data not found, defaulting to standard mode.");
+            }
+        }
+        loadUser();
     }, []);
-
     return (
         <div className="feed-container">
             <div className="posts-list" style={{width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>

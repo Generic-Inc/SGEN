@@ -1,7 +1,11 @@
 import { useState } from 'react';
+import SlangHighlighter from "./slang_highlighter";
 
-export default function EventCard({ event, communityId, onEdit, onDelete, onToggleInterest, disableNavigation = false }) {
+export default function EventCard({ event, communityId, onEdit, onDelete, onToggleInterest, disableNavigation = false, userAge }) {
     const [showMenu, setShowMenu] = useState(false);
+
+    const [isSpeaking, setIsSpeaking] = useState(false);
+
     const detailUrl = `${window.location.origin}/community/${communityId}/events/${event.eventId}`;
 
     const toggleMenu = (e) => {
@@ -54,6 +58,21 @@ export default function EventCard({ event, communityId, onEdit, onDelete, onTogg
         }
     };
 
+    const handleSpeak = (e) => {
+        e.stopPropagation();
+        if (isSpeaking) {
+            window.speechSynthesis.cancel();
+            setIsSpeaking(false);
+        } else {
+            const utterance = new SpeechSynthesisUtterance(event.eventDescription);
+            utterance.onend = () => setIsSpeaking(false);
+            window.speechSynthesis.speak(utterance);
+            setIsSpeaking(true);
+        }
+    };
+
+    const isSenior = userAge && userAge > 60;
+
     return (
         <div
             className={`event-card ${disableNavigation ? '' : 'event-card-clickable'}`}
@@ -73,7 +92,34 @@ export default function EventCard({ event, communityId, onEdit, onDelete, onTogg
             </div>
 
             {event.eventDescription && (
-                <p className="event-description">{event.eventDescription}</p>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '10px' }}>
+                    <p className="event-description" style={{ flex: 1, margin: 0 }}>
+                        <SlangHighlighter text={event.eventDescription} userAge={userAge} />
+                    </p>
+
+                    {isSenior && (
+                        <button
+                            onClick={handleSpeak}
+                            style={{
+                                background: isSpeaking ? "#e0245e" : "#f0f2f5",
+                                color: isSpeaking ? "white" : "#65676B",
+                                border: "none",
+                                borderRadius: "50%",
+                                width: "30px",
+                                height: "30px",
+                                cursor: "pointer",
+                                fontSize: "16px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0
+                            }}
+                            title={isSpeaking ? "Stop" : "Read"}
+                        >
+                            {isSpeaking ? "🔇" : "🔊"}
+                        </button>
+                    )}
+                </div>
             )}
 
             {event.imageUrl && (

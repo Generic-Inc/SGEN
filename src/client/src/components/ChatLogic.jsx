@@ -1,7 +1,7 @@
 // src/components/ChatLogic.jsx
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { fetchData, postData } from '../static/api.js';
-import io from 'socket.io-client'; // 1. Import Socket.IO
+import io from 'socket.io-client';
 
 /* Checks if a message string ends in an image file extension */
 export const isImage = (text) => {
@@ -17,82 +17,91 @@ export const formatTime = (dateString) => {
     } catch { return ""; }
 };
 
-export const useChatLogic = (API_URL, communityId, currentUserId) => {
+export const useChatLogic = (communityId) => {
     const [messages, setMessages] = useState([]);
     const [community, setCommunity] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [onlineCount, setOnlineCount] = useState(0);
 
-    // 2. Create a Ref to hold the socket connection
+    /* -----------------------------------------------------------
+       NEW: State to store the logged-in user's identity
+       received via WebSocket handshake.
+    ----------------------------------------------------------- */
+    const [currentUser, setCurrentUser] = useState(null);
+
     const socketRef = useRef();
 
     /* Retrieves community metadata */
     const fetchCommunityInfo = useCallback(async () => {
         try {
             const data = await fetchData(`community/${communityId}`);
-            if (data) {
-                setCommunity(data);
-            } else {
-                setCommunity({ display_name: "greenery walk", description: "Default Community Description" });
-            }
+            if (data) setCommunity(data);
         } catch (error) {
             console.error("Community fetch error:", error);
-            setCommunity({ display_name: "Error", description: "Could not load community details." });
+            setCommunity({ display_name: "Error", description: "Could not load details." });
         }
     }, [communityId]);
 
     /* Retrieves the INITIAL list of chat messages */
-const fetchInitialMessages = useCallback(async () => {
-    setLoading(true); // Ensure loading starts
-    try {
-        const data = await fetchData(`community/${communityId}/messages`);
-        if (data && data.messages) {
-            setMessages(data.messages);
+    const fetchInitialMessages = useCallback(async () => {
+        setLoading(true);
+        try {
+            const data = await fetchData(`community/${communityId}/messages`);
+            if (data && data.messages) setMessages(data.messages);
+        } catch (error) {
+            console.error("Failed to load messages:", error);
+        } finally {
+            setLoading(false);
         }
-    } catch (error) {
-        console.error("Failed to load messages:", error);
-        // Even if it fails (e.g., 403 Forbidden), we must stop loading
-    } finally {
-        setLoading(false); // This will now ALWAYS run
-    }
-}, [communityId]);
+    }, [communityId]);
 
-    /* 3. Setup WebSocket Connection & Listeners */
+    /* Setup WebSocket Connection & Listeners */
     useEffect(() => {
         if (!communityId) return;
 
-        // Load initial data via HTTP
         fetchCommunityInfo();
         fetchInitialMessages();
 
-        // Connect to Flask Server (Ensure port 5000 is correct)
-        const socket = io("http://127.0.0.1:5000");
+        // Ensure credentials are included to share the secure token cookie
+        const socket = io("http://127.0.0.1:5000", { withCredentials: true });
         socketRef.current = socket;
 
-        // Join the specific room for this community
         socket.emit('join', { room: communityId });
 
-        // Listen for incoming messages (Real-time!)
+        /* -----------------------------------------------------------
+           NEW LISTENER: Identity Handshake
+           Listen for the server to send back your user details.
+        ----------------------------------------------------------- */
+        socket.on('connect_user_data', (userData) => {
+            console.log("WebSocket Handshake: Logged in as", userData);
+            setCurrentUser(userData);
+        });
+
+        // LISTENER 1: New Messages
         socket.on('receive_message', (newMessage) => {
-            setMessages((prevMessages) => {
-                // Prevent duplicate messages if the server sends them twice
-                if (prevMessages.some(msg => msg.messageId === newMessage.messageId)) {
-                    return prevMessages;
-                }
-                return [...prevMessages, newMessage];
+            setMessages((prev) => {
+                if (prev.some(msg => msg.messageId === newMessage.messageId)) return prev;
+                return [...prev, newMessage];
             });
         });
 
+        // LISTENER 2: Message Edits
         socket.on('message_edited', (updatedMsg) => {
             setMessages((prev) =>
-            prev.map(msg => msg.messageId === updatedMsg.messageId ? updatedMsg : msg)
+                prev.map(msg => msg.messageId === updatedMsg.messageId ? updatedMsg : msg)
             );
         });
 
+        // LISTENER 3: Message Deletions
         socket.on('message_deleted', (data) => {
             setMessages((prev) => prev.filter(msg => msg.messageId !== data.messageId));
         });
 
-        // Cleanup: Disconnect when leaving the page
+        // LISTENER 4: Online Count
+        socket.on('room_data', (data) => {
+            if (data && data.count !== undefined) setOnlineCount(data.count);
+        });
+
         return () => {
             socket.disconnect();
         };
@@ -102,48 +111,87 @@ const fetchInitialMessages = useCallback(async () => {
     const sendMessage = async (content) => {
         if (!content.trim()) return false;
         try {
-            // We still use HTTP POST to send the message for security/validation
-            await postData(`community/${communityId}/messages`, {
-                userId: currentUserId,
-                content: content
-            });
-
-            // 4. IMPORTANT: We REMOVED await fetchMessages() here.
-            // Why? Because the server will "emit" the message back to us via the socket
-            // and the 'receive_message' listener above will update the UI automatically.
-
+            await postData(`community/${communityId}/messages`, { content });
             return true;
         } catch (error) {
             console.error("Send error:", error);
             return false;
         }
     };
-    const editMessage = async (messageId, newContent) => {
-    if (!newContent.trim()) return false;
-    try {
-        // Sends the new content to the specific message ID
-        await postData(`community/${communityId}/messages/${messageId}`,
-            { content: newContent },
-            'PATCH'
-        );
-        return true;
-    } catch (error) {
-        console.error("Edit error:", error);
-        return false;
-    }
-};
-    const deleteMessage = async (messageId) => {
-    try {
-        // Tells the backend to delete the message
-        await fetchData(`community/${communityId}/messages/${messageId}`, 'DELETE');
-        return true;
-    } catch (error) {
-        console.error("Delete error:", error);
-        return false;
-    }
-};
 
-    /* Return 'fetchMessages' as an empty function or alias to initial fetch
-       so existing UI code doesn't break if it tries to call it. */
-    return { community, messages, loading, sendMessage,editMessage, deleteMessage, fetchMessages: fetchInitialMessages };
+    /* Edits a message */
+    const editMessage = async (messageId, newContent) => {
+        if (!newContent.trim()) return false;
+        try {
+            const response = await fetch(`http://localhost:5000/api/community/${communityId}/messages/${messageId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ content: newContent })
+            });
+
+            if (response.ok) {
+                setMessages((prevMessages) =>
+                    prevMessages.map((msg) =>
+                        msg.messageId === messageId ? { ...msg, content: newContent } : msg
+                    )
+                );
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error("Edit error:", error);
+            return false;
+        }
+    };
+
+    /* Deletes a message */
+    const deleteMessage = async (messageId) => {
+        try {
+            const response = await fetch(`http://localhost:5000/api/community/${communityId}/messages/${messageId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                setMessages((prevMessages) =>
+                    prevMessages.filter((msg) => msg.messageId !== messageId)
+                );
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error("Delete error:", error);
+            return false;
+        }
+    };
+
+    /* Joins the community */
+    const joinCommunity = async () => {
+        try {
+            const result = await postData(`community/${communityId}/join`, {});
+            if (result.success) {
+                await fetchCommunityInfo();
+                await fetchInitialMessages();
+                return true;
+            }
+        } catch (error) {
+            console.error("Join error:", error);
+        }
+        return false;
+    };
+
+    return {
+        community,
+        messages,
+        loading,
+        onlineCount,
+        currentUser, // NEW: Return this for identity checks in components
+        sendMessage,
+        editMessage,
+        deleteMessage,
+        joinCommunity,
+        fetchMessages: fetchInitialMessages
+    };
 };

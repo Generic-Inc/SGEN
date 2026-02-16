@@ -1,6 +1,7 @@
 from flask import Blueprint, request
 
 from global_src.db import DATABASE
+from global_src.global_classes import User
 from global_src.util import get_response
 from . import api
 
@@ -34,8 +35,15 @@ async def search():
 
 @api.route("/chatbot", methods=["POST"])
 async def chatbot():
+    authorization = request.cookies.get('token')
+    if not authorization:
+        return {"error": "Unauthorized"}, 401
+    user = await User.get_user_by_token(authorization)
+    if not user:
+        return {"error": "Unauthorized"}, 401
+
     data = request.json
     message = data.get("message_history", [])
-    response = await get_response(message)
+    response = await get_response(message, user.display_name)
     message.append({"role": "assistant", "content": response})
     return {"messages": message}

@@ -31,12 +31,10 @@ function LinkWithGuard({ url }) {
     const [showWarning, setShowWarning] = useState(false);
 
     const href = url.startsWith("http") ? url : `https://${url}`;
-
     const isTrusted = TRUSTED_DOMAINS.some(domain => url.toLowerCase().includes(domain));
 
     const handleLinkClick = (e) => {
         if (isTrusted) return;
-
         e.preventDefault();
         e.stopPropagation();
         setShowWarning(true);
@@ -86,14 +84,22 @@ function LinkWithGuard({ url }) {
 export default function SlangHighlighter({ text, userAge }) {
     if (!text) return null;
 
+    // Safety check: If age is missing or young, return plain text
     if (!userAge || userAge <= 60) {
         return <>{text}</>;
     }
 
     const slangKeys = Object.keys(GEN_Z_SLANG);
-    const urlPattern = "((?:https?:\\/\\/|www\\.)[^\\s]+)";
-    const slangPattern = `\\b(${slangKeys.join("|")})\\b`;
+    if (slangKeys.length === 0) return <>{text}</>;
 
+    // 1. Sort by length (Longest first)
+    slangKeys.sort((a, b) => b.length - a.length);
+
+    // 2. Regex Pattern
+    const urlPattern = "(?:https?:\\/\\/|www\\.)[^\\s]+";
+    const slangPattern = `\\b(?:${slangKeys.join("|")})\\b`;
+
+    // 3. One Capture Group
     const regex = new RegExp(`(${urlPattern}|${slangPattern})`, "gi");
 
     const parts = text.split(regex);
@@ -105,10 +111,12 @@ export default function SlangHighlighter({ text, userAge }) {
 
                 const lowerPart = part.toLowerCase();
 
+                // 1. Is it a URL?
                 if (lowerPart.startsWith("http") || lowerPart.startsWith("www.")) {
                     return <LinkWithGuard key={index} url={part} />;
                 }
 
+                // 2. Is it Slang?
                 if (GEN_Z_SLANG[lowerPart]) {
                     return (
                         <SlangWord
@@ -119,6 +127,7 @@ export default function SlangHighlighter({ text, userAge }) {
                     );
                 }
 
+                // 3. Plain Text
                 return part;
             })}
         </span>

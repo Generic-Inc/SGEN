@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import SlangHighlighter from "./slang_highlighter";
 
-export default function EventCard({ event, communityId, onEdit, onDelete, onToggleInterest, disableNavigation = false }) {
+export default function EventCard({ event, communityId, onEdit, onDelete, onToggleInterest, disableNavigation = false, userAge }) {
     const [showMenu, setShowMenu] = useState(false);
     const detailUrl = `${window.location.origin}/community/${communityId}/events/${event.eventId}`;
 
@@ -73,7 +74,9 @@ export default function EventCard({ event, communityId, onEdit, onDelete, onTogg
             </div>
 
             {event.eventDescription && (
-                <p className="event-description">{event.eventDescription}</p>
+                <p className="event-description">
+                    <SlangHighlighter text={event.eventDescription} userAge={userAge} />
+                </p>
             )}
 
             {event.imageUrl && (

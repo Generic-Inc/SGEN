@@ -7,6 +7,8 @@ from modules.onboarding.Onboarding import Onboarding
 from . import community_blueprint
 from . import api
 from datetime import datetime
+# ✅ UPDATED IMPORT: Import the class for checking roles
+from modules.authentications.community_permissions import CommunityPermissions
 
 @api.route("/my-communities", methods=["GET"])
 async def get_my_communities():
@@ -100,7 +102,11 @@ async def single_post(community_id: int, post_id: int):
     if not post: return {"error": "Post not found"}, 404
 
     if request.method == "DELETE":
-        if post.author.user_id != user.user_id:
+        # ✅ NEW LOGIC: Check Author OR Admin/Owner
+        is_author = (post.author.user_id == user.user_id)
+        is_admin_or_owner = await CommunityPermissions.check_permission(user.user_id, community_id, 'admin')
+
+        if not is_author and not is_admin_or_owner:
             return {"error": "Forbidden"}, 403
 
         await post.delete()

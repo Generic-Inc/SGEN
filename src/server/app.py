@@ -45,4 +45,4 @@ if __name__ == '__main__':
 
     # --- 3. REPLACE APP.RUN WITH SOCKETIO.RUN ---
     # use_reloader=False is important to prevent the server from starting twice
-    socketio.run(app, debug=True, use_reloader=False)
+    socketio.run(app, debug=True, use_reloader=False, allow_unsafe_werkzeug=True)

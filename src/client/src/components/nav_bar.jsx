@@ -3,7 +3,7 @@ import {useEffect, useState} from "react";
 import "../static/styles/nav.css"
 import {CreateButton} from "./sub components/create_button.jsx";
 import Profile from "./sub components/profile.jsx";
-import {Navigate} from "react-router-dom";
+import SearchBar from "./sub components/search_bar.jsx";
 
 export default function NavBar() {
     const [data, setData] = useState(null);
@@ -28,12 +28,15 @@ export default function NavBar() {
                     <a href={"/"}>
                         <img src="https://i.ibb.co/YKjk4w4/SGEN-Logo.png" className="nav-icon" alt="SGEN" />
                     </a>
+                    <div className="nav-search-center">
+                        <SearchBar />
+                    </div>
                     <div className="right-container">
                         <CreateButton />
                         <Profile className="nav-avatar" avatarUrl={user.avatarUrl} hrefUrl={`/user/${user?.userId}`}/>
                     </div>
                 </nav>
-            < />
+            </>
         )
 
 }

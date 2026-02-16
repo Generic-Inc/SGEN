@@ -1,5 +1,22 @@
 import { useState } from "react";
 import { postData } from "../../static/api";
+import TranslatedText from "./translated_text";
+import SlangHighlighter from "./slang_highlighter";
+
+// Helper function
+function formatTimeAgo(dateString) {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+
+    if (diffInSeconds < 0) return "Just now";
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d`;
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
 
 export default function CommentItem({ comment, currentUser, communityId, postId, onDelete, onUpdate }) {
     const cAuthor = comment.author || {};
@@ -10,7 +27,7 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
     // Permissions
     const currentUserId = currentUser?.userId || currentUser?.user_id;
     const commentAuthorId = cAuthor.userId || cAuthor.user_id;
-    const canManageComment = currentUserId && commentAuthorId && (currentUserId == commentAuthorId);
+    const canManageComment = currentUserId && commentAuthorId && (String(currentUserId) === String(commentAuthorId));
 
     // State
     const [isEditing, setIsEditing] = useState(false);
@@ -18,12 +35,22 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
+    // --- NEW: TTS State ---
+    const [isSpeaking, setIsSpeaking] = useState(false);
+
     // Like State
     const [cLikeCount, setCLikeCount] = useState(comment.likeCount || comment.like_count || 0);
     const [cIsLiked, setCIsLiked] = useState(comment.isLiked || comment.is_liked || false);
 
-    // Edited Check
-    const isEdited = comment.modified && comment.created && (comment.modified !== comment.created);
+    // Time & Edited Logic
+    const displayCreated = formatTimeAgo(comment.created);
+    const displayEdited = formatTimeAgo(comment.modified);
+
+    const isEdited = comment.modified && comment.created &&
+                     (new Date(comment.modified).getTime() > new Date(comment.created).getTime() + 1000);
+
+    // Check Age
+    const isSenior = currentUser?.age && currentUser.age > 60;
 
     // Handlers
     const handleSave = async () => {
@@ -70,15 +97,27 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
         try {
             await postData(`community/${communityId}/posts/${postId}/comments/${cId}/likes`, {});
         } catch (error) {
-            // Revert on error
             setCIsLiked(!newLikedState);
             setCLikeCount(prev => newLikedState ? prev - 1 : prev + 1);
         }
     };
 
+    // --- NEW: Speak Handler ---
+    const handleSpeak = () => {
+        if (isSpeaking) {
+            window.speechSynthesis.cancel();
+            setIsSpeaking(false);
+        } else {
+            const utterance = new SpeechSynthesisUtterance(comment.content);
+            utterance.onend = () => setIsSpeaking(false);
+            window.speechSynthesis.speak(utterance);
+            setIsSpeaking(true);
+        }
+    };
+
     return (
         <div style={{ display: "flex", gap: "8px" }}>
-            {/* LINK TO PROFILE */}
+            {/* AVATAR */}
             <a href={`/user/${commentAuthorId}`} style={{ textDecoration: "none" }}>
                 <img src={cAvatar} style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit:"cover", marginTop: "4px" }} />
             </a>
@@ -100,15 +139,24 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
                     onMouseLeave={() => setIsMenuOpen(false)}
                 >
 
-                    {/* Header */}
-                    <div style={{ fontWeight: "600", fontSize: "13px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <a href={`/user/${commentAuthorId}`} style={{ textDecoration: "none", color: "inherit" }}>
+                    {/* Header: Name + Time + Edited Time */}
+                    <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", marginBottom: "2px" }}>
+                        <a href={`/user/${commentAuthorId}`} style={{ textDecoration: "none", color: "inherit", fontWeight: "600", fontSize: "13px" }}>
                             {cName}
                         </a>
-                        {isEdited && <span style={{marginLeft: "5px", fontWeight: "normal", fontStyle: "italic", fontSize: "11px", color: "#666"}}>• Edited</span>}
+
+                        <span style={{ fontSize: "11px", color: "#65676B", marginLeft: "6px" }}>
+                            {displayCreated}
+                        </span>
+
+                        {isEdited && (
+                            <span style={{ marginLeft: "5px", fontStyle: "italic", fontSize: "11px", color: "#666" }}>
+                                • Edited {displayEdited}
+                            </span>
+                        )}
                     </div>
 
-                    {/* Content: View vs Edit Mode */}
+                    {/* Content Area */}
                     {isEditing ? (
                         <div style={{ marginTop: "5px" }}>
                             <textarea
@@ -125,10 +173,39 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
                             </div>
                         </div>
                     ) : (
-                        <div style={{ marginTop: "2px" }}>{comment.content}</div>
+                        // --- UPDATED: Flex container for Text + Speaker ---
+                        <div style={{ marginTop: "0", display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                            <div style={{flex: 1}}>
+                                {isSenior ? (
+                                    <SlangHighlighter text={comment.content} userAge={currentUser.age} />
+                                ) : (
+                                    <TranslatedText content={comment.content} />
+                                )}
+                            </div>
+
+                            {/* TTS Button (Only for Seniors) */}
+                            {isSenior && (
+                                <button
+                                    onClick={handleSpeak}
+                                    style={{
+                                        background: "none",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        fontSize: "14px",
+                                        opacity: 0.7,
+                                        padding: "0",
+                                        minWidth: "20px",
+                                        marginTop: "2px"
+                                    }}
+                                    title={isSpeaking ? "Stop" : "Read"}
+                                >
+                                    {isSpeaking ? "🔇" : "🔊"}
+                                </button>
+                            )}
+                        </div>
                     )}
 
-                    {/* INTERNAL MENU */}
+                    {/* MENU (Edit/Delete) */}
                     {canManageComment && !isEditing && (
                         <div style={{ position: "absolute", top: "8px", right: "8px" }}>
                             <button
@@ -148,7 +225,7 @@ export default function CommentItem({ comment, currentUser, communityId, postId,
                                     background: "white", boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
                                     borderRadius: "6px", overflow: "hidden", zIndex: 10, minWidth: "80px"
                                 }}>
-                                    <div onClick={() => { setIsEditing(true); setIsMenuOpen(false); }} style={{ padding: "8px 12px", cursor: "pointer", fontSize: "12px", ":hover": {background: "#eee"} }}>✏️ Edit</div>
+                                    <div onClick={() => { setIsEditing(true); setIsMenuOpen(false); }} style={{ padding: "8px 12px", cursor: "pointer", fontSize: "12px" }}>✏️ Edit</div>
                                     <div onClick={handleDelete} style={{ padding: "8px 12px", cursor: "pointer", fontSize: "12px", color: "red" }}>🗑️ Delete</div>
                                 </div>
                             )}

@@ -3,10 +3,10 @@ from global_src.global_classes import Community, User, CommunityMember
 from modules.authentications import Permissions
 from modules.posts import Post, Comment, Like
 from global_src.db import DATABASE
+from modules.onboarding.Onboarding import Onboarding
 from . import community_blueprint
 from . import api
 from datetime import datetime
-
 
 @api.route("/my-communities", methods=["GET"])
 async def get_my_communities():
@@ -36,7 +36,6 @@ async def get_home_feed():
     limit = 10
     offset = (page - 1) * limit
 
-    # Updated to use pagination
     posts = await Post.get_user_feed(user.user_id, limit=limit, offset=offset)
     return {"posts": [p.public_json for p in posts]}
 

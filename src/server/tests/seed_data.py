@@ -1,134 +1,290 @@
+import asyncio
+import random
+from datetime import datetime, timedelta
+
+# Import your actual classes
 from config.config import CONFIG
 from global_src.db import DATABASE
 from global_src.global_classes import User, Community
-from modules.authentications import SaltHash, AuthenticationsUser
+from modules.authentications.data_classes import AuthenticationsUser, SaltHash
 from modules.posts import Post, Comment
 from modules.events import Event, EventAttendance
-from datetime import datetime, timedelta
+from modules.onboarding.Onboarding import Onboarding
+from modules.chat_model import ChatMessage
+
+# --- 🛠️ CONFIGURATION ---
+NUM_USERS = 30
+NUM_POSTS = 120
+NUM_EVENTS = 15
+NUM_CHATS = 50
+PROB_SENIOR = 0.3
+
+# --- 🎭 DATA POOLS ---
+USER_NAMES = ["Alex", "Jordan", "Taylor", "Morgan", "Casey", "Riley", "Jamie", "Robin", "Drew", "Cameron", "Sam",
+              "Quinn", "Avery", "Dakota", "Reese"]
+SURNAMES = ["Lee", "Tan", "Wong", "Smith", "Chen", "Lim", "Raju", "Koh", "Teo", "Ng", "Yap", "Chua"]
+REGIONS = ["North", "South", "East", "West", "Central"]
+PRONOUNS = ["he/him", "she/her", "they/them", "she/they", "he/they"]
+INTERESTS_LIST = ["Coding", "Knitting", "Gaming", "Hiking", "Cooking", "Tai Chi", "Photography", "K-Pop", "History",
+                  "Tech", "Investing", "Gardening"]
+
+# --- 🗣️ SLANG & CONTENT ---
+SLANG_WORDS = [
+    "no cap", "fr", "slay", "bet", "bop", "mood", "salty", "flex", "tea",
+    "shook", "simp", "ghost", "vibe", "goat", "extra", "stan", "low-key",
+    "high-key", "sus", "rizz", "delulu", "ate", "finna", "gyatt"
+]
+
+TOPICS = {
+    "General": "Just hanging out.",
+    "Tech": "Talking about the latest gadgets and code.",
+    "Food": "Best hawker spots in SG.",
+    "Wellness": "Mental health and physical fitness.",
+    "Retro": "Remembering the good old days."
+}
+
+POST_TEMPLATES_YOUNG = [
+    "Honestly, {topic} is a whole {slang}.",
+    "The way I love {topic} is {slang} fr.",
+    "{topic} just makes me feel so {slang}.",
+    "Anyone else think {topic} is kinda {slang}?",
+    "Just dropped a new project on {topic}. It {slang}.",
+    "Current mood: {slang}.",
+    "Can't believe {topic} exists. {slang} behavior.",
+    "Woke up and chose {topic}. No regrets."
+]
+
+POST_TEMPLATES_SENIOR = [
+    "I really enjoyed the {topic} session today.",
+    "Does anyone know where to find good {topic} classes?",
+    "Back in my day, {topic} was very different.",
+    "Sharing a photo from my morning walk. Lovely weather.",
+    "How do I use this feature? Still learning.",
+    "Wonderful to see so many young people interested in {topic}.",
+    "Looking for recommendations for {topic}. Thank you!",
+    "Had a lovely tea time discussing {topic}."
+]
+
+# --- 📅 SLANG EVENT TEMPLATES (NEW!) ---
+EVENT_NAMES_SLANG = [
+    "{topic} Vibe Check Session",
+    "The Ultimate {topic} Slay",
+    "High-Key {topic} Workshop",
+    "{topic} Rizz Party",
+    "No Cap: Best {topic} Meetup",
+    "{topic} & Chill",
+    "The {topic} Flex-Off"
+]
+
+EVENT_DESC_SLANG = [
+    "Come through if you're not basic. It's gonna be {slang}.",
+    "We finna discuss everything about {topic}. Don't ghost us!",
+    "If you miss this, you're honestly {slang}.",
+    "Big vibes only. Join us for a {slang} time.",
+    "Strictly for the {slang} ones. Haters stay home."
+]
+
+
+async def clean_db():
+    print("🗑️  Cleaning Database...")
+    tables = [
+        "EventAttendance", "Events", "CommentLikes", "PostLikes", "Comments",
+        "Posts", "ChatMessage", "Memberships", "Communities",
+        "OnboardingInformation", "UserAuthentication", "Profiles", "AuthTokens"
+    ]
+    for table in tables:
+        await DATABASE.execute(f"DELETE FROM {table}")
+        await DATABASE.execute(f"DELETE FROM sqlite_sequence WHERE name='{table}'")
+    await DATABASE.commit()
+
+
+async def create_full_user(username, display_name, age, bio, interests, email=None):
+    """Helper to create Profile + Auth + Onboarding using Class Methods."""
+    if not email:
+        email = f"{username}@example.com"
+
+    password = "Password123!"
+
+    try:
+        # 1. Create Profile
+        user_obj = await AuthenticationsUser.create_user(
+            username=username,
+            display_name=display_name,
+            email=email,
+            bio=bio,
+            avatar_url=f"https://api.dicebear.com/7.x/avataaars/svg?seed={username}"
+        )
+
+        # 2. Create Auth (Manual insert required as per your sample code)
+        salt_hash = SaltHash.create_salt_hash(password)
+        await DATABASE.execute(
+            "INSERT INTO UserAuthentication (user_id, salt, password_hash) VALUES (?, ?, ?)",
+            (user_obj.user_id, salt_hash.salt, salt_hash.hash_value)
+        )
+
+        # 3. Register Onboarding
+        region = random.choice(REGIONS)
+        pronoun = random.choice(PRONOUNS)
+
+        await Onboarding.register_onboarding(
+            user_id=user_obj.user_id,
+            age=age,
+            interests=interests,
+            pronouns=pronoun,
+            region=region
+        )
+
+        return await AuthenticationsUser.get_user(user_obj.user_id)
+
+    except Exception as e:
+        print(f"❌ Error creating user {username}: {e}")
+        return None
+
 
 async def main():
+    print("🚀 STARTING SEED PROCESS...")
     await DATABASE.initialize()
     await CONFIG.load_config()
-    user_1_password = "TestPassword1!"
-    user_1_salt_hash = SaltHash.create_salt_hash(user_1_password)
-    try:
-        user_1 = await AuthenticationsUser.create_user("testuser1",
-                                        "Test User 1",
-                                        "ryankgithub@gmail.com",
-                                        )
 
-        await DATABASE.execute("INSERT INTO UserAuthentication (user_id, salt, password_hash) VALUES (?, ?, ?)",
-                               (user_1.user_id,
-                                user_1_salt_hash.salt,
-                                user_1_salt_hash.hash_value))
-        print(f"Created user 'testuser1' with password '{user_1_password}'")
-    except Exception as e:
-        print(e)
-        user_1 = await AuthenticationsUser.get_user_by_username("testuser1")
-    auth_token = await user_1.login(user_1_password, user_agent="SeedDataScript/1.0", bypass=True)
-    print(f"Auth token for 'testuser1': {auth_token}")
+    await clean_db()
 
-    user_2_password = "TestPassword2!"
-    user_2_salt_hash = SaltHash.create_salt_hash(user_2_password)
-    try:
-        user_2 = await AuthenticationsUser.create_user("testuser2",
-                                        "Test User 2",
-                                        "SGENverifications@outlook.com")
-
-        await DATABASE.execute("INSERT INTO UserAuthentication (user_id, salt, password_hash) VALUES (?, ?, ?)",
-                               (user_2.user_id,
-                                user_2_salt_hash.salt,
-                                user_2_salt_hash.hash_value))
-        print(f"Created user 'testuser2' with password '{user_2_password}'")
-    except Exception as e:
-        print(e)
-        user_2 = await AuthenticationsUser.get_user_by_username("testuser2")
-    auth_token = await user_2.login(user_2_password, user_agent="SeedDataScript/1.0", bypass=True)
-    print(f"Auth token for 'testuser2': {auth_token}")
-
-    try:
-        test_community = await Community.create_community(
-            community_name="testcommunity",
-            display_name="Test Community",
-            owner=user_1,
-            description="This is a test community created for seeding data.",
-            icon_url=None,
-            post_guidelines="Be respectful and follow the rules.",
-            messages_guidelines=None,
-            offline_text=None,
-            online_text=None
-        )
-        await test_community.add_member(user_2.user_id)
-        test_community2 = await Community.create_community(
-            community_name="testcommunity2",
-            display_name="Test Community 2",
-            owner=user_1,
-            description="This is a test community created for seeding data.",
-            icon_url=None,
-            post_guidelines="Be respectful and follow the rules.",
-            messages_guidelines=None,
-            offline_text=None,
-            online_text=None
-        )
-    except Exception as e:
-        print(e)
-        test_community = await Community.get_community_by_name("testcommunity")
-    post_1 = await Post.create(
-        content="Welcome to the Test Community! This is the first post.",
-        community_id=test_community.community_id,
-        author_id=user_1.user_id,
-        image_url=None
+    # --- 1. CREATE ADMINS ---
+    print("\n👑 Creating Admins...")
+    admin_young = await create_full_user(
+        "cyber_ninja", "Ninja Coder", 22,
+        "Full stack dev. I love caffeine and code.", "Coding, Gaming"
     )
-    comment = await Comment.create(
-        "This is a comment on the first post.",
-        post_id=post_1.post_id,
-        author_id=user_2.user_id
+    admin_senior = await create_full_user(
+        "senior_sage", "Madam Mary", 72,
+        "Retired teacher. Loving this new app!", "History, Knitting"
     )
 
-    events_to_create = [
-        {
-            'event_name': 'Marina Bay Sands Day',
-            'event_description': 'Explore the iconic Marina Bay Sands and enjoy breathtaking views!',
-            'scheduled_date': (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d 18:00:00'),
-            'event_location': 'Marina Bay Sands Convention Center',
-            'image_url': 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd',
-        },
-        {
-            'event_name': 'Rizzler day',
-            'event_description': 'A meeting of great rizzlers young and old',
-            'scheduled_date': (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d 19:00:00'),
-            'event_location': 'Orchard Road',
-            'image_url': None,
-        },
-        {
-            'event_name': 'Hidden Hawker Tour',
-            'event_description': 'Discover hidden hawker gems in the East!',
-            'scheduled_date': (datetime.now() + timedelta(days=21)).strftime('%Y-%m-%d 12:00:00'),
-            'event_location': 'Bedok Food Centre',
-            'image_url': 'https://images.unsplash.com/photo-1551218808-94e220e084d2',
-        },
-    ]
+    # --- 2. CREATE RANDOM USERS ---
+    print(f"\n👥 Creating {NUM_USERS} Users...")
+    all_users = [admin_young, admin_senior]
 
-    for event_data in events_to_create:
-        try:
+    for i in range(NUM_USERS):
+        is_senior = random.random() < PROB_SENIOR
+        age = random.randint(65, 85) if is_senior else random.randint(18, 28)
+        fname = random.choice(USER_NAMES)
+        lname = random.choice(SURNAMES)
+        username = f"{fname}{lname}{random.randint(10, 99)}".lower()
+
+        u = await create_full_user(
+            username,
+            f"{fname} {lname}",
+            age,
+            f"Just a {'retired' if is_senior else 'student'} living in {random.choice(REGIONS)}.",
+            ", ".join(random.sample(INTERESTS_LIST, 2))
+        )
+        if u: all_users.append(u)
+
+    # --- 3. CREATE COMMUNITIES ---
+    print("\n🏘️ Creating Communities...")
+    communities = []
+
+    for name, desc in TOPICS.items():
+        comm_name = name.lower().replace(" ", "") + "hub"
+        comm = await Community.create_community(
+            community_name=comm_name,
+            display_name=f"{name} Lounge",
+            owner=admin_young,
+            description=desc,
+            icon_url=f"https://api.dicebear.com/7.x/identicon/svg?seed={comm_name}",
+            post_guidelines="1. Be nice.\n2. No spam.",
+            messages_guidelines="Respect everyone.",
+            offline_text="Offline",
+            online_text="Online"
+        )
+        communities.append(comm)
+
+        # Add members
+        await comm.add_member(admin_young.user_id, role="admin")
+        await comm.add_member(admin_senior.user_id, role="admin")
+        for u in all_users[2:]:
+            if random.random() > 0.3:
+                await comm.add_member(u.user_id, role="member")
+
+    # --- 4. CREATE POSTS ---
+    print(f"\n📝 Generating {NUM_POSTS} Posts...")
+    all_posts = []
+
+    for i in range(NUM_POSTS):
+        u = random.choice(all_users)
+        c = random.choice(communities)
+
+        # Check Age for Content Style
+        onboarding = await Onboarding.get_onboarding(u.user_id)
+        is_senior_user = onboarding.age >= 60 if onboarding else False
+        topic = random.choice(list(TOPICS.keys()))
+
+        if is_senior_user:
+            content = random.choice(POST_TEMPLATES_SENIOR).format(topic=topic)
+        else:
+            slang = random.choice(SLANG_WORDS)
+            content = random.choice(POST_TEMPLATES_YOUNG).format(topic=topic, slang=slang)
+
+        img_url = f"https://picsum.photos/seed/{i}/500/300" if random.random() < 0.25 else None
+
+        post = await Post.create(content=content, community_id=c.community_id, author_id=u.user_id, image_url=img_url)
+        if post: all_posts.append(post)
+
+    # --- 5. CREATE COMMENTS ---
+    print("\n💬 Generating Comments...")
+    for post in all_posts:
+        for _ in range(random.randint(0, 4)):
+            u = random.choice(all_users)
+            slang = random.choice(SLANG_WORDS)
+            text = f"That's {slang}!" if random.random() > 0.5 else "Great post! Thanks for sharing."
+            await Comment.create(content=text, post_id=post.post_id, author_id=u.user_id)
+
+    # --- 6. CREATE EVENTS (WITH SLANG!) ---
+    print("\n📅 Creating Events...")
+    for c in communities:
+        for i in range(2):
+            creator = random.choice(all_users)
+
+            # Identify the topic string (e.g. "Tech" from "Tech Lounge")
+            topic_key = c.display_name.split(" ")[0]
+            slang = random.choice(SLANG_WORDS)
+
+            # 60% chance of SLANG EVENT
+            if random.random() > 0.4:
+                evt_name = random.choice(EVENT_NAMES_SLANG).format(topic=topic_key, slang=slang)
+                evt_desc = random.choice(EVENT_DESC_SLANG).format(topic=topic_key, slang=slang)
+            else:
+                evt_name = f"{c.display_name} Monthly Meetup"
+                evt_desc = "Join us for a friendly gathering."
+
             event = await Event.create(
-                event_name=event_data['event_name'],
-                event_description=event_data['event_description'],
-                scheduled_date=event_data['scheduled_date'],
-                event_location=event_data['event_location'],
-                community_id=test_community.community_id,
-                creator_id=user_1.user_id,
-                image_url=event_data['image_url']
+                event_name=evt_name,
+                event_description=evt_desc,
+                scheduled_date=(datetime.now() + timedelta(days=random.randint(1, 30))).strftime('%Y-%m-%d %H:%M:%S'),
+                event_location="Community Hub Lvl 2",
+                community_id=c.community_id,
+                creator_id=creator.user_id,
+                image_url=f"https://picsum.photos/seed/evt{c.community_id}{i}/600/400"
             )
 
-            # Add some interested users
-            await EventAttendance.toggle_interest(event.event_id, user_1.user_id)
-            await EventAttendance.toggle_interest(event.event_id, user_2.user_id)
+            # Attendance
+            attendees = random.sample(all_users, k=random.randint(3, 8))
+            for attendee in attendees:
+                await EventAttendance.toggle_interest(event.event_id, attendee.user_id)
 
-            print(f"Created event: {event_data['event_name']}")
-        except Exception as e:
-            print(f"Error creating event {event_data['event_name']}: {e}")
+    # --- 7. CREATE CHATS ---
+    print("\n💭 Filling Chat Logs...")
+    for _ in range(NUM_CHATS):
+        c = random.choice(communities)
+        u = random.choice(all_users)
+        slang = random.choice(SLANG_WORDS)
+        msg = f"Yo, this community is {slang}." if random.random() > 0.5 else "Good morning everyone!"
+
+        await ChatMessage.create_message(community_id=c.community_id, author_id=u.user_id, content=msg)
+
+    print("\n✅ SEED COMPLETE!")
+    print(f"🔹 Young Admin: cyber_ninja / Password123!")
+    print(f"🔹 Senior Admin: senior_sage / Password123!")
+
 
 if __name__ == "__main__":
-    import asyncio
     asyncio.run(main())

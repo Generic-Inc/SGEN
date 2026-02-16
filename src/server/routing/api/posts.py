@@ -8,7 +8,7 @@ from . import community_blueprint
 from . import api
 from datetime import datetime
 # ✅ UPDATED IMPORT: Import the class for checking roles
-from modules.authentications.community_permissions import CommunityPermissions
+from modules.authentications.community_permissions import Permissions
 
 @api.route("/my-communities", methods=["GET"])
 async def get_my_communities():

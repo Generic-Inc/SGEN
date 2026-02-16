@@ -1,11 +1,15 @@
 import React, {useEffect, useState} from "react";
+import { useNavigate } from "react-router-dom";
 import "../static/styles/user_styles.css"
 import FeedRouter from "./feed_router.jsx";
+import { checkStatus } from "../static/api";
 
 export default function UserComponent() {
     const [user, setUser] = useState({ name: "Loading..." });
     const [communities, setCommunities] = useState([]);
+    const [currentUserId, setCurrentUserId] = useState(null);
     const userId = window.location.pathname.split("/")[2];
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (!userId) return;
@@ -42,15 +46,45 @@ export default function UserComponent() {
         fetchUser();
     }, [userId]);
 
+    useEffect(() => {
+        let isActive = true;
+
+        async function loadStatus() {
+            try {
+                const status = await checkStatus();
+                const statusUser = status?.user || status?.account || status?.currentUser;
+                const statusUserId =
+                    statusUser?.userId ??
+                    statusUser?.user_id ??
+                    statusUser?.id ??
+                    status?.userId ??
+                    status?.user_id ??
+                    null;
+                if (isActive) {
+                    setCurrentUserId(statusUserId);
+                }
+            } catch (err) {
+                console.error("Failed to check status", err);
+            }
+        }
+
+        loadStatus();
+        return () => {
+            isActive = false;
+        };
+    }, []);
+
     if (!userId) {
         return <div style={{textAlign: 'center', padding: '20px'}}>User ID not found</div>;
     }
+
+    const isSelf = currentUserId && userId && String(currentUserId) === String(userId);
 
     return (
         <>
             <div style={{display: "flex", flexDirection: "row", width: "100%"}}>
                 <div className={"main-user"}>
-                    <MainCard user={user} />
+                    <MainCard user={user} isSelf={isSelf} onEdit={() => navigate(`/user/${userId}/edit`)} />
                 </div>
                 <div className={"side-user"}>
                     <UserCommunities communities={communities} />
@@ -63,7 +97,7 @@ export default function UserComponent() {
 
 }
 
-function MainCard({user}) {
+function MainCard({user, isSelf, onEdit}) {
  return (
      <div className={"user-main-card"}>
          <div className={"user-section"}>
@@ -75,6 +109,13 @@ function MainCard({user}) {
              <p className={"user-bio"}>{user.bio}</p>
          </div>
          <div className={"user-section"}>Created: {user.created}</div>
+         {isSelf && (
+             <div className={"user-edit-actions"}>
+                 <button type="button" className={"user-edit-button"} onClick={onEdit}>
+                     Edit profile
+                 </button>
+             </div>
+         )}
 
  </div> )
 }

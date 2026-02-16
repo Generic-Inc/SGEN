@@ -41,14 +41,17 @@ export function addListeners(ids) {
         const element = document.getElementById(id);
         if (!element) return;
 
+        const header = element.querySelector("h3");
+        if (!header) return;
+
         const handler = () => {
             const nextOpen = !element.classList.contains("open");
             element.classList.toggle("open", nextOpen);
             writeAsideBar(id, nextOpen);
         };
 
-        element.addEventListener("click", handler);
-        cleanups.push(() => element.removeEventListener("click", handler));
+        header.addEventListener("click", handler);
+        cleanups.push(() => header.removeEventListener("click", handler));
     });
 
     return () => cleanups.forEach((fn) => fn());

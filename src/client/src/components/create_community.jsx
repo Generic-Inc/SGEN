@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { postData } from "../static/api";
 import "../static/styles/community.css";
+import { useLocation, useNavigate } from "react-router-dom";
 
 // Modal for creating a community via POST /api/community
 // Payload keys must match backend: communityName, displayName, description, iconUrl,
 // postsGuidelines, messagesGuidelines, offlineText, onlineText
 export default function CreateCommunity() {
     const [isOpen, setIsOpen] = useState(false);
+    const location = useLocation();
+    const navigate = useNavigate();
 
     const [communityName, setCommunityName] = useState("");
     const [displayName, setDisplayName] = useState("");
@@ -53,6 +56,13 @@ export default function CreateCommunity() {
         };
     }, []);
 
+    // Open when user navigates directly to /create/community
+    useEffect(() => {
+        if (location.pathname === "/create/community") {
+            setIsOpen(true);
+        }
+    }, [location.pathname]);
+
     // If user hasn't typed a communityName, suggest one based on displayName
     useEffect(() => {
         if (!communityName && suggestedCommunityName) {
@@ -66,6 +76,9 @@ export default function CreateCommunity() {
         setLoading(false);
         setError(null);
         setSuccess(null);
+        if (location.pathname === "/create/community") {
+            navigate(-1);
+        }
     };
 
     const validate = () => {

@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import MemberCardOverlay from "./member_card_overlay.jsx";
 
-export default function MemberCard({ member }) {
+export default function MemberCard({ member, canManageMembers = false, currentUserId = null, currentUserRole = null, onRoleUpdate, onRemoveMember }) {
     const user = member.user;
 
     const overlayId = useMemo(() => `overlay-${String(user.userId)}`, [user.userId]);
 
     const [shown, setShown] = useState(false);
     const [pos, setPos] = useState({ x: 0, y: 0 });
+    const [roleInput, setRoleInput] = useState(member?.role || "member");
 
     const hoverTimerRef = useRef(null);
 
@@ -42,13 +43,32 @@ export default function MemberCard({ member }) {
         return () => clearHoverTimer();
     }, []);
 
+    useEffect(() => {
+        setRoleInput(member?.role || "member");
+    }, [member?.role]);
+
+    const memberUserId = user?.userId || user?.user_id || member?.userId || member?.user_id;
+    const memberRole = member?.role || "";
+    const isSelf = currentUserId && String(memberUserId) === String(currentUserId);
+    const showActions = canManageMembers && !isSelf;
+    const canUpdateRole = showActions && !(currentUserRole === "admin" && (memberRole === "owner" || memberRole === "admin"));
+    const canRemoveMember = showActions && !(currentUserRole === "admin" && (memberRole === "owner" || memberRole === "admin"));
+
+    const handleRoleSubmit = (e) => {
+        e.preventDefault();
+        if (!onRoleUpdate) return;
+        onRoleUpdate(member, roleInput);
+    };
+
     return (
         <>
-            <a href={`/user/${user.userId}`}>
-                <div className="member-card"
-                     onMouseEnter={handleEnter}
-                     onMouseMove={handleMouseMove}
-                     onMouseLeave={handleLeave}>
+            <div
+                className="member-card"
+                onMouseEnter={handleEnter}
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleLeave}
+            >
+                <a href={`/user/${memberUserId}`} className="member-card-link">
                     <img
                         src={user.avatarUrl}
                         className="member-avatar"
@@ -63,8 +83,38 @@ export default function MemberCard({ member }) {
                         )}
                         <span className="member-join-date">Joined: {member.joined}</span>
                     </div>
-                </div>
-            </a>
+                </a>
+
+                {showActions && (
+                    <div className="member-actions">
+                        {canUpdateRole && (
+                            <form className="member-role-form" onSubmit={handleRoleSubmit}>
+                                <select
+                                    value={roleInput}
+                                    onChange={(e) => setRoleInput(e.target.value)}
+                                    className="member-role-input"
+                                >
+                                    <option value="admin">admin</option>
+                                    <option value="member">member</option>
+                                    <option value="banned">banned</option>
+                                </select>
+                                <button type="submit" className="member-role-save">
+                                    Update role
+                                </button>
+                            </form>
+                        )}
+                        {canRemoveMember && (
+                            <button
+                                type="button"
+                                className="member-remove"
+                                onClick={() => onRemoveMember && onRemoveMember(member)}
+                            >
+                                Remove
+                            </button>
+                        )}
+                    </div>
+                )}
+            </div>
 
             <MemberCardOverlay
                 member={member}

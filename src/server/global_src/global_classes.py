@@ -192,6 +192,7 @@ FROM Profiles
         FROM Memberships
             WHERE member_id=?
             AND active=1
+            AND role != 'banned'
         LIMIT ?
         """, (self.user_id, limit))
         if not community_fetch:

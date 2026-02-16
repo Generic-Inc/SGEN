@@ -137,7 +137,7 @@ async def verify_email():
 @auth_blueprint.route("/logout", methods=["POST"])
 async def logout():
     """Logout a user by invalidating their token"""
-    resp = make_response(redirect(url_for('pages.login_page')))
+    resp = make_response({"success": "Logged out successfully"})
     resp.set_cookie('token', '', expires=0, samesite="Lax", secure=False)
     return resp
 

@@ -5,6 +5,7 @@ from global_src.global_classes import User, CommunityMember
 from modules.authentications import Permissions
 from . import chat_blueprint
 from modules.chat_model import ChatMessage
+from .content_censorship import censor_text
 
 
 # --- HELPER: Verify Auth & Membership ---
@@ -48,11 +49,13 @@ async def create_message(community_id):
     data = request.get_json()
     if not data or "content" not in data:
         return {"error": "Missing content"}, 400
+    if not isinstance(data.get("content"), str) or not data["content"].strip():
+        return {"error": "Missing content"}, 400
 
     new_msg = await ChatMessage.create_message(
         community_id=community_id,
         author_id=user.user_id,
-        content=data["content"]
+        content=censor_text(data["content"])
     )
 
     if new_msg:
@@ -70,6 +73,8 @@ async def update_message(community_id, message_id):
     data = request.get_json()
     if not data or "content" not in data:
         return {"error": "New content is required"}, 400
+    if not isinstance(data.get("content"), str) or not data["content"].strip():
+        return {"error": "New content is required"}, 400
 
     message = await ChatMessage.get_message(message_id)
     if not message:
@@ -78,7 +83,7 @@ async def update_message(community_id, message_id):
     if message.author.user_id != user.user_id:
         return {"error": "You can only edit your own messages"}, 403
 
-    updated_msg = await ChatMessage.update_message(message_id, data["content"])
+    updated_msg = await ChatMessage.update_message(message_id, censor_text(data["content"]))
 
     # Optional: Broadcast the edit
     # socketio.emit('update_message', updated_msg.public_json, room=str(community_id))

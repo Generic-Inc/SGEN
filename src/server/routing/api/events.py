@@ -3,6 +3,7 @@ from global_src.global_classes import Community, User, CommunityMember
 from modules.authentications import Permissions
 from modules.events import Event, EventAttendance
 from . import community_blueprint
+from .content_censorship import censor_fields
 
 @community_blueprint.route("/<int:community_id>/events", methods=["GET", "POST"])
 async def community_events(community_id: int):
@@ -24,6 +25,7 @@ async def community_events(community_id: int):
 
     elif request.method == "POST":
         data = request.get_json() or {}
+        censor_fields(data, ("eventName", "eventDescription"))
         
         required_fields = ["eventName", "scheduledDate", "eventLocation"]
         if not all(data.get(field) for field in required_fields):
@@ -69,6 +71,7 @@ async def single_event(community_id: int, event_id: int):
 
     elif request.method == "PATCH":
         data = request.get_json() or {}
+        censor_fields(data, ("eventName", "eventDescription"))
 
         if not community_member: # Potentially need to be member to view
             return {"error": "You must first join this community to view event details"}, 403

@@ -7,6 +7,7 @@ from modules.onboarding.Onboarding import Onboarding
 from . import community_blueprint
 from . import api
 from datetime import datetime
+from .content_censorship import censor_fields, build_post_content, censor_text
 
 @api.route("/my-communities", methods=["GET"])
 async def get_my_communities():
@@ -78,10 +79,12 @@ async def community_posts(community_id: int):
             return {"error": "Forbidden"}, 403
 
         data = request.get_json() or {}
-        if not data.get("content"):
-            return {"error": "Missing content"}, 400
+        censor_fields(data, ("content", "title", "description"))
+        post_content = build_post_content(data)
+        if not post_content:
+            return {"error": "Missing content (content or title/description required)"}, 400
         new_post = await Post.create(
-            content=data.get("content"),
+            content=post_content,
             community_id=community_id,
             author_id=user.user_id,
             image_url=data.get("imageUrl")
@@ -111,9 +114,10 @@ async def single_post(community_id: int, post_id: int):
             return {"error": "Forbidden"}, 403
 
         data = request.get_json() or {}
-        new_content = data.get("content")
+        censor_fields(data, ("content", "title", "description"))
+        new_content = build_post_content(data)
 
-        if not new_content: return {"error": "Missing content"}, 400
+        if not new_content: return {"error": "Missing content (content or title/description required)"}, 400
 
         updated_post = await post.update(new_content)
         return updated_post.public_json
@@ -165,7 +169,11 @@ async def post_comments(community_id: int, post_id: int):
             return {"error": "Forbidden"}, 403
         data = request.get_json() or {}
         if not data.get("content"): return {"error": "Missing info"}, 400
-        new_comment = await Comment.create(content=data.get("content"), post_id=post_id, author_id=user.user_id)
+        new_comment = await Comment.create(
+            content=censor_text(data.get("content")),
+            post_id=post_id,
+            author_id=user.user_id
+        )
         if new_comment: return new_comment.public_json, 201
         return {"error": "Failed"}, 500
 
@@ -196,7 +204,7 @@ async def single_comment(community_id: int, post_id: int, comment_id: int):
         new_content = data.get("content")
         if not new_content: return {"error": "Missing content"}, 400
 
-        updated_comment = await comment.update(new_content)
+        updated_comment = await comment.update(censor_text(new_content))
         return updated_comment.public_json
 
     return comment.public_json

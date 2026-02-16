@@ -5,7 +5,7 @@ from pinecone import Pinecone
 load_dotenv()
 
 # 1. Initialize Pinecone
-pc = Pinecone(api_key="i dont wanna include api key cause im not even using it")
+pc = Pinecone()
 
 INDEX_NAME = "auto-embed-communities"
 namespace = "communities"

@@ -41,7 +41,6 @@
     text-align: center;
 }
 
-/* 4. The Arrow */
 .slang-term:hover::before,
 .slang-term.clicked::before {
     content: "";

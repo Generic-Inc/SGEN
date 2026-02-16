@@ -6,7 +6,6 @@ import { useVoice } from "../../static/use_voice";
 import "../../static/styles/community.css";
 import SlangHighlighter from "./slang_highlighter";
 
-// --- CONFIG: SMART REPLIES (For Seniors) ---
 const SMART_REPLIES = [
     "This is wonderful! 👏",
     "Thanks for sharing!",
@@ -59,10 +58,8 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
     const [commentText, setCommentText] = useState("");
     const [commentsLoaded, setCommentsLoaded] = useState(false);
 
-    // --- NEW: SUGGESTION STATE ---
     const [suggestions, setSuggestions] = useState([]);
 
-    // --- VOICE INPUT HOOK ---
     const { isListening, toggleListen, support, lang, setLang, interimTranscript } = useVoice((text) => {
         setCommentText(prev => prev + (prev ? " " : "") + text);
     });
@@ -72,10 +69,8 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
     const [editContent, setEditContent] = useState(content);
     const [isSaving, setIsSaving] = useState(false);
 
-    // --- NEW: TTS STATE ---
     const [isSpeaking, setIsSpeaking] = useState(false);
 
-    // Initialize Suggestions on load (Random 3)
     useEffect(() => {
         const shuffled = [...SMART_REPLIES].sort(() => 0.5 - Math.random());
         setSuggestions(shuffled.slice(0, 3));
@@ -95,10 +90,8 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
     };
 
     const handlePostComment = async (e) => {
-        // Allow clicking 'Enter' OR passing manual text (from Smart Chips)
         const textToPost = typeof e === 'string' ? e : commentText;
 
-        // If event object, prevent default
         if (typeof e !== 'string' && e?.preventDefault) e.preventDefault();
 
         if ((typeof e === 'string' || e.key === 'Enter' || e.type === 'click') && textToPost.trim()) {
@@ -170,13 +163,11 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
         } catch (err) { console.error(err); alert("Failed to save edits."); } finally { setIsSaving(false); }
     };
 
-    // --- NEW: TEXT TO SPEECH LOGIC ---
     const handleSpeak = () => {
         if (isSpeaking) {
             window.speechSynthesis.cancel();
             setIsSpeaking(false);
         } else {
-            // Read ONLY the plain text content
             const utterance = new SpeechSynthesisUtterance(content);
             utterance.onend = () => setIsSpeaking(false);
             window.speechSynthesis.speak(utterance);
@@ -188,7 +179,6 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
     const showCommunityLabel = communityName && (!view || view.type !== "community");
     const isPostEdited = modifiedAt && createdAt && (new Date(modifiedAt).getTime() > new Date(createdAt).getTime() + 1000);
 
-    // Check if user is senior
     const isSenior = currentUser?.age && currentUser.age > 60;
 
     return (
@@ -240,7 +230,6 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
                                 )}
                             </p>
 
-                            {/* --- TTS BUTTON (Only for Seniors) --- */}
                             {isSenior && (
                                 <button
                                     onClick={handleSpeak}
@@ -279,7 +268,6 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
             {showComments && (
                 <div style={{ marginTop: "15px", paddingTop: "15px", borderTop: "1px dashed #eee" }}>
 
-                    {/* --- SMART REPLY CHIPS (Only for Seniors) --- */}
                     {isSenior && (
                         <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
                             <span style={{ fontSize: '12px', color: '#888', width: '100%', marginBottom: '2px' }}>Quick Reply:</span>

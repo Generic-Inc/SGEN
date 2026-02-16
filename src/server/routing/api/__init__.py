@@ -10,7 +10,6 @@ api.register_blueprint(auth_blueprint, url_prefix='/auth')
 api.register_blueprint(community_blueprint, url_prefix='/community')
 api.register_blueprint(chat_blueprint)
 api.register_blueprint(user_blueprint, url_prefix='/user')
-
 from . import main
 from . import authentication
 from . import user

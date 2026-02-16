@@ -17,7 +17,7 @@ async def get_user(user_id: int):
     if not user_get:
         return {"error": "User not found"}, 404
     if request.method == "GET":
-        return user_get.public_json
+        return await user_get.public_json_translated(language=user.language)
     elif request.method == "PATCH":
         if user.user_id != user_get.user_id:
             return {"error": "Forbidden"}, 403
@@ -144,5 +144,3 @@ async def recommend_communities():
     except Exception as e:
         print(e)
         return {"communities": []}
-
-

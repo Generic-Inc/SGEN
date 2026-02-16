@@ -60,6 +60,30 @@ class User(BaseClass):
         }
         return base_json
 
+    async def _get_translated_bio(self, language: str) -> Optional[str]:
+        if not self.bio or not language:
+            return None
+        row = await DATABASE.fetch_one(
+            """
+            SELECT translated_text FROM Translations
+                WHERE table_name=? AND column_name=? AND record_id=? AND record_column=? AND language=?
+            """,
+            ("Profiles", "bio", self.user_id, "user_id", language)
+        )
+        if not row:
+            return None
+        translated_text, = row
+        return translated_text
+
+    async def public_json_translated(self, language: Optional[str] = None) -> dict[str, Any]:
+        base_json = self.public_json
+        if not language:
+            return base_json
+        translated_bio = await self._get_translated_bio(language)
+        if translated_bio:
+            base_json["bio"] = translated_bio.replace("{display_name}", self.display_name)
+        return base_json
+
     @classmethod
     async def create_user(cls,
                             username: str,
@@ -80,7 +104,20 @@ class User(BaseClass):
         INSERT INTO Profiles (username, display_name, _email, language, avatar_url, bio)
                                VALUES(?,?,?,?,?,?)""",
                                (username, display_name, email, language, avatar_url, bio))
-        return await cls.get_user_by_username(username)
+        user = await cls.get_user_by_username(username)
+        if user and bio:
+            try:
+                from modules.translations.data_class import TRANSLATOR
+                await TRANSLATOR.translate_and_insert(
+                    text=bio,
+                    table="Profiles",
+                    column="bio",
+                    id_column="user_id",
+                    id_value=user.user_id,
+                )
+            except Exception as e:
+                print(f"Bio translation insert failed: {e}")
+        return user
 
     @classmethod
     async def get_user(cls, user_id: int) -> "User":

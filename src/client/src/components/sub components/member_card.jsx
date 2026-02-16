@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import MemberCardOverlay from "./member_card_overlay.jsx";
 
-export default function MemberCard({ member, canManageMembers = false, currentUserId = null, onRoleUpdate, onRemoveMember }) {
+export default function MemberCard({ member, canManageMembers = false, currentUserId = null, currentUserRole = null, onRoleUpdate, onRemoveMember }) {
     const user = member.user;
 
     const overlayId = useMemo(() => `overlay-${String(user.userId)}`, [user.userId]);
@@ -48,8 +48,11 @@ export default function MemberCard({ member, canManageMembers = false, currentUs
     }, [member?.role]);
 
     const memberUserId = user?.userId || user?.user_id || member?.userId || member?.user_id;
+    const memberRole = member?.role || "";
     const isSelf = currentUserId && String(memberUserId) === String(currentUserId);
     const showActions = canManageMembers && !isSelf;
+    const canUpdateRole = showActions && !(currentUserRole === "admin" && (memberRole === "owner" || memberRole === "admin"));
+    const canRemoveMember = showActions && !(currentUserRole === "admin" && (memberRole === "owner" || memberRole === "admin"));
 
     const handleRoleSubmit = (e) => {
         e.preventDefault();
@@ -84,27 +87,31 @@ export default function MemberCard({ member, canManageMembers = false, currentUs
 
                 {showActions && (
                     <div className="member-actions">
-                        <form className="member-role-form" onSubmit={handleRoleSubmit}>
-                            <select
-                                value={roleInput}
-                                onChange={(e) => setRoleInput(e.target.value)}
-                                className="member-role-input"
+                        {canUpdateRole && (
+                            <form className="member-role-form" onSubmit={handleRoleSubmit}>
+                                <select
+                                    value={roleInput}
+                                    onChange={(e) => setRoleInput(e.target.value)}
+                                    className="member-role-input"
+                                >
+                                    <option value="admin">admin</option>
+                                    <option value="member">member</option>
+                                    <option value="banned">banned</option>
+                                </select>
+                                <button type="submit" className="member-role-save">
+                                    Update role
+                                </button>
+                            </form>
+                        )}
+                        {canRemoveMember && (
+                            <button
+                                type="button"
+                                className="member-remove"
+                                onClick={() => onRemoveMember && onRemoveMember(member)}
                             >
-                                <option value="admin">admin</option>
-                                <option value="member">member</option>
-                                <option value="banned">banned</option>
-                            </select>
-                            <button type="submit" className="member-role-save">
-                                Update role
+                                Remove
                             </button>
-                        </form>
-                        <button
-                            type="button"
-                            className="member-remove"
-                            onClick={() => onRemoveMember && onRemoveMember(member)}
-                        >
-                            Remove
-                        </button>
+                        )}
                     </div>
                 )}
             </div>

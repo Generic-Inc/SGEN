@@ -9,6 +9,7 @@ export default function Members() {
     const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [currentUserId, setCurrentUserId] = useState(null);
+    const [currentUserRole, setCurrentUserRole] = useState(null);
     const [canManageMembers, setCanManageMembers] = useState(false);
     const [actionError, setActionError] = useState(null);
     const communityId = getCommunityIdFromPage();
@@ -71,7 +72,8 @@ export default function Members() {
                 console.log(member)
 
                 setCurrentUserId(userId);
-                setCanManageMembers(member?.role === "owner");
+                setCurrentUserRole(member?.role || null);
+                setCanManageMembers(member?.role === "owner" || member?.role === "admin");
             } catch (error) {
                 console.error("Error loading current user role:", error);
             }
@@ -88,9 +90,21 @@ export default function Members() {
         return member?.user?.userId || member?.user?.user_id || member?.userId || member?.user_id;
     };
 
+    const getMemberRole = (member) => {
+        return member?.role || member?.role || member?.role || "";
+    };
+
+    const isOwnerTarget = (member) => getMemberRole(member) === "owner";
+    const isAdminTarget = (member) => getMemberRole(member) === "admin";
+
     const handleRoleUpdate = async (member, nextRole) => {
         const userId = getMemberUserId(member);
         if (!userId) return;
+
+        if (currentUserRole === "admin" && (isOwnerTarget(member) || isAdminTarget(member))) {
+            setActionError("Admins cannot modify the owner or other admins.");
+            return;
+        }
 
         const normalizedRole = (nextRole || "").trim();
         const allowedRoles = new Set(["admin", "member", "banned"]);
@@ -134,6 +148,12 @@ export default function Members() {
     const handleRemoveMember = async (member) => {
         const userId = getMemberUserId(member);
         if (!userId) return;
+
+        if (currentUserRole === "admin" && (isOwnerTarget(member) || isAdminTarget(member))) {
+            setActionError("Admins cannot remove the owner or other admins.");
+            return;
+        }
+
         if (!confirm("Remove this member from the community?")) return;
 
         try {
@@ -146,8 +166,7 @@ export default function Members() {
                 const payload = await response.json().catch(() => ({}));
                 throw new Error(payload?.error || "Failed to remove member.");
             }
-
-            setMembers((prev) => prev.filter((m) => getMemberUserId(m) !== userId));
+            window.location.reload()
         } catch (error) {
             setActionError(error.message || "Failed to remove member.");
         }
@@ -166,6 +185,7 @@ export default function Members() {
                             <MemberCard
                                 member={member}
                                 currentUserId={currentUserId}
+                                currentUserRole={currentUserRole}
                                 canManageMembers={canManageMembers}
                                 onRoleUpdate={handleRoleUpdate}
                                 onRemoveMember={handleRemoveMember}

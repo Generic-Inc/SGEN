@@ -30,3 +30,11 @@ async def search():
                            [{"name": f"event:{i[1]}", "href": f"community/1/event/{i[0]}"} for i in events_get] +
         [{"name": f"user:{i[1]}", "href": f"user/{i[0]}"} for i in users_get]
                 }
+
+@api.route("/chatbot", methods=["POST"])
+async def chatbot():
+    data = request.json
+    message = data.get("message_history", "")
+    # For demonstration, we'll just echo the message back with a prefix.
+    response = f"Chatbot response to: {message}"
+    return {"messages": [{"role": "user", "content": response}, {"role": "assistant", "content": response}]}

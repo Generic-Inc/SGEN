@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { fetchData, postData, getCommunityIdFromPage } from "../static/api";
+import { useVoice } from "../static/use_voice";
 import "../static/styles/community.css";
 
 export default function CreatePostModal() {
@@ -8,13 +9,17 @@ export default function CreatePostModal() {
     const [imageUrl, setImageUrl] = useState("");
 
     const [communities, setCommunities] = useState([]);
-    const [selectedCommunity, setSelectedCommunity] = useState(""); // Default to empty
+    const [selectedCommunity, setSelectedCommunity] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
     const currentCommunityId = getCommunityIdFromPage();
 
-    // --- THE MAGIC INTERCEPTOR (Kept this from before) ---
+    // --- VOICE HOOK ---
+    const { isListening, toggleListen, support, lang, setLang, interimTranscript } = useVoice((text) => {
+    setContent(prev => prev + (prev ? " " : "") + text);
+});
+
     useEffect(() => {
         const handleLinkClick = (e) => {
             const anchor = e.target.closest('a');
@@ -47,7 +52,7 @@ export default function CreatePostModal() {
                 if (currentCommunityId) {
                     setSelectedCommunity(currentCommunityId);
                 } else {
-                    setSelectedCommunity("");
+                    setSelectedCommunity(""); // User must choose if not in a community page
                 }
             } catch (err) {
                 setError("Could not load your communities.");
@@ -61,7 +66,7 @@ export default function CreatePostModal() {
         setError(null);
         setContent("");
         setImageUrl("");
-        setSelectedCommunity(""); // Reset selection on close
+        setSelectedCommunity("");
     };
 
     const handleSubmit = async (e) => {
@@ -71,11 +76,16 @@ export default function CreatePostModal() {
 
         try {
             setLoading(true);
+            // If the mic is still listening, we should stop it
+            if (isListening) toggleListen();
+
             await postData(`community/${selectedCommunity}/posts`, {
                 content: content,
                 imageUrl: imageUrl
             });
-            window.location.reload();
+
+            onClose(); // Close modal first
+            window.location.reload(); // Now it's safe to reload the feed
         } catch (err) {
             setError(err.message || "Failed to create post.");
             setLoading(false);
@@ -104,15 +114,12 @@ export default function CreatePostModal() {
                 <form onSubmit={handleSubmit}>
                     <div style={{ marginBottom: "15px" }}>
                         <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Community</label>
-
                         <select
                             value={selectedCommunity}
                             onChange={(e) => setSelectedCommunity(e.target.value)}
                             style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ddd" }}
                         >
-                            {/* The "Placeholder" option */}
                             <option value="" disabled>Select a community...</option>
-
                             {communities.map(c => (
                                 <option key={c.communityId || c.community_id} value={c.communityId || c.community_id}>
                                     {c.displayName || c.display_name}
@@ -123,10 +130,17 @@ export default function CreatePostModal() {
 
                     <div style={{ marginBottom: "15px" }}>
                         <textarea
-                            placeholder="What's on your mind?"
-                            value={content}
+                            placeholder={isListening ? "Listening..." : "What's on your mind?"}
+
+                            // --- CHANGE THIS LINE ---
+                            value={isListening ? (content + " " + interimTranscript) : content}
+
                             onChange={(e) => setContent(e.target.value)}
-                            style={{ width: "100%", height: "100px", padding: "10px", borderRadius: "4px", border: "1px solid #ddd", resize: "none" }}
+                            style={{
+                                width: "100%", height: "100px", padding: "10px", borderRadius: "4px",
+                                border: isListening ? "2px solid #ff4444" : "1px solid #ddd",
+                                resize: "none"
+                            }}
                         />
                     </div>
 
@@ -140,13 +154,45 @@ export default function CreatePostModal() {
                         />
                     </div>
 
-                    <div style={{ textAlign: "right" }}>
-                        <button type="button" onClick={onClose} style={{ marginRight: "10px", padding: "8px 16px", border: "none", background: "#eee", borderRadius: "4px", cursor: "pointer" }}>
-                            Cancel
-                        </button>
-                        <button type="submit" disabled={loading} style={{ padding: "8px 16px", border: "none", background: "#1877F2", color: "white", borderRadius: "4px", cursor: "pointer", opacity: loading ? 0.7 : 1 }}>
-                            {loading ? "Posting..." : "Post"}
-                        </button>
+                    {/* --- CONTROLS ROW (Mic + Language) --- */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+                         {support && (
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                <button
+                                    type="button"
+                                    onClick={toggleListen}
+                                    style={{
+                                        background: isListening ? "#ff4444" : "#eee",
+                                        color: isListening ? "white" : "#333",
+                                        border: "none", borderRadius: "50%", width: "40px", height: "40px",
+                                        cursor: "pointer", fontSize: "20px", display: "flex", alignItems: "center", justifyContent: "center"
+                                    }}
+                                    title="Click to Speak"
+                                >
+                                    {isListening ? "⏹️" : "🎙️"}
+                                </button>
+
+                                <select
+                                    value={lang}
+                                    onChange={(e) => setLang(e.target.value)}
+                                    style={{ padding: "5px", borderRadius: "5px", border: "1px solid #ddd", fontSize: "12px" }}
+                                >
+                                    <option value="en-US">🇺🇸 English</option>
+                                    <option value="zh-CN">🇨🇳 中文</option>
+                                    <option value="ms-MY">🇲🇾 Melayu</option>
+                                    <option value="ta-IN">🇮🇳 Tamil</option>
+                                </select>
+                            </div>
+                        )}
+
+                        <div>
+                            <button type="button" onClick={onClose} style={{ marginRight: "10px", padding: "8px 16px", border: "none", background: "#eee", borderRadius: "4px", cursor: "pointer" }}>
+                                Cancel
+                            </button>
+                            <button type="submit" disabled={loading} style={{ padding: "8px 16px", border: "none", background: "#1877F2", color: "white", borderRadius: "4px", cursor: "pointer", opacity: loading ? 0.7 : 1 }}>
+                                {loading ? "Posting..." : "Post"}
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>

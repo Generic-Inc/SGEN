@@ -5,7 +5,7 @@ from global_src.global_classes import Community, User, CommunityMember
 from modules.authentications import Permissions, PresetRoles, ROLE_HIERARCHY
 from . import community_blueprint
 
-@community_blueprint.route('/', methods=['POST'])
+@community_blueprint.route('/', methods=['POST'], strict_slashes=False)
 async def create_community():
     authorization = request.cookies.get('token')
     if not authorization:
@@ -78,7 +78,7 @@ async def get_community(community_id: int):
     elif request.method == "PATCH":
         if not community_member:
             return {"error": "Unauthorized"}, 403
-        perms_check = await community_member.has_permission(
+        perms_check = community_member.requires_permissions(
             Permissions.MANAGE_COMMUNITY
         )
         if not perms_check[0]:
@@ -101,13 +101,15 @@ async def get_community(community_id: int):
         if "onlineText" in data:
             kwargs["online_text"] = data["onlineText"]
 
-        community_update = await community_get.update_community(community_id, **kwargs)
+        print(kwargs)
+
+        community_update = await community_get.update_community(**kwargs)
         return community_update.public_json
 
     elif request.method == "DELETE":
         if not community_member:
             return {"error": "Unauthorized"}, 403
-        perms_check = await community_member.has_permission(
+        perms_check = community_member.requires_permissions(
             Permissions.DELETE_COMMUNITY
         )
         if not perms_check[0]:

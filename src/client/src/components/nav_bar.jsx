@@ -3,25 +3,27 @@ import {useEffect, useState} from "react";
 import "../static/styles/nav.css"
 import {CreateButton} from "./sub components/create_button.jsx";
 import Profile from "./sub components/profile.jsx";
+import {Navigate} from "react-router-dom";
 
 export default function NavBar() {
     const [data, setData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
-     useEffect(() => {
-         const fetchData = async () => {
-                const result = await checkStatus();
-                setData(result);
-                setIsLoading(false);
-         }
-         fetchData();
+    useEffect(() => {
+        const fetchData = async () => {
+        const result = await checkStatus();
+        setData(result);
+        setIsLoading(false);
+    }
+    fetchData();
     }, []);
 
-
-    if (!isLoading && data.user) {
-        const user = data.user
+    if (isLoading) {
+        return <nav className="nav-bar">Loading...</nav>;
+    }
+    const user = data.user;
         return (
-            <>
+                <>
                 <nav className="nav-bar">
                     <img src="https://i.ibb.co/YKjk4w4/SGEN-Logo.png" className="nav-icon" alt="SGEN" />
                     <div className="right-container">
@@ -31,7 +33,6 @@ export default function NavBar() {
                 </nav>
             < />
         )
-    }
 
 }
 

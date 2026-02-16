@@ -1,7 +1,8 @@
 import {useEffect, useState} from "react";
-import {fetchData} from "../static/api.js";
+import {fetchData, checkStatus} from "../static/api.js";
 import JoinLeaveCommunityButton from "./join_leave_community.jsx";
 import FeedRouter from "./feed_router.jsx";
+import EditCommunityModal from "./edit_community_modal.jsx";
 import "../static/styles/App.css"
 
 export default function CommunityInfo() {
@@ -22,20 +23,23 @@ export default function CommunityInfo() {
         }, [])
     return (
         <>
+            <EditCommunityModal />
             <div className={"community-page-row"}>
                 <div className={"community-main-container"}>
                     <div className={"community-info"}>
                         <div className={"community-header-row"}>
                             <img src={communityInfo.iconUrl} alt={communityInfo.displayName ? `${communityInfo.displayName} icon` : "Community icon"} />
-                            <h2>{communityInfo.displayName}</h2>
+                            <div style={{display: "flex", flexDirection: "column"}}>
+                                <h2>{communityInfo.displayName}</h2>
+                                <div style={{marginLeft: "0.5rem"}}>
+                                    <h3>{communityInfo.communityName}</h3>
+                                    <JoinLeaveCommunityButton />
+                                </div>
+                            </div>
+
                         </div>
-                        <div className={"community-second-row"}>
-                            <h3>{communityInfo.communityName}</h3>
-                        </div>
-                        <div className={"community-joinleave-row"}>
-                            <JoinLeaveCommunityButton />
-                        </div>
-                        <div style={{translateX: "10%"}}>
+
+                        <div style={{translateX: "10%", marginTop: "1rem"}}>
                             <FeedRouter />
                         </div>
 
@@ -56,6 +60,30 @@ export function CommunitySideInfo({communityInfo}) {
     const memberCount = communityInfo?.memberCount ?? 0;
     const offline = Math.max(0, memberCount - online);
 
+    const [canEditCommunity, setCanEditCommunity] = useState(false);
+
+    useEffect(() => {
+        const communityId = communityInfo?.communityId || communityInfo?.community_id;
+        if (!communityId) return;
+
+        const loadRole = async () => {
+            try {
+                const status = await checkStatus();
+                const userId = status?.user?.userId || status?.user?.user_id;
+                if (!userId) return;
+
+                const member = await fetchData(`community/${communityId}/members/${userId}`);
+                const role = member?.role;
+                setCanEditCommunity(role === "owner");
+            } catch {
+                // Not a member / unauthorized / etc => hide button
+                setCanEditCommunity(false);
+            }
+        };
+
+        loadRole();
+    }, [communityInfo?.communityId, communityInfo?.community_id]);
+
     return (
         <div className={"community-side-box"}>
             <div className={"community-side-section"}>
@@ -66,6 +94,14 @@ export function CommunitySideInfo({communityInfo}) {
                     {description || "No description"}
                 </div>
             </div>
+
+            {canEditCommunity && (
+                <div className={"community-side-section"}>
+                    <a href="/edit/community" className={"community-side-edit-button"}>
+                        Edit community
+                    </a>
+                </div>
+            )}
 
             <div className={"community-side-stats-row"}>
                 <div className={"community-side-stat"}>

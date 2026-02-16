@@ -8,8 +8,20 @@ export default function OnboardingOverlay() {
     const navigate = useNavigate();
     const [status, setStatus] = useState(null);
     useEffect(() => {
-        setStatus(checkStatus());
-    }, [])
+        let isMounted = true;
+        checkStatus()
+            .then((result) => {
+                if (isMounted) {
+                    setStatus(result);
+                }
+            })
+            .catch((err) => {
+                console.error("checkStatus failed:", err);
+            });
+        return () => {
+            isMounted = false;
+        };
+    }, []);
     console.log(status);
     async function handleSubmit(event) {
         event.preventDefault();

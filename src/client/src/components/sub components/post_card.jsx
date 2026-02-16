@@ -6,6 +6,7 @@ import { useVoice } from "../../static/use_voice";
 import "../../static/styles/community.css";
 import SlangHighlighter from "./slang_highlighter";
 
+// --- CONFIG: SMART REPLIES (For Seniors) ---
 const SMART_REPLIES = [
     "This is wonderful! 👏",
     "Thanks for sharing!",
@@ -32,7 +33,7 @@ function formatTimeAgo(dateString) {
     return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 }
 
-export default function PostCard({ post, currentUser, onDelete, view }) {
+export default function PostCard({ post, currentUser, onDelete, view, communityRole }) {
     const authorObj = post.author || {};
     const authorName = authorObj.displayName || authorObj.display_name || authorObj.name || post.author_name || "Unknown";
     const authorAvatar = authorObj.avatarUrl || authorObj.avatar_url || post.author_avatar || "https://placehold.co/40";
@@ -89,17 +90,27 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
         }
     };
 
+    // ✅ FIXED: Only prevent default behavior on ENTER key, not every letter!
     const handlePostComment = async (e) => {
         const textToPost = typeof e === 'string' ? e : commentText;
 
-        if (typeof e !== 'string' && e?.preventDefault) e.preventDefault();
+        // 1. If it is an event (not a string), check if we need to block it
+        if (typeof e !== 'string') {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Block Enter so it doesn't add a new line
+            }
+            // For other keys (a, b, c...), DO NOTHING so they can be typed!
+        }
 
-        if ((typeof e === 'string' || e.key === 'Enter' || e.type === 'click') && textToPost.trim()) {
+        // 2. Determine if we should submit (Click, Enter key, or direct String call)
+        const isSubmit = typeof e === 'string' || e.key === 'Enter' || e.type === 'click';
+
+        if (isSubmit && textToPost.trim()) {
             try {
                 const route = `community/${communityId}/posts/${postId}/comments`;
                 const newCommentReal = await postData(route, { content: textToPost });
                 setComments([...comments, newCommentReal]);
-                setCommentText(""); // Clear input
+                setCommentText("");
                 setCommentCount(prev => prev + 1);
             } catch (err) {
                 console.error(err);
@@ -175,15 +186,16 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
         }
     };
 
-    const canManagePost = currentUserId && postAuthorId && (String(currentUserId) === String(postAuthorId));
+    const isAuthor = currentUserId && postAuthorId && (String(currentUserId) === String(postAuthorId));
+    const isPowerUser = communityRole === 'admin' || communityRole === 'owner';
+    const canManagePost = isAuthor || isPowerUser;
+
     const showCommunityLabel = communityName && (!view || view.type !== "community");
     const isPostEdited = modifiedAt && createdAt && (new Date(modifiedAt).getTime() > new Date(createdAt).getTime() + 1000);
-
     const isSenior = currentUser?.age && currentUser.age > 60;
 
     return (
         <div className="post-card" style={{ marginBottom: "20px", background: "#fff", borderRadius: "8px", padding: "15px", boxShadow: "0 1px 2px rgba(0,0,0,0.1)", position: "relative" }}>
-
             <div className="post-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <a href={`/user/${postAuthorId}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: 'inherit' }}>
@@ -196,12 +208,15 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     {showCommunityLabel && <a href={`/community/${communityId}`} style={{ fontSize: "12px", color: "#65676B", textDecoration: "none", fontWeight: "500" }}>Posted in <span style={{ color: "#1877F2" }}>{communityName}</span></a>}
+
                     {canManagePost && (
                         <div style={{ position: "relative" }}>
                             <button onClick={() => setIsMenuOpen(!isMenuOpen)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px', padding: "0 5px", color: "#606770", fontWeight: "bold" }}>&#x22EF;</button>
                             {isMenuOpen && (
                                 <div style={{ position: "absolute", right: 0, top: "25px", background: "white", boxShadow: "0 2px 8px rgba(0,0,0,0.2)", borderRadius: "8px", overflow: "hidden", zIndex: 10, minWidth: "120px" }}>
-                                    <button onClick={() => { setIsMenuOpen(false); setIsEditing(true); }} style={{ display: "block", width: "100%", padding: "10px 15px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: "14px", color: "#333" }}>✏️ Edit</button>
+                                    {isAuthor && (
+                                        <button onClick={() => { setIsMenuOpen(false); setIsEditing(true); }} style={{ display: "block", width: "100%", padding: "10px 15px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: "14px", color: "#333" }}>✏️ Edit</button>
+                                    )}
                                     <button onClick={() => { setIsMenuOpen(false); handleDelete(); }} style={{ display: "block", width: "100%", padding: "10px 15px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: "14px", color: "#dc3545" }}>🗑️ Delete</button>
                                 </div>
                             )}
@@ -229,7 +244,6 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
                                     <TranslatedText content={content} translations={post.translations} />
                                 )}
                             </p>
-
                             {isSenior && (
                                 <button
                                     onClick={handleSpeak}
@@ -254,7 +268,6 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
                                 </button>
                             )}
                         </div>
-
                         {postImage && <img src={postImage} alt="Post" style={{ width: '100%', borderRadius: '8px', marginTop: '10px' }} /> }
                     </>
                 )}
@@ -267,7 +280,6 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
 
             {showComments && (
                 <div style={{ marginTop: "15px", paddingTop: "15px", borderTop: "1px dashed #eee" }}>
-
                     {isSenior && (
                         <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
                             <span style={{ fontSize: '12px', color: '#888', width: '100%', marginBottom: '2px' }}>Quick Reply:</span>
@@ -303,7 +315,6 @@ export default function PostCard({ post, currentUser, onDelete, view }) {
 
                     <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
                         <img src={currentUser?.avatarUrl || currentUser?.avatar_url || "https://placehold.co/30"} style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit:"cover", marginTop: "4px" }} />
-
                         <div style={{ flex: 1, position: "relative" }}>
                             <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
                                 <input

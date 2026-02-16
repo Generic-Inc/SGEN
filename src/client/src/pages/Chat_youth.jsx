@@ -1,6 +1,6 @@
 /* src/pages/Chat_youth.jsx */
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import EmojiPicker from 'emoji-picker-react';
 import '../static/styles/Chat_youth.css';
 import '../static/styles/App.css';
@@ -9,11 +9,13 @@ import SideBar from "../components/side_bar.jsx";
 import { ExpandableText } from "../components/ChatUtils.jsx";
 import { isImage, formatTime, useChatLogic } from "../components/ChatLogic.jsx";
 
+
 export default function ChatPageYouth() {
     // 1. ROBUST PARAMETER HANDLING
     // Extract communityId from the URL regardless of the route key
     const params = useParams();
     const communityId = params.communityId || params.id;
+    const navigate = useNavigate();
 
     // 2. GET USER ID
     // Retrieve the ID saved during login to identify "Me"
@@ -90,14 +92,23 @@ export default function ChatPageYouth() {
                 <div className="discord-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
 
                     {/* Header */}
-                    <div className="discord-header" onClick={() => setShowProfile(true)}>
-                        <div className="header-icon-circle">
-                            {iconUrl ? <img src={iconUrl} alt="Icon" className="header-icon-img"/> : <span>#</span>}
-                        </div>
-                        <div style={{display: 'flex', flexDirection: 'column'}}>
-                            <span>{displayName} Chat</span>
-                            <span style={{fontSize: '12px', color: '#23a559'}}>● {onlineCount} Online</span>
-                        </div>
+                    <div className="discord-header" style={{ justifyContent: 'space-between', cursor: 'default' }}>
+            <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => setShowProfile(true)}>
+                <div className="header-icon-circle">
+                    {iconUrl ? <img src={iconUrl} alt="Icon" className="header-icon-img"/> : <span>#</span>}
+                </div>
+                <div style={{display: 'flex', flexDirection: 'column'}}>
+                    <span>{displayName} Chat</span>
+                    <span style={{fontSize: '12px', color: '#23a559'}}>● {onlineCount} Online</span>
+                </div>
+            </div>
+                        <button
+                className="youth-switch-btn"
+                onClick={() => navigate(`/community/${communityId}/messages`)}
+            >
+                <span className="material-icons" style={{ fontSize: '0.1px' }}>old_standard</span>
+                Elderly Mode
+            </button>
                     </div>
 
                     {/* Messages Area */}

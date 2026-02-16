@@ -1,7 +1,8 @@
 /* Import React tools and external libraries */
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import EmojiPicker from 'emoji-picker-react';
+
 
 /* Import local styles and components */
 import '../static/styles/Chat_elder.css';
@@ -17,6 +18,7 @@ import { isImage, formatTime, useChatLogic } from "../components/ChatLogic.jsx";
 export default function ChatPage() {
     /* Get URL parameters and setup local states */
     const { communityId } = useParams();
+    const navigate = useNavigate();
     const [inputText, setInputText] = useState("");
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [showProfile, setShowProfile] = useState(false);
@@ -98,17 +100,31 @@ export default function ChatPage() {
                 <SideBar />
                 <div className="main-container">
                     <div className="chat-box">
-                        <div className="chat-header" onClick={() => setShowProfile(true)}>
-                            <div className="header-icon-circle">
-                                {iconUrl ? <img src={iconUrl} alt="Icon" className="header-icon-img"/> : <span>#</span>}
-                            </div>
-                            <div style={{display:'flex', flexDirection:'column'}}>
-                                <strong>{displayName} Chat</strong>
-                                <span style={{fontSize:'14px', color: '#4caf50', fontWeight:'normal'}}>
-                                    ● {onlineCount} Online
-                                </span>
-                            </div>
-                        </div>
+                        <div className="chat-header">
+    {/* NEW WRAPPER: Group 1 (Left Side) */}
+    <div style={{ display: 'flex', alignItems: 'center' }} onClick={() => setShowProfile(true)}>
+        <div className="header-icon-circle">
+            {iconUrl ? <img src={iconUrl} alt="Icon" className="header-icon-img"/> : <span>#</span>}
+        </div>
+        <div style={{display:'flex', flexDirection:'column'}}>
+            <strong>{displayName} Chat</strong>
+            <span style={{fontSize:'14px', color: '#4caf50', fontWeight:'normal'}}>
+                ● {onlineCount} Online
+            </span>
+        </div>
+    </div>
+
+    {/* Group 2 (Right Side) */}
+    <button
+        className="switch-ui-btn"
+        onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/community/${communityId}/messages/youth`);
+        }}
+    >
+        Switch to Youth UI
+    </button>
+</div>
 
                         <div className="chat-messages-area">
                             {/* Improved Loading / Empty State */}
@@ -157,17 +173,29 @@ export default function ChatPage() {
                                                 </>
                                             )}
 
-                                            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px'}}>
-                                                <span className="timestamp">{formatTime(msg.created)}</span>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+    <span className="timestamp">{formatTime(msg.created)}</span>
 
-                                                {/* ACTION BUTTONS (Only visible to owner when not editing) */}
-                                                {isMe && editingId !== msg.messageId && (
-                                                    <div style={{display:'flex', gap: '10px'}}>
-                                                        <button className="text-btn" onClick={() => { setEditingId(msg.messageId); setEditText(msg.content); }}>Edit</button>
-                                                        <button className="text-btn delete" style={{color:'#ea4335'}} onClick={() => handleDelete(msg.messageId)}>Delete</button>
-                                                    </div>
-                                                )}
-                                            </div>
+    {/* Icons only, aligned with the timestamp */}
+    {isMe && editingId !== msg.messageId && (
+        <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+                className="icon-only-btn edit"
+                onClick={() => { setEditingId(msg.messageId); setEditText(msg.content); }}
+                title="Edit"
+            >
+                <span className="material-icons">edit</span>
+            </button>
+            <button
+                className="icon-only-btn delete"
+                onClick={() => handleDelete(msg.messageId)}
+                title="Delete"
+            >
+                <span className="material-icons">delete_outline</span>
+            </button>
+        </div>
+    )}
+</div>
                                         </div>
                                     );
                                 })

@@ -16,6 +16,7 @@
     border-bottom: 1px solid #26272d;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     padding: 0 16px;
     font-size: 16px;
     font-weight: bold;
@@ -404,4 +405,35 @@
 .youth-actions {
     z-index: 10;
     transition: background-color 0.2s;
+}
+/* src/static/styles/Chat_youth.css */
+
+.youth-switch-btn {
+    background-color: #4e5058;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;     /* Increased padding slightly for better look */
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+
+    /* CRITICAL FIXES START HERE */
+    display: inline-flex;  /* Behaves like an inline element (hugs content) */
+    align-items: center;   /* Vertically aligns icon and text */
+    justify-content: center;
+    width: auto !important; /* Forces the button to NOT be 100% wide */
+    flex-grow: 0;          /* Prevents the button from stretching */
+    flex-shrink: 0;        /* Prevents the button from squishing */
+    white-space: nowrap;   /* Keeps "Elderly Mode" on one line */
+    /* CRITICAL FIXES END HERE */
+
+    gap: 8px;
+    transition: background-color 0.2s;
+    margin-left: auto;     /* Extra safety: pushes it to the right if flex fails */
+}
+
+.youth-switch-btn:hover {
+    background-color: #6d6f78;
+    color: #fff;
 }

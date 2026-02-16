@@ -26,10 +26,10 @@ export default function Events() {
             try {
                 const apiBase = `/api/community/${communityId}`;
 
-                const [communityResponse, eventsResponse, ageData] = await Promise.all([
+                const [communityResponse, eventsResponse, onboardingData] = await Promise.all([
                     fetch(apiBase, { credentials: 'include' }),
                     fetch(`${apiBase}/events`, { credentials: 'include' }),
-                    fetchData('my-age') // Fetch user age
+                    fetchData('user/onboarding')
                 ]);
 
                 if (!communityResponse.ok || !eventsResponse.ok) {
@@ -40,7 +40,10 @@ export default function Events() {
                 const eventsData = await eventsResponse.json();
 
                 setCommunity(communityData);
-                setUserAge(ageData.age);
+
+                if (onboardingData && onboardingData.age) {
+                    setUserAge(onboardingData.age);
+                }
 
                 const eventsList = Array.isArray(eventsData?.events) ? eventsData.events : [];
 
@@ -253,7 +256,7 @@ export default function Events() {
                                             onEdit={handleEditEvent}
                                             onDelete={handleDeleteEvent}
                                             onToggleInterest={handleToggleInterest}
-                                            userAge={userAge} // ✅ Pass userAge prop
+                                            userAge={userAge}
                                         />
                                     ))
                                 )}

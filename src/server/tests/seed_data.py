@@ -229,14 +229,45 @@ async def main():
         post = await Post.create(content=content, community_id=c.community_id, author_id=u.user_id, image_url=img_url)
         if post: all_posts.append(post)
 
-    # --- 5. CREATE COMMENTS ---
-    print("\n💬 Generating Comments...")
-    for post in all_posts:
-        for _ in range(random.randint(0, 4)):
-            u = random.choice(all_users)
-            slang = random.choice(SLANG_WORDS)
-            text = f"That's {slang}!" if random.random() > 0.5 else "Great post! Thanks for sharing."
-            await Comment.create(content=text, post_id=post.post_id, author_id=u.user_id)
+        # --- 5. CREATE COMMENTS ---
+        print("\n💬 Generating Comments...")
+        all_comments = []  # <--- NEW: Store comments so we can like them later
+
+        for post in all_posts:
+            for _ in range(random.randint(0, 4)):
+                u = random.choice(all_users)
+                slang = random.choice(SLANG_WORDS)
+                text = f"That's {slang}!" if random.random() > 0.5 else "Great post! Thanks for sharing."
+
+                # Capture the comment object
+                comment = await Comment.create(content=text, post_id=post.post_id, author_id=u.user_id)
+                if comment:
+                    all_comments.append(comment)
+
+        # --- 5.5. GENERATE POST LIKES ---
+        print("\n❤️ Spreading the Love (Post Likes)...")
+        from modules.posts import Like
+
+        for post in all_posts:
+            if random.random() < 0.8:
+                num_likes = random.randint(1, 10)
+                likers = random.sample(all_users, min(num_likes, len(all_users)))
+                for liker in likers:
+                    await Like.toggle_post_like(post.post_id, liker.user_id)
+
+        # --- 5.6. GENERATE COMMENT LIKES (NEW!) ---
+        print("\n👍 Liking Comments...")
+        for comment in all_comments:
+            # 60% chance a comment gets liked
+            if random.random() < 0.6:
+                # 1 to 5 likes per comment
+                num_likes = random.randint(1, 5)
+                likers = random.sample(all_users, min(num_likes, len(all_users)))
+
+                for liker in likers:
+                    await Like.toggle_comment_like(comment.comment_id, liker.user_id)
+
+        # ... (Continue to CREATE EVENTS) ...
 
     # --- 6. CREATE EVENTS (WITH SLANG!) ---
     print("\n📅 Creating Events...")

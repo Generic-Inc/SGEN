@@ -33,7 +33,6 @@ function formatTimeAgo(dateString) {
     return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 }
 
-// ✅ ADDED: 'communityRole' to props
 export default function PostCard({ post, currentUser, onDelete, view, communityRole }) {
     const authorObj = post.author || {};
     const authorName = authorObj.displayName || authorObj.display_name || authorObj.name || post.author_name || "Unknown";
@@ -91,11 +90,22 @@ export default function PostCard({ post, currentUser, onDelete, view, communityR
         }
     };
 
+    // ✅ FIXED: Only prevent default behavior on ENTER key, not every letter!
     const handlePostComment = async (e) => {
         const textToPost = typeof e === 'string' ? e : commentText;
-        if (typeof e !== 'string' && e?.preventDefault) e.preventDefault();
 
-        if ((typeof e === 'string' || e.key === 'Enter' || e.type === 'click') && textToPost.trim()) {
+        // 1. If it is an event (not a string), check if we need to block it
+        if (typeof e !== 'string') {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Block Enter so it doesn't add a new line
+            }
+            // For other keys (a, b, c...), DO NOTHING so they can be typed!
+        }
+
+        // 2. Determine if we should submit (Click, Enter key, or direct String call)
+        const isSubmit = typeof e === 'string' || e.key === 'Enter' || e.type === 'click';
+
+        if (isSubmit && textToPost.trim()) {
             try {
                 const route = `community/${communityId}/posts/${postId}/comments`;
                 const newCommentReal = await postData(route, { content: textToPost });
@@ -176,14 +186,8 @@ export default function PostCard({ post, currentUser, onDelete, view, communityR
         }
     };
 
-    // --- PERMISSION LOGIC ---
-    // 1. Am I the author?
     const isAuthor = currentUserId && postAuthorId && (String(currentUserId) === String(postAuthorId));
-
-    // 2. Am I an admin/owner? (Can delete, but NOT edit others)
     const isPowerUser = communityRole === 'admin' || communityRole === 'owner';
-
-    // 3. Can I open the menu? (Yes, if I am either)
     const canManagePost = isAuthor || isPowerUser;
 
     const showCommunityLabel = communityName && (!view || view.type !== "community");
@@ -205,19 +209,14 @@ export default function PostCard({ post, currentUser, onDelete, view, communityR
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     {showCommunityLabel && <a href={`/community/${communityId}`} style={{ fontSize: "12px", color: "#65676B", textDecoration: "none", fontWeight: "500" }}>Posted in <span style={{ color: "#1877F2" }}>{communityName}</span></a>}
 
-                    {/* --- MENU BUTTON --- */}
                     {canManagePost && (
                         <div style={{ position: "relative" }}>
                             <button onClick={() => setIsMenuOpen(!isMenuOpen)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px', padding: "0 5px", color: "#606770", fontWeight: "bold" }}>&#x22EF;</button>
                             {isMenuOpen && (
                                 <div style={{ position: "absolute", right: 0, top: "25px", background: "white", boxShadow: "0 2px 8px rgba(0,0,0,0.2)", borderRadius: "8px", overflow: "hidden", zIndex: 10, minWidth: "120px" }}>
-
-                                    {/* Edit: Only for Author */}
                                     {isAuthor && (
                                         <button onClick={() => { setIsMenuOpen(false); setIsEditing(true); }} style={{ display: "block", width: "100%", padding: "10px 15px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: "14px", color: "#333" }}>✏️ Edit</button>
                                     )}
-
-                                    {/* Delete: Author OR Admin/Owner */}
                                     <button onClick={() => { setIsMenuOpen(false); handleDelete(); }} style={{ display: "block", width: "100%", padding: "10px 15px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: "14px", color: "#dc3545" }}>🗑️ Delete</button>
                                 </div>
                             )}
@@ -226,7 +225,6 @@ export default function PostCard({ post, currentUser, onDelete, view, communityR
                 </div>
             </div>
 
-            {/* ... (Rest of the component remains exactly the same) ... */}
             <div className="post-content" style={{ marginTop: "10px" }}>
                 {isEditing ? (
                     <div style={{ marginBottom: "10px" }}>

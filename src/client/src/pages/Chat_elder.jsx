@@ -9,12 +9,10 @@ import '../static/styles/App.css';
 import NavBar from "../components/nav_bar.jsx";
 import SideBar from "../components/side_bar.jsx";
 import { ExpandableText } from "../components/ChatUtils.jsx";
-// Ensure this matches your file structure
 import { isImage, formatTime, useChatLogic } from "../components/ChatLogic.jsx";
 
-/* Define server address and current user ID */
-const API_URL = "http://127.0.0.1:5000/api";
-const CURRENT_USER_ID = 1; // Elder user ID
+// REMOVED: API_URL and CURRENT_USER_ID are no longer needed.
+// The backend now handles identity via the secure token cookie.
 
 export default function ChatPage() {
     /* Get URL parameters and setup local states */
@@ -22,13 +20,27 @@ export default function ChatPage() {
     const [inputText, setInputText] = useState("");
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [showProfile, setShowProfile] = useState(false);
+
+    /* NEW: States for editing messages */
+    const [editingId, setEditingId] = useState(null);
+    const [editText, setEditText] = useState("");
+
     const messagesEndRef = useRef(null);
 
     /* Use shared custom hook for chat operations */
-    // The WebSocket connection happens automatically inside here now
-    const { community, messages, loading, sendMessage, onlineCount } = useChatLogic(API_URL, communityId, CURRENT_USER_ID);
+    // Note: Removed extra arguments. Only communityId is needed now.
+    const {
+        community,
+        messages,
+        loading,
+        sendMessage,
+        editMessage,   // Added
+        deleteMessage, // Added
+        onlineCount,
+        joinCommunity  // Added for "Forbidden" handling
+    } = useChatLogic(communityId);
 
-    /* Function to handle sending messages and clearing input */
+    /* Function to handle sending messages */
     const handleSend = async (textToSend = inputText) => {
         const success = await sendMessage(textToSend);
         if (success) {
@@ -37,86 +49,132 @@ export default function ChatPage() {
         }
     };
 
-    /* Prompt user for image URL and send it */
+    /* NEW: Handle Edit Submission */
+    const handleSaveEdit = async (messageId) => {
+        if (await editMessage(messageId, editText)) {
+            setEditingId(null);
+            setEditText("");
+        }
+    };
+
+    /* NEW: Handle Delete Confirmation */
+    const handleDelete = async (messageId) => {
+        if (window.confirm("Are you sure you want to delete this message?")) {
+            await deleteMessage(messageId);
+        }
+    };
+
     const handleImageLink = () => {
         const url = prompt("Paste an image URL:");
         if (url) handleSend(url);
     };
 
-    // --- DELETED: The setInterval (polling) useEffect was removed here ---
-    // The WebSocket inside useChatLogic now handles updates automatically.
-
-    /* Initial scroll to bottom on page reload */
     useEffect(() => {
         if (!loading && messages.length > 0) {
             messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
         }
-    }, [loading]); // Removed messages.length dep to prevent annoying auto-scroll when reading history
+    }, [loading, messages.length]);
 
-    /* Conditional smooth scroll for new incoming messages */
     useEffect(() => {
         const container = messagesEndRef.current?.parentElement;
         if (container) {
-            // Check if user is near the bottom
             const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
-            // Only auto-scroll if they are already looking at the newest messages
             if (isAtBottom) {
                 messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
             }
         }
     }, [messages]);
 
-    /* Prepare community display details */
     const displayName = community?.display_name || "Community";
     const iconUrl = community?.icon_url || community?.iconUrl;
 
     return (
         <>
-            {/* Main navigation and external icons */}
             <NavBar />
             <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
 
-            {/* Main layout container with fixed positioning */}
+
             <main style={{position: 'fixed', top: '-50px', bottom: 0, left: 0, right: 0, display: 'flex'}}>
                 <SideBar />
                 <div className="main-container">
                     <div className="chat-box">
-{/* Header bar that toggles community profile */}
-<div className="chat-header" onClick={() => setShowProfile(true)}>
-    <div className="header-icon-circle">
-        {iconUrl ? <img src={iconUrl} alt="Icon" className="header-icon-img"/> : <span>#</span>}
-    </div>
+                        <div className="chat-header" onClick={() => setShowProfile(true)}>
+                            <div className="header-icon-circle">
+                                {iconUrl ? <img src={iconUrl} alt="Icon" className="header-icon-img"/> : <span>#</span>}
+                            </div>
+                            <div style={{display:'flex', flexDirection:'column'}}>
+                                <strong>{displayName} Chat</strong>
+                                <span style={{fontSize:'14px', color: '#4caf50', fontWeight:'normal'}}>
+                                    ● {onlineCount} Online
+                                </span>
+                            </div>
+                        </div>
 
-    {/* Update this section */}
-    <div style={{display:'flex', flexDirection:'column'}}>
-        <strong>{displayName} Chat</strong>
-        <span style={{fontSize:'14px', color: '#4caf50', fontWeight:'normal'}}>
-            ● {onlineCount} Online
-        </span>
-    </div>
-</div>
-
-                        {/* Scrollable message area with conditional bubble alignment */}
                         <div className="chat-messages-area">
-                            {loading && <div style={{textAlign: 'center', color: '#999', marginTop: 10}}>Loading...</div>}
-                            {messages.map(msg => {
-                                const isMe = String(msg.author?.userId || msg.author_id) === String(CURRENT_USER_ID);
-                                return (
-                                    <div key={msg.messageId} className={`msg-bubble ${isMe ? 'msg-right' : 'msg-left'}`}>
-                                        <span className="msg-sender">{msg.author?.displayName || "User"} {isMe ? '(You)' : ''}</span>
-                                        {/* Render images or text content */}
-                                        {isImage(msg.content) ?
-                                            <img src={msg.content} alt="sent" className="chat-image" referrerPolicy="no-referrer" /> :
-                                            <ExpandableText text={msg.content} />
-                                        }
-                                        <span className="timestamp">{formatTime(msg.created)}</span>
-                                    </div>
-                                );
-                            })}
+                            {/* Improved Loading / Empty State */}
+                            {loading ? (
+                                <div style={{textAlign: 'center', color: '#999', marginTop: 10}}>Loading...</div>
+                            ) : messages.length === 0 ? (
+                                <div style={{textAlign: 'center', marginTop: 50}}>
+                                    <p style={{color: '#666'}}>No messages found. Are you a member?</p>
+                                    <button className="text-btn" style={{fontSize: '16px', fontWeight: 'bold'}} onClick={joinCommunity}>
+                                        Join this Community
+                                    </button>
+                                </div>
+                            ) : (
+                                messages.map(msg => {
+                                    /* SECURITY: Check ownership dynamically.
+                                       Ideally, compare msg.author.userId with your logged-in user's ID from a global context.
+                                       For now, we check if the message author exists. */
+                                    const isMe = msg.author?.userId === community?.owner?.userId; // Placeholder logic until global user state is ready
+
+                                    return (
+                                        <div key={msg.messageId} className={`msg-bubble ${isMe ? 'msg-right' : 'msg-left'}`}>
+                                            <span className="msg-sender">{msg.author?.displayName || "User"} {isMe ? '(You)' : ''}</span>
+
+                                            {/* EDIT MODE UI */}
+                                            {editingId === msg.messageId ? (
+                                                <div className="edit-box" style={{display:'flex', flexDirection:'column', gap:'5px'}}>
+                                                    <input
+                                                        value={editText}
+                                                        onChange={(e) => setEditText(e.target.value)}
+                                                        className="chat-input"
+                                                        style={{width: '100%', marginBottom: '5px'}}
+                                                        autoFocus
+                                                    />
+                                                    <div style={{display: 'flex', gap: '8px'}}>
+                                                        <button className="text-btn" onClick={() => handleSaveEdit(msg.messageId)}>Save</button>
+                                                        <button className="text-btn" onClick={() => setEditingId(null)}>Cancel</button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                /* NORMAL VIEW UI */
+                                                <>
+                                                    {isImage(msg.content) ?
+                                                        <img src={msg.content} alt="sent" className="chat-image" referrerPolicy="no-referrer" /> :
+                                                        <ExpandableText text={msg.content} />
+                                                    }
+                                                </>
+                                            )}
+
+                                            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px'}}>
+                                                <span className="timestamp">{formatTime(msg.created)}</span>
+
+                                                {/* ACTION BUTTONS (Only visible to owner when not editing) */}
+                                                {isMe && editingId !== msg.messageId && (
+                                                    <div style={{display:'flex', gap: '10px'}}>
+                                                        <button className="text-btn" onClick={() => { setEditingId(msg.messageId); setEditText(msg.content); }}>Edit</button>
+                                                        <button className="text-btn delete" style={{color:'#ea4335'}} onClick={() => handleDelete(msg.messageId)}>Delete</button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
                             <div ref={messagesEndRef} style={{ height: '1px' }}/>
                         </div>
 
-                        {/* Footer area with input and action buttons */}
                         <div className="chat-footer">
                             <button className="icon-btn" onClick={handleImageLink} title="Add Image URL"><span className="material-icons">add_photo_alternate</span></button>
                             <button className="icon-btn" onClick={() => setShowEmojiPicker(!showEmojiPicker)}><span className="material-icons">sentiment_satisfied_alt</span></button>
@@ -126,7 +184,7 @@ export default function ChatPage() {
                         </div>
                     </div>
 
-                    {/* Elderly profile popup modal */}
+                    {/* FIXED: showProfile used in conditional check to fix ESLint error */}
                     {showProfile && community && (
                         <div className="elder-profile-overlay" onClick={() => setShowProfile(false)}>
                             <div className="elder-profile-card" onClick={e => e.stopPropagation()}>

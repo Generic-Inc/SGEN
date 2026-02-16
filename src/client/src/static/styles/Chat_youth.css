@@ -378,3 +378,30 @@
     align-items: center;
     justify-content: center;
 }
+/* Show the actions box when hovering anywhere on the message row */
+.message-row:hover .youth-actions {
+    display: flex !important;
+}
+
+/* Ensure the actions box stays on top and is clickable */
+.youth-actions {
+    z-index: 10;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.youth-actions span:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+/* Show actions only when the message row is hovered */
+.message-row:hover .youth-actions {
+    display: flex !important;
+}
+
+/* Ensure actions box is visible over other elements */
+.youth-actions {
+    z-index: 10;
+    transition: background-color 0.2s;
+}

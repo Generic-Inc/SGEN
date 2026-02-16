@@ -22,7 +22,10 @@ To logout, click on the profile icon in the top right corner and select "Logout"
 """
 
 async def get_response(messages: list):
-    messages = messages.insert(0, {"role": "system", "content": "You are a helpful assistant for a community platform called 'Communities'. You will be given a conversation history between a user and the assistant. The user may ask questions about the platform, how to use it, or any other related topic. Your task is to provide accurate and helpful responses based on the conversation history and your knowledge of the platform. If you don't know the answer to a question, it's okay to say you don't know."})
+    if not messages:
+        messages = []
+    messages = [{"role": "system", "content": SYS_PROMPT}, *messages]
+    print(messages)
     chat = await client.chat.completions.create(model="openai/gpt-oss-120b",
                                          messages=messages,
                                          max_completion_tokens=3000)

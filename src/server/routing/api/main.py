@@ -1,6 +1,7 @@
 from flask import Blueprint, request
 
 from global_src.db import DATABASE
+from global_src.util import get_response
 from . import api
 
 
@@ -34,7 +35,7 @@ async def search():
 @api.route("/chatbot", methods=["POST"])
 async def chatbot():
     data = request.json
-    message = data.get("message_history", "")
-    # For demonstration, we'll just echo the message back with a prefix.
-    response = f"Chatbot response to: {message}"
-    return {"messages": [{"role": "user", "content": response}, {"role": "assistant", "content": response}]}
+    message = data.get("message_history", [])
+    response = await get_response(message)
+    message.append({"role": "assistant", "content": response})
+    return {"messages": message}

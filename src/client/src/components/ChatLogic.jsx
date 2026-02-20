@@ -3,9 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { fetchData, postData } from '../static/api.js';
 import io from 'socket.io-client';
 
-/* ===========================================================================
-   UTILITY FUNCTIONS
-=========================================================================== */
+/* Helper functions for message media detection and time formatting */
 export const isImage = (text) => {
     return text && text.match(/\.(jpeg|jpg|gif|png|webp)$/i) != null;
 };
@@ -18,19 +16,19 @@ export const formatTime = (dateString) => {
     } catch { return ""; }
 };
 
-/* ===========================================================================
-   MAIN CHAT LOGIC HOOK
-=========================================================================== */
+/* --- Chat Hook --- */
 export const useChatLogic = (communityId) => {
+    // Grab the ID from storage so we can track unique users
+    const storedUserId = localStorage.getItem("currentUserId");
 
-    /* --- 1. State Management --- */
+    /* --- API Calls --- */
     const [messages, setMessages] = useState([]);
     const [community, setCommunity] = useState(null);
     const [loading, setLoading] = useState(true);
     const [onlineCount, setOnlineCount] = useState(0);
     const [currentUser, setCurrentUser] = useState(null);
 
-    /* --- 2. Data Fetching --- */
+    /* --- Data Fetching --- */
     const fetchCommunityInfo = useCallback(async () => {
         try {
             const data = await fetchData(`community/${communityId}`);
@@ -46,7 +44,9 @@ export const useChatLogic = (communityId) => {
         try {
             const data = await fetchData(`community/${communityId}/messages`);
             if (data && data.messages) setMessages(data.messages);
-            if (data.current_user_id) setCurrentUser({ user_id: data.current_user_id });
+
+            const userId = data && (data['current_user_id'] || data['currentUserId']);
+            if (userId) setCurrentUser({ user_id: userId });
         } catch (error) {
             console.error("Failed to load messages:", error);
         } finally {
@@ -54,18 +54,25 @@ export const useChatLogic = (communityId) => {
         }
     }, [communityId]);
 
-    /* --- 3. WebSocket Setup --- */
+    /* --- WebSocket Logic --- */
     useEffect(() => {
         if (!communityId) return;
 
-        fetchCommunityInfo();
-        fetchInitialMessages();
+        // Fetch data immediately when the room changes
+        (async () => {
+            await fetchCommunityInfo();
+            await fetchInitialMessages();
+        })();
 
         const socket = io("http://127.0.0.1:5000", { withCredentials: true });
-        socket.emit('join', { room: communityId });
+
+        // @ts-ignore - Suppresses strict IDE type checking for the payload object
+        socket.emit('join', ({
+            room: communityId,
+            user_id: storedUserId
+        }));
 
         socket.on('connect_user_data', (userData) => {
-            console.log("WebSocket Handshake: Logged in as", userData);
             setCurrentUser(userData);
         });
 
@@ -90,10 +97,13 @@ export const useChatLogic = (communityId) => {
             if (data && data.count !== undefined) setOnlineCount(data.count);
         });
 
-        return () => socket.disconnect();
-    }, [communityId, fetchCommunityInfo, fetchInitialMessages]);
+        // Cleanup: Disconnect when the user leaves the page or changes room
+        return () => {
+            socket.disconnect();
+        };
+    }, [communityId, fetchCommunityInfo, fetchInitialMessages, storedUserId]);
 
-    /* --- 4. CRUD Operations --- */
+    /* --- CRUD functions --- */
     const sendMessage = async (content) => {
         if (!content.trim()) return false;
         try {
@@ -165,7 +175,6 @@ export const useChatLogic = (communityId) => {
         return false;
     };
 
-    /* --- 5. Exports --- */
     return {
         community,
         messages,

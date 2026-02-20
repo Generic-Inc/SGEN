@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import EmojiPicker from 'emoji-picker-react';
 
 /* Local Styles & Components */
+import '../static/styles/Chat.css';
 import '../static/styles/Chat_elder.css';
 import '../static/styles/App.css';
 import NavBar from "../components/nav_bar.jsx";
@@ -12,33 +13,31 @@ import { ExpandableText, InlineMessageEditor } from "../components/ChatUtils.jsx
 import { isImage, formatTime, useChatLogic } from "../components/ChatLogic.jsx";
 
 
-/* ===========================================================================
-   MAIN COMPONENT
-=========================================================================== */
+// --- Main Elderly Chat Part ---
 export default function ElderlyChat() {
 
-    /* --- 1. Routing & Storage --- */
+    // Get the community ID from the URL and check who is logged in
     const { communityId } = useParams();
     const navigate = useNavigate();
     const storedUserId = localStorage.getItem("currentUserId");
 
-    /* --- 2. State Management --- */
+    // UI state (inputs, toggles, and hover states)
     const [inputText, setInputText] = useState("");
     const [showEmojis, setShowEmojis] = useState(false);
     const [showProfile, setShowProfile] = useState(false);
     const [hoveredMsgId, setHoveredMsgId] = useState(null);
     const [editMsgId, setEditMsgId] = useState(null);
 
-    /* --- 3. References --- */
+    // Reference to the bottom of the chat for auto-scrolling
     const chatEndRef = useRef(null);
 
-    /* --- 4. Chat Logic Hook --- */
+    // Pull in all our heavy-lifting chat functions from the custom hook
     const {
         community, messages, loading, currentUser,
         sendMessage, editMessage, deleteMessage, onlineCount, joinCommunity
     } = useChatLogic(communityId);
 
-    /* --- 5. Action Handlers --- */
+    // Handlers for user actions (sending, editing, deleting)
     const handleSendMsg = async (textToSend = inputText) => {
         const success = await sendMessage(textToSend);
         if (success) {
@@ -59,12 +58,12 @@ export default function ElderlyChat() {
         }
     };
 
-    const handleSendImage = () => {
+    const handleSendImage = async () => {
         const url = prompt("Paste an image URL:");
-        if (url) handleSendMsg(url);
+        if (url) await handleSendMsg(url);
     };
 
-    /* --- 6. Auto-Scroll Effects --- */
+    // Keep the chat scrolled to the bottom when new messages arrive
     useEffect(() => {
         if (!loading && messages.length > 0) {
             chatEndRef.current?.scrollIntoView({ behavior: "auto" });
@@ -79,13 +78,11 @@ export default function ElderlyChat() {
         }
     }, [messages]);
 
-    /* --- 7. UI Display Variables --- */
+    // Quick helpers for displaying the community info
     const elderName = community?.display_name || "Community";
     const elderIcon = community?.icon_url || community?.iconUrl;
 
-    /* ===========================================================================
-       RENDER UI
-    =========================================================================== */
+    // --- What the user actually sees (The UI) ---
     return (
         <>
             <NavBar />
@@ -97,7 +94,7 @@ export default function ElderlyChat() {
                 <div className="main-container">
                     <div className="chat-box">
 
-                        {/* --- CHAT HEADER --- */}
+                        {/* --- Chat Header --- */}
                         <div className="chat-header">
                             <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => setShowProfile(true)}>
                                 <div className="header-icon-circle">
@@ -113,7 +110,7 @@ export default function ElderlyChat() {
                             </button>
                         </div>
 
-                        {/* --- MESSAGES AREA --- */}
+                        {/* --- Messages Area --- */}
                         <div className="chat-messages-area">
                             {loading ? (
                                 <div style={{textAlign: 'center', color: '#999', marginTop: 10}}>Loading...</div>
@@ -125,7 +122,7 @@ export default function ElderlyChat() {
                             ) : (
                                 messages.map(msg => {
 
-                                    // Security & Identity Check
+                                    // Figure out if the current user wrote this message
                                     const authorId = msg.author?.user_id || msg.author?.userId || msg.author?.id || msg.author_id;
                                     const myId = currentUser?.user_id || currentUser?.userId || currentUser?.id || storedUserId;
                                     const isMe = myId != null && String(authorId) === String(myId);
@@ -139,7 +136,7 @@ export default function ElderlyChat() {
                                         >
                                             <span className="msg-sender">{msg.author?.displayName || "User"} {isMe ? '(You)' : ''}</span>
 
-                                            {/* Content Area: Edit Mode vs Normal Mode */}
+                                            {/* Show the editor if they are editing, otherwise show the text/image */}
                                             {editMsgId === msg.messageId ? (
                                                 <InlineMessageEditor
                                                     initialText={msg.content}
@@ -178,9 +175,9 @@ export default function ElderlyChat() {
                             <div ref={chatEndRef} style={{ height: '1px' }}/>
                         </div>
 
-                        {/* --- CHAT FOOTER (INPUT AREA) --- */}
+                        {/* --- Input Area (Footer) --- */}
                         <div className="chat-footer">
-                            <button className="icon-btn" onClick={handleSendImage} title="Add Image URL"><span className="material-icons">add_photo_alternate</span></button>
+                            <button className="icon-btn" onClick={async () => { await handleSendImage(); }} title="Add Image URL"><span className="material-icons">add_photo_alternate</span></button>
                             <button className="icon-btn" onClick={() => setShowEmojis(!showEmojis)}><span className="material-icons">sentiment_satisfied_alt</span></button>
 
                             {showEmojis && (
@@ -189,12 +186,19 @@ export default function ElderlyChat() {
                                 </div>
                             )}
 
-                            <input type="text" className="chat-input" placeholder="Type a message..." value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSendMsg()} />
-                            <button className="icon-btn" style={{color: '#25d366'}} onClick={() => handleSendMsg()}><span className="material-icons">send</span></button>
+                            <input
+                                type="text"
+                                className="chat-input"
+                                placeholder="Type a message..."
+                                value={inputText}
+                                onChange={(e) => setInputText(e.target.value)}
+                                onKeyPress={async (e) => {if (e.key === 'Enter') {e.preventDefault();await handleSendMsg();}}}
+                            />
+                            <button className="icon-btn" style={{color: '#25d366'}} onClick={async () => { await handleSendMsg(); }}><span className="material-icons">send</span></button>
                         </div>
                     </div>
 
-                    {/* --- ELDER PROFILE OVERLAY --- */}
+                    {/* --- Community Profile Modal --- */}
                     {showProfile && community && (
                         <div className="elder-profile-overlay" onClick={() => setShowProfile(false)}>
                             <div className="elder-profile-card" onClick={e => e.stopPropagation()}>

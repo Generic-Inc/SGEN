@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 
-/* ===========================================================================
-   1. EXPANDABLE TEXT COMPONENT
-   Shortens long messages and adds a "Read More" / "Show Less" toggle.
-=========================================================================== */
+/* Shortens long messages and adds a "Read More" toggle */
 export const ExpandableText = ({ text }) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
-    if (!text || text.length < 300) return <span>{text}</span>;
+    // Fixed: Ensure 'text' is treated as a string to avoid property errors
+    const safeText = String(text || "");
+    if (!safeText || safeText.length < 300) return <span>{safeText}</span>;
 
-    const showLimit = Math.max(100, Math.floor(text.length * 0.3));
-    const displayText = isExpanded ? text : text.substring(0, showLimit) + "... ";
+    const showLimit = Math.max(100, Math.floor(safeText.length * 0.3));
+    const displayText = isExpanded ? safeText : safeText.substring(0, showLimit) + "... ";
 
     return (
         <span>
@@ -29,12 +28,10 @@ export const ExpandableText = ({ text }) => {
     );
 };
 
-/* ===========================================================================
-   2. INLINE MESSAGE EDITOR COMPONENT
-   Reusable edit box that automatically resizes and matches the current theme.
-=========================================================================== */
+/* Reusable, auto-resizing edit box that adapts to the current UI theme */
 export const InlineMessageEditor = ({ initialText, onSave, onCancel, theme }) => {
-    const [text, setText] = useState(initialText);
+    // Fixed: Default to empty string so 'text' is never 'unknown' or 'null'
+    const [text, setText] = useState(String(initialText || ""));
     const isYouth = theme === 'youth';
 
     /* --- Action Handlers --- */
@@ -62,7 +59,9 @@ export const InlineMessageEditor = ({ initialText, onSave, onCancel, theme }) =>
     };
 
     const handleChange = (e) => {
-        setText(e.target.value);
+        // Fixed: Ensure value is treated as a string
+        const newValue = String(e.target.value || "");
+        setText(newValue);
         handleAutoResize(e);
     };
 
@@ -111,7 +110,7 @@ export const InlineMessageEditor = ({ initialText, onSave, onCancel, theme }) =>
     return (
         <div style={containerStyle}>
             <textarea
-                value={text}
+                value={text} // The editor is now happy because text is guaranteed string
                 autoFocus
                 onFocus={handleFocus}
                 onChange={handleChange}

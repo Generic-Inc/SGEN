@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import EmojiPicker from 'emoji-picker-react';
 
 /* Local Styles & Components */
+import '../static/styles/Chat.css';
 import '../static/styles/Chat_youth.css';
 import '../static/styles/App.css';
 import NavBar from "../components/nav_bar.jsx";
@@ -12,34 +13,32 @@ import { ExpandableText, InlineMessageEditor } from "../components/ChatUtils.jsx
 import { isImage, formatTime, useChatLogic } from "../components/ChatLogic.jsx";
 
 
-/* ===========================================================================
-   MAIN COMPONENT
-=========================================================================== */
+// --- Main Youth Chat Part ---
 export default function YouthChat() {
 
-    /* --- 1. Routing & Storage --- */
+    // Get the community ID from the URL and check who is logged in
     const params = useParams();
     const communityId = params.communityId || params.id;
     const navigate = useNavigate();
     const storedUserId = localStorage.getItem("currentUserId");
 
-    /* --- 2. State Management --- */
+    // UI state (inputs, toggles, and hover states)
     const [inputText, setInputText] = useState("");
     const [showEmojis, setShowEmojis] = useState(false);
     const [showProfile, setShowProfile] = useState(false);
     const [hoveredMsgId, setHoveredMsgId] = useState(null);
     const [editMsgId, setEditMsgId] = useState(null);
 
-    /* --- 3. References --- */
+    // Reference to the bottom of the chat for auto-scrolling
     const chatEndRef = useRef(null);
 
-    /* --- 4. Chat Logic Hook --- */
+    // Pull in all our heavy-lifting chat functions from the custom hook
     const {
         community, messages, loading, onlineCount, currentUser,
         sendMessage, deleteMessage, editMessage, joinCommunity
     } = useChatLogic(communityId);
 
-    /* --- 5. Action Handlers --- */
+    // Handlers for user actions (sending, editing, deleting)
     const handleSendMsg = async (textToSend = inputText) => {
         if (await sendMessage(textToSend)) {
             setInputText("");
@@ -55,16 +54,16 @@ export default function YouthChat() {
 
     const handleDeleteMsg = async (msgId) => {
         if (window.confirm("Delete this message?")) {
-            deleteMessage(msgId);
+            await deleteMessage(msgId);
         }
     };
 
-    const handleSendImage = () => {
+    const handleSendImage = async () => {
         const url = prompt("Paste an image URL:");
-        if (url) handleSendMsg(url);
+        if (url) await handleSendMsg(url);
     };
 
-    /* --- 6. Auto-Scroll Effects --- */
+    // Keep the chat scrolled to the bottom when new messages arrive
     useEffect(() => {
         if (!loading && messages.length > 0) {
             chatEndRef.current?.scrollIntoView({ behavior: "auto" });
@@ -75,7 +74,7 @@ export default function YouthChat() {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
-    /* --- 7. UI Display Helpers --- */
+    // Quick helpers for displaying the community info and assigning avatar colors
     const chatName = community?.display_name || "Community";
     const chatIcon = community?.icon_url || community?.iconUrl;
 
@@ -84,9 +83,7 @@ export default function YouthChat() {
         return colors[id % colors.length] || '#5865F2';
     };
 
-    /* ===========================================================================
-       RENDER UI
-    =========================================================================== */
+    // --- What the user actually sees (The UI) ---
     return (
         <>
             <NavBar />
@@ -95,10 +92,10 @@ export default function YouthChat() {
             <main style={{ position: 'fixed', top: '-16px', bottom: 0, left: 34, right: 0, display: 'flex', backgroundColor: '#313338' }}>
                 <SideBar />
 
-                <div className="discord-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                <div className="youth-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
 
-                    {/* --- CHAT HEADER --- */}
-                    <div className="discord-header" style={{ justifyContent: 'space-between', cursor: 'default' }}>
+                    {/* --- Chat Header --- */}
+                    <div className="youth-header" style={{ justifyContent: 'space-between', cursor: 'default' }}>
                         <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => setShowProfile(true)}>
                             <div className="header-icon-circle">
                                 {chatIcon ? <img src={chatIcon} alt="Icon" className="header-icon-img"/> : <span>#</span>}
@@ -114,8 +111,8 @@ export default function YouthChat() {
                         </button>
                     </div>
 
-                    {/* --- MESSAGES AREA --- */}
-                    <div className="discord-messages">
+                    {/* --- Messages Area --- */}
+                    <div className="youth-messages">
                         {loading ? (
                             <div style={{textAlign: 'center', color: '#949BA4', marginTop: 20}}>Loading...</div>
                         ) : messages.length === 0 ? (
@@ -126,7 +123,7 @@ export default function YouthChat() {
                         ) : (
                             messages.map(msg => {
 
-                                // Security & Identity Check
+                                // Figure out if the current user wrote this message
                                 const authorId = msg.author?.user_id || msg.author?.userId || msg.author?.id || msg.author_id;
                                 const myId = currentUser?.user_id || currentUser?.userId || currentUser?.id || storedUserId;
                                 const isMe = myId != null && String(authorId) === String(myId);
@@ -149,7 +146,7 @@ export default function YouthChat() {
                                                 <span className="timestamp">{formatTime(msg.created)}</span>
                                             </div>
 
-                                            {/* Content Area: Edit Mode vs Normal Mode */}
+                                            {/* Show the editor if they are editing, otherwise show the text/image */}
                                             <div className="msg-text">
                                                 {editMsgId === msg.messageId ? (
                                                     <InlineMessageEditor
@@ -166,7 +163,7 @@ export default function YouthChat() {
                                             </div>
                                         </div>
 
-                                        {/* Hover Actions (Edit / Delete) */}
+                                        {/*Show edit/delete buttons only if the user wrote the message and is hovering over it */}
                                         {isMe && hoveredMsgId === msg.messageId && editMsgId !== msg.messageId && (
                                             <div className="youth-actions">
                                                 <span className="material-icons" title="Edit" onClick={() => setEditMsgId(msg.messageId)}>edit</span>
@@ -180,8 +177,8 @@ export default function YouthChat() {
                         <div ref={chatEndRef}/>
                     </div>
 
-                    {/* --- CHAT FOOTER (INPUT AREA) --- */}
-                    <div className="discord-input-area">
+                    {/* --- Input Area (Footer) --- */}
+                    <div className="youth-input-area">
                          {showEmojis && (
                             <div className="emoji-picker-container">
                                 <EmojiPicker onEmojiClick={(e) => setInputText(p => p + e.emoji)} theme="dark" height={350} width={300}/>
@@ -193,20 +190,21 @@ export default function YouthChat() {
                             </button>
                             <input
                                 type="text"
-                                className="discord-input"
+                                className="youth-input"
                                 placeholder={`Message #${chatName}`}
                                 value={inputText}
                                 onChange={(e) => setInputText(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && handleSendMsg()}
+                                onKeyPress={async (e) => {if (e.key === 'Enter') {e.preventDefault();await handleSendMsg();}
+                                }}
                             />
                             <div className="right-icons">
                                 <button className="icon-btn" onClick={() => setShowEmojis(!showEmojis)}><span className="material-icons">sentiment_satisfied_alt</span></button>
-                                <button className="icon-btn" onClick={() => handleSendMsg()}><span className="material-icons">send</span></button>
+                                <button className="icon-btn" onClick={async () => { await handleSendMsg(); }}><span className="material-icons">send</span></button>
                             </div>
                         </div>
                     </div>
 
-                    {/* --- YOUTH PROFILE OVERLAY --- */}
+                    {/* --- Community Profile Modal --- */}
                     {showProfile && community && (
                         <div className="youth-profile-overlay" onClick={() => setShowProfile(false)}>
                             <div className="youth-profile-card" onClick={e => e.stopPropagation()}>

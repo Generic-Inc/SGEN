@@ -1,20 +1,12 @@
-/* ===========================================================================
-   1. BASE & LAYOUT
-=========================================================================== */
-* {
-    box-sizing: border-box;
-}
-
-.discord-container {
+/* --- BASE & LAYOUT --- */
+.youth-container {
     background-color: #313338;
     color: #dbdee1;
     font-family: 'gg sans', sans-serif;
 }
 
-/* ===========================================================================
-   2. HEADER
-=========================================================================== */
-.discord-header {
+/* --- HEADER --- */
+.youth-header {
     height: 48px;
     border-bottom: 1px solid #26272d;
     display: flex;
@@ -26,33 +18,13 @@
     color: #f2f3f5;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
-
 .header-icon-circle {
     width: 28px;
     height: 28px;
-    border-radius: 50%;
     background-color: #5865F2;
     margin-right: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    overflow: hidden;
-    color: white;
     font-size: 14px;
-    transition: transform 0.2s;
 }
-
-.header-icon-circle:hover {
-    transform: scale(1.1);
-}
-
-.header-icon-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
 .youth-switch-btn {
     background-color: #4e5058;
     color: #ffffff;
@@ -73,34 +45,28 @@
     transition: background-color 0.2s;
     margin-left: auto;
 }
-
 .youth-switch-btn:hover {
     background-color: #6d6f78;
     color: #fff;
 }
 
-/* ===========================================================================
-   3. MESSAGES AREA
-=========================================================================== */
-.discord-messages {
+/* --- MESSAGES AREA & BUBBLES --- */
+.youth-messages {
     flex: 1;
     overflow-y: auto;
     padding: 20px 0;
     display: flex;
     flex-direction: column;
 }
-
 .message-row {
     display: flex;
     padding: 2px 16px;
     margin-top: 10px;
     align-items: flex-start;
 }
-
 .message-row:hover {
     background-color: rgba(2, 2, 2, 0.06);
 }
-
 .avatar-circle {
     width: 40px;
     height: 40px;
@@ -114,33 +80,28 @@
     font-size: 18px;
     flex-shrink: 0;
 }
-
 .msg-content-col {
     display: flex;
     flex-direction: column;
     justify-content: center;
     max-width: 90%;
 }
-
 .msg-header {
     display: flex;
     align-items: baseline;
     gap: 8px;
     margin-bottom: 2px;
 }
-
 .username {
     font-weight: 500;
     color: #f2f3f5;
     font-size: 16px;
     cursor: pointer;
 }
-
 .timestamp {
     font-size: 12px;
     color: #949BA4;
 }
-
 .msg-text {
     font-size: 15px;
     color: #dbdee1;
@@ -149,21 +110,15 @@
     word-wrap: break-word;
     overflow-wrap: anywhere;
 }
-
 .chat-image {
-    max-width: 100%;
     max-height: 300px;
     width: auto;
     height: auto;
     border-radius: 8px;
     margin-top: 6px;
-    display: block;
-    object-fit: contain;
 }
 
-/* ===========================================================================
-   4. HOVER ACTIONS (EDIT / DELETE)
-=========================================================================== */
+/* --- HOVER ACTIONS (EDIT / DELETE) --- */
 .youth-actions {
     display: none; /* Hidden by default */
     z-index: 10;
@@ -172,31 +127,25 @@
     margin-left: auto; /* Pushes the icons to the far right of the row */
     gap: 4px;
 }
-
 .message-row:hover .youth-actions {
     display: flex !important; /* Shows only when hovering over the specific row */
 }
-
 .youth-actions span {
     padding: 4px;
     transition: background-color 0.2s;
 }
-
 .youth-actions span:hover {
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: 4px;
 }
 
-/* ===========================================================================
-   5. FOOTER & INPUTS
-=========================================================================== */
-.discord-input-area {
+/* --- FOOTER & INPUTS --- */
+.youth-input-area {
     padding: 0 16px 24px 16px;
     background-color: #313338;
     flex-shrink: 0;
     position: relative;
 }
-
 .input-wrapper {
     background-color: #383a40;
     border-radius: 8px;
@@ -204,8 +153,7 @@
     align-items: center;
     padding: 0 16px;
 }
-
-.discord-input {
+.youth-input {
     flex: 1;
     background: transparent;
     border: none;
@@ -214,36 +162,22 @@
     outline: none;
     font-size: 15px;
 }
-
 .right-icons {
     display: flex;
     gap: 12px;
 }
-
 .icon-btn {
     color: #b5bac1;
-    cursor: pointer;
-    background: none;
-    border: none;
-    display: flex;
-    align-items: center;
-    padding: 5px;
 }
-
 .icon-btn:hover {
     color: #f2f3f5;
 }
-
 .emoji-picker-container {
-    position: absolute;
     bottom: 80px;
     right: 20px;
-    z-index: 100;
 }
 
-/* ===========================================================================
-   6. YOUTH PROFILE MODAL
-=========================================================================== */
+/* --- YOUTH PROFILE MODAL --- */
 .youth-profile-overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -253,7 +187,6 @@
     align-items: center;
     justify-content: center;
 }
-
 .youth-profile-card {
     width: 350px;
     background-color: #111214;
@@ -263,12 +196,10 @@
     position: relative;
     text-align: left;
 }
-
 .youth-profile-banner {
     height: 60px;
     background-color: #5865F2;
 }
-
 .youth-profile-avatar-wrapper {
     position: absolute;
     top: 20px; left: 20px;
@@ -281,20 +212,17 @@
     align-items: center;
     justify-content: center;
 }
-
 .youth-profile-content {
     margin-top: 40px;
     padding: 16px;
     background-color: #111214;
 }
-
 .youth-profile-title {
     font-size: 20px;
     font-weight: bold;
     color: white;
     margin-bottom: 8px;
 }
-
 .youth-profile-desc-box {
     background-color: #2b2d31;
     padding: 12px;
@@ -304,7 +232,6 @@
     line-height: 1.4;
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
-
 .youth-close-btn {
     position: absolute;
     top: 10px; right: 10px;

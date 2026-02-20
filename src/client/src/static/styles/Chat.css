@@ -1,0 +1,43 @@
+* {
+    box-sizing: border-box;
+}
+
+/* --- Shared Header Icons --- */
+.header-icon-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    overflow: hidden;
+    color: #ffffff;
+    transition: transform 0.2s;
+}
+.header-icon-circle:hover {
+    transform: scale(1.1);
+}
+.header-icon-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* --- Shared Media --- */
+.chat-image {
+    max-width: 100%;
+    object-fit: contain;
+    display: block;
+}
+.icon-btn {
+    border: none;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+}
+.emoji-picker-container {
+    position: absolute;
+    z-index: 100;
+}
+

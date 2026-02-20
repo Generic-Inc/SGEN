@@ -1,6 +1,6 @@
+# API routing, WebSockets, database models, and security utilities for the chat system
 from flask import request
 from extensions import socketio
-
 from global_src.global_classes import User, CommunityMember
 from modules.authentications import Permissions
 from . import chat_blueprint
@@ -8,7 +8,7 @@ from modules.chat_model import ChatMessage
 from .content_censorship import censor_text
 
 
-# --- HELPER: Verify Auth & Membership ---
+# --- Verify Auth & Membership ---
 async def verify_user_and_membership(community_id):
     authorization = request.cookies.get('token')
     if not authorization:
@@ -25,17 +25,21 @@ async def verify_user_and_membership(community_id):
     return user, community_member, None
 
 
-# --- ROUTES ---
-
+# --- Read ---
 @chat_blueprint.route('/community/<int:community_id>/messages', methods=['GET'])
 async def get_messages(community_id):
     user, member, error = await verify_user_and_membership(community_id)
     if error: return {"error": error}, 401 if "Unauthorized" in error else 403
 
     messages = await ChatMessage.get_messages(community_id)
-    return {"messages": [msg.public_json for msg in messages]}
 
+    # ADDED: current_user_id is now sent to the frontend
+    return {
+        "messages": [msg.public_json for msg in messages],
+        "current_user_id": user.user_id
+    }
 
+# --- CREATE ---
 @chat_blueprint.route('/community/<int:community_id>/messages', methods=['POST'])
 async def create_message(community_id):
     user, member, error = await verify_user_and_membership(community_id)
@@ -64,7 +68,7 @@ async def create_message(community_id):
 
     return {"error": "Failed to create message"}, 500
 
-
+# --- UPDATE ---
 @chat_blueprint.route('/community/<int:community_id>/messages/<int:message_id>', methods=['PATCH'])
 async def update_message(community_id, message_id):
     user, member, error = await verify_user_and_membership(community_id)
@@ -90,7 +94,7 @@ async def update_message(community_id, message_id):
 
     return updated_msg.public_json
 
-
+# --- DELETE ---
 @chat_blueprint.route('/community/<int:community_id>/messages/<int:message_id>', methods=['DELETE'])
 async def delete_message(community_id, message_id):
     user, member, error = await verify_user_and_membership(community_id)

@@ -1,14 +1,15 @@
-// src/components/ChatLogic.jsx
-import { useState, useEffect, useCallback, useRef } from 'react';
+// React state hooks, custom API fetchers, and WebSocket client for real-time chat
+import { useState, useEffect, useCallback } from 'react';
 import { fetchData, postData } from '../static/api.js';
 import io from 'socket.io-client';
 
-/* Checks if a message string ends in an image file extension */
+/* ===========================================================================
+   UTILITY FUNCTIONS
+=========================================================================== */
 export const isImage = (text) => {
     return text && text.match(/\.(jpeg|jpg|gif|png|webp)$/i) != null;
 };
 
-/* Converts server date strings into readable 12-hour time format */
 export const formatTime = (dateString) => {
     if (!dateString) return "";
     try {
@@ -17,21 +18,19 @@ export const formatTime = (dateString) => {
     } catch { return ""; }
 };
 
+/* ===========================================================================
+   MAIN CHAT LOGIC HOOK
+=========================================================================== */
 export const useChatLogic = (communityId) => {
+
+    /* --- 1. State Management --- */
     const [messages, setMessages] = useState([]);
     const [community, setCommunity] = useState(null);
     const [loading, setLoading] = useState(true);
     const [onlineCount, setOnlineCount] = useState(0);
-
-    /* -----------------------------------------------------------
-       NEW: State to store the logged-in user's identity
-       received via WebSocket handshake.
-    ----------------------------------------------------------- */
     const [currentUser, setCurrentUser] = useState(null);
 
-    const socketRef = useRef();
-
-    /* Retrieves community metadata */
+    /* --- 2. Data Fetching --- */
     const fetchCommunityInfo = useCallback(async () => {
         try {
             const data = await fetchData(`community/${communityId}`);
@@ -42,12 +41,12 @@ export const useChatLogic = (communityId) => {
         }
     }, [communityId]);
 
-    /* Retrieves the INITIAL list of chat messages */
     const fetchInitialMessages = useCallback(async () => {
         setLoading(true);
         try {
             const data = await fetchData(`community/${communityId}/messages`);
             if (data && data.messages) setMessages(data.messages);
+            if (data.current_user_id) setCurrentUser({ user_id: data.current_user_id });
         } catch (error) {
             console.error("Failed to load messages:", error);
         } finally {
@@ -55,29 +54,21 @@ export const useChatLogic = (communityId) => {
         }
     }, [communityId]);
 
-    /* Setup WebSocket Connection & Listeners */
+    /* --- 3. WebSocket Setup --- */
     useEffect(() => {
         if (!communityId) return;
 
         fetchCommunityInfo();
         fetchInitialMessages();
 
-        // Ensure credentials are included to share the secure token cookie
         const socket = io("http://127.0.0.1:5000", { withCredentials: true });
-        socketRef.current = socket;
-
         socket.emit('join', { room: communityId });
 
-        /* -----------------------------------------------------------
-           NEW LISTENER: Identity Handshake
-           Listen for the server to send back your user details.
-        ----------------------------------------------------------- */
         socket.on('connect_user_data', (userData) => {
             console.log("WebSocket Handshake: Logged in as", userData);
             setCurrentUser(userData);
         });
 
-        // LISTENER 1: New Messages
         socket.on('receive_message', (newMessage) => {
             setMessages((prev) => {
                 if (prev.some(msg => msg.messageId === newMessage.messageId)) return prev;
@@ -85,29 +76,24 @@ export const useChatLogic = (communityId) => {
             });
         });
 
-        // LISTENER 2: Message Edits
         socket.on('message_edited', (updatedMsg) => {
             setMessages((prev) =>
                 prev.map(msg => msg.messageId === updatedMsg.messageId ? updatedMsg : msg)
             );
         });
 
-        // LISTENER 3: Message Deletions
         socket.on('message_deleted', (data) => {
             setMessages((prev) => prev.filter(msg => msg.messageId !== data.messageId));
         });
 
-        // LISTENER 4: Online Count
         socket.on('room_data', (data) => {
             if (data && data.count !== undefined) setOnlineCount(data.count);
         });
 
-        return () => {
-            socket.disconnect();
-        };
+        return () => socket.disconnect();
     }, [communityId, fetchCommunityInfo, fetchInitialMessages]);
 
-    /* Sends a new message */
+    /* --- 4. CRUD Operations --- */
     const sendMessage = async (content) => {
         if (!content.trim()) return false;
         try {
@@ -119,7 +105,6 @@ export const useChatLogic = (communityId) => {
         }
     };
 
-    /* Edits a message */
     const editMessage = async (messageId, newContent) => {
         if (!newContent.trim()) return false;
         try {
@@ -145,7 +130,6 @@ export const useChatLogic = (communityId) => {
         }
     };
 
-    /* Deletes a message */
     const deleteMessage = async (messageId) => {
         try {
             const response = await fetch(`http://localhost:5000/api/community/${communityId}/messages/${messageId}`, {
@@ -167,7 +151,6 @@ export const useChatLogic = (communityId) => {
         }
     };
 
-    /* Joins the community */
     const joinCommunity = async () => {
         try {
             const result = await postData(`community/${communityId}/join`, {});
@@ -182,12 +165,13 @@ export const useChatLogic = (communityId) => {
         return false;
     };
 
+    /* --- 5. Exports --- */
     return {
         community,
         messages,
         loading,
         onlineCount,
-        currentUser, // NEW: Return this for identity checks in components
+        currentUser,
         sendMessage,
         editMessage,
         deleteMessage,

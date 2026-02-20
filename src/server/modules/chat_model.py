@@ -1,3 +1,4 @@
+# Database connection and core classes for chat models
 from global_src.global_classes import BaseClass, User
 from global_src.db import DATABASE
 
@@ -20,7 +21,7 @@ class ChatMessage(BaseClass):
             "created": self.created
         }
 
-    # --- NEW: Helper to get a single message (for ownership checks) ---
+    # --- get a single message (for ownership checks) ---
     @classmethod
     async def get_message(cls, message_id: int):
         row = await DATABASE.fetch_one("""
@@ -35,7 +36,7 @@ class ChatMessage(BaseClass):
         author = await User.get_user(row[2])
         return cls(row[0], row[1], author, row[3], row[4])
 
-    # --- CREATE (Updated) ---
+    # --- CREATE ---
     @classmethod
     async def create_message(cls, community_id: int, author_id: int, content: str):
         await DATABASE.execute("""
@@ -98,6 +99,6 @@ class ChatMessage(BaseClass):
                                WHERE message_id = ?
                                """, (message_id,))
 
-        # Verify deletion
+        # Verify if text is deleted
         check = await DATABASE.fetch_one("SELECT message_id FROM ChatMessage WHERE message_id=?", (message_id,))
         return check is None
